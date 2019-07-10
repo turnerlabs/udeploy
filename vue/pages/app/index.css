@@ -1,0 +1,42 @@
+.app {
+  margin-bottom: 50px;
+}
+
+.scroll {
+  overflow:auto;
+  max-height:300px;
+}
+
+.link {
+  color: #3273dc !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+}
+
+.links {
+  width: 100%;
+}
+
+.link:hover {
+  color: #000 !important;
+}
+
+.counter {
+  width: 60px !important;
+}
+
+.name {
+  width: 400px !important;
+}
+
+.instance {
+  width: 100px !important;
+}
+
+.repo {
+  width: 750px !important;
+}
+
+[v-cloak] {
+  display: none;
+}

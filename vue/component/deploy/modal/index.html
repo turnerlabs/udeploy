@@ -1,0 +1,69 @@
+<script type="text/x-template" id="deploy-modal-template">
+<div class="modal is-active">
+<div class="modal-background"></div>
+<div class="modal-card">
+    <header class="modal-card-head">
+        <p class="modal-card-title">Deploy to {{ instance.name.toUpperCase() }}</p>
+        <button class="delete" @click="$emit('close')" aria-label="close"></button>
+    </header>
+    <section class="modal-card-body">
+        <div class="field is-horizontal">
+            <div class="field-label"><label class="label">From</label></div>
+            <div class="field-body">
+            <div class="control">
+                <div class="select">
+                    <select id="source-instance" v-model="selectedSource">
+                        <option v-for="inst in app.instances" :value="inst.name">{{inst.name}}</option>
+                    </select>
+                </div>
+            </div>
+            </div>
+        </div>
+        <div class="field is-horizontal">
+            <div class="field-label"><label class="label">Version</label></div>
+            <div class="field-body">
+            <div class="control">
+                <div class="select" v-bind:class="{ 'is-loading': versions.isLoading }">
+                    <select id="source-version" v-model="selectedVersion">
+                        <option v-for="(ver, key) in versions.data" :value="key">{{ ver.display }}</option>
+                    </select>
+                </div>
+            </div>
+            </div>
+        </div>
+        <div class="field is-horizontal">
+            <div class="field-label"><label class="label">Environment</label></div>
+            <div class="field-body">
+            <div class="control">
+                <label class="checkbox">
+                <input type="checkbox" @click="overrideEnv">
+                override 
+                </label>
+            </div>
+            </div>
+        </div>
+        <div v-if="override.env" class="field is-horizontal">
+            <textarea id="environment" class="textarea" placeholder="ENV_VAR_NAME=ENV_VAR" v-model="environment" rows="10"></textarea>  
+        </div>
+        <label v-if="override.env && (app.type == 'service' || app.type == 'scheduled-task')" class="label">Secrets</label>
+        <div v-if="override.env && (app.type == 'service' || app.type == 'scheduled-task')" class="field is-horizontal">
+            <textarea id="secrets" class="textarea" placeholder="ENV_VAR_NAME=/aws/parameter/store/path/ENV_VAR_NAME" v-model="secrets" rows="10"></textarea>  
+        </div>
+    </section>
+    <footer class="modal-card-foot content is-centered">
+        <div class="container has-text-centered">
+            <div v-if="willPropagate()" class="box has-background-warning content">
+                This deployment will automatically propagate to other instances. Auto-propagation can be disabled in the application's instance <a :href="'/apps/' + app.name">settings</a>.
+            </div>
+            <div v-if="instance.deployCode.length > 0" class="field is-horizontal">
+                <input class="input is-danger" type="text" v-on:keyup="validateDeployCode" placeholder="authorization code required">
+            </div>
+            <div v-if="error.length > 0" class="box has-background-danger has-text-white content">
+                {{ error }}
+            </div>
+            <button class="button is-primary" v-bind:class="{ 'is-loading': deploying }" :disabled="deploying || !deployAuthorized ? true : false" @click="deploy(instance.name)">Deploy</button>
+        </div>
+    </footer>
+</div>
+</div>
+</script>

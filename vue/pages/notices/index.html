@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html class="has-background-white-ter">
+<head>
+  <title>uDeploy</title>
+
+  <link rel="stylesheet" type="text/css" href="/component/header/bar.css?auto-version=14419" />
+  <link rel="stylesheet" type="text/css" href="/pages/notices/index.css?auto-version=14419"  />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.4/css/bulma.min.css" />
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+</head>
+<body>
+    <div id="notices" v-cloak>
+        <header-bar v-bind:user="user" v-bind:page="page" v-bind:config="config"></header-bar>
+
+        <div class="container box is-family-primary">
+          <div class="content">
+            <div v-if="!isLoading" class="is-pulled-right">
+              <button class="button is-success" :disabled="!canSave" @click="save">Save</button>
+              <button class="button is-warning" @click="cancel">Cancel</button>
+            </div>
+            <h4><a href="/apps">APPS</a> > NOTICES</h4> 
+            <hr />
+                       
+            <alert-banner v-bind:alerts="alerts"></alert-banner>
+
+            <progress v-if="isLoading" class="progress is-small is-dark" max="100"></progress>
+
+            <div v-if="notices.length > 0">
+              <p>All notification events do not apply to all application types.</p>
+              <table>
+                  <tr><th>Name</th><th>SNS (arn)</th><th></th><th class="has-text-centered">Enabled</th><th></th></tr>
+                  <tr v-for="(notice, index) in notices">
+                      <td class="name">
+                          <div class="field"> 
+                            <input class="input" type="text" v-on:change="didEdit(index)" v-model="notice.name" v-on:keyup="validateField($event, '[A-Za-z0-9._%+-]+', 'REQUIRED: Notice Name', index)" title="" placeholder="Application Notice">
+                          </div>
+                          <article v-if="notice.showCriteria" class="message is-primary">
+                              <div class="message-header">
+                                  Watch
+                                  <template v-if="notice.apps.length == 0">
+                                    All 
+                                  </template>
+                                  Applications
+                              </div>
+                              <div class="message-body">
+                                <table>
+                                  <tr v-if="notice.apps.length > 0"><th>Name</th><th></th></tr>
+                                  <tr v-for="(a, aIndex) in notice.apps" :key="a.id">
+                                    <td>
+                                      <div class="select">
+                                        <select v-model="a.name" v-on:change="didEdit(index)">
+                                          <option v-for="app in apps.map(a => a.name).sort()" :value="app" >{{ app }}</option>
+                                        </select>
+                                      </div>
+                                    </td>
+                                    <td>
+                                      <button title="Remove App" class="button is-pulled-right" :disabled="!user.admin" @click="removeApp(index+'-app-'+aIndex, index, aIndex)">
+                                        <span class="icon is-small">
+                                            <i class="fas fa-minus"></i>
+                                        </span>
+                                      </button>
+                                    </td>
+                                  </tr>
+                                  <tr><td></td>
+                                    <td>
+                                      <button title="Add App" class="button is-pulled-right" :disabled="!user.admin" @click="addApp(index)">
+                                        <span class="icon is-small">
+                                            <i class="fas fa-plus"></i>
+                                        </span>
+                                      </button>
+                                    </td>
+                                </tr>
+                                </table>
+                              </div>
+                          </article>
+                      </td>
+                      <td>
+                          <div class="field"> 
+                            <input class="input" type="text" v-on:change="didEdit(index)" v-model="notice.snsArn" v-on:keyup="validateField($event, /arn:aws[a-zA-Z-]*:sns:[a-z]{2}-[a-z]+-\d{1}:\d{12}:[a-zA-Z0-9-_]+/g, 'REQUIRED: SNS ARN', index)" title="" placeholder="">
+                          </div>
+                          <article v-if="notice.showCriteria" class="message is-primary">
+                              <div class="message-header">
+                                  Watch
+                                  <template v-if="notice.instances.length == 0">
+                                    All
+                                  </template>
+                                  Instances
+                              </div>
+                              <div class="message-body">
+                               
+                                <table>
+                                  <tr v-if="notice.instances.length > 0"><th>Name</th><th></th></tr>
+                                  <tr v-for="(i, iIndex) in notice.instances" :key="i.id">
+                                    <td>
+                                      <div class="select">
+                                        <select v-model="i.name" v-on:change="didEdit(index)">
+                                          <option v-for="name in instances" :value="name">{{ name }}</option>
+                                        </select>
+                                      </div>
+                                    </td>
+                                    <td>
+                                      <button title="Remove Instance" class="button is-pulled-right" :disabled="!user.admin" @click="removeInst(index+'-inst-'+iIndex, index, iIndex)">
+                                        <span class="icon is-small">
+                                            <i class="fas fa-minus"></i>
+                                        </span>
+                                      </button>
+                                    </td>
+                                  </tr>
+                                  <tr><td></td>
+                                    <td>
+                                      <button title="Add Instance" class="button is-pulled-right" :disabled="!user.admin" @click="addInst(index)">
+                                        <span class="icon is-small">
+                                            <i class="fas fa-plus"></i>
+                                        </span>
+                                      </button>
+                                    </td>
+                                </tr>
+                                </table>
+                              </div>
+                          </article>
+                      </td>
+                      <td>
+                          <div class="field"> 
+                            <button class="button is-info" @click="notice.showCriteria ? notice.showCriteria = false : notice.showCriteria = true">{{ notice.showCriteria ? "Hide" : "Edit" }} Trigger</button>
+                          </div>
+                          <article v-if="notice.showCriteria" class="message is-primary">
+                              <div class="message-header">
+                                Watch Events
+                              </div>
+                              <div class="message-body">
+                                  <div class="field">
+                                    <label class="checkbox">
+                                        <input type="checkbox" v-on:change="didEdit(index)" v-model="notice.events.error"> Error
+                                    </label>
+                                  </div>
+                                  <div class="field">
+                                  <label class="checkbox">
+                                      <input type="checkbox" v-on:change="didEdit(index)" v-model="notice.events.stopped"> Stopped
+                                  </label>
+                                  </div>
+                                  <div class="field">
+                                  <label class="checkbox">
+                                      <input type="checkbox" v-on:change="didEdit(index)" v-model="notice.events.starting"> Starting
+                                  </label>
+                                  </div>
+                                  <div class="field">
+                                  <label class="checkbox">
+                                      <input type="checkbox" v-on:change="didEdit(index)" v-model="notice.events.pending"> Pending
+                                  </label>
+                                  </div>
+                                  <div class="field">
+                                  <label class="checkbox">
+                                      <input type="checkbox" v-on:change="didEdit(index)" v-model="notice.events.running"> Running
+                                  </label>
+                                  </div>
+                                  <div class="field">
+                                  <label class="checkbox">
+                                      <input type="checkbox" v-on:change="didEdit(index)" v-model="notice.events.deploying"> Deploying
+                                  </label>
+                                  </div>
+                                  <div class="field">
+                                  <label class="checkbox">
+                                      <input type="checkbox" v-on:change="didEdit(index)" v-model="notice.events.deployed"> Deployed
+                                  </label>
+                                  </div>
+                              </div>
+                          </article>
+                      </td>
+                      <td class="has-text-centered">
+                          <label class="checkbox">
+                              <input type="checkbox" v-on:change="didEdit(index)" v-model="notice.enabled">
+                          </label>
+                      </td>
+                      <td>
+                          <button title="Delete notice." class="button is-pulled-right" :disabled="!user.admin" @click="deleteNotice(index)">
+                            <span class="icon is-small">
+                                <i class="fas fa-trash-alt"></i>
+                            </span>
+                          </button>
+                      </td>
+                  </tr>
+                  <tr><td></td><td></td><td></td><td></td>
+                    <td>
+                      <button title="Add notice." class="button is-pulled-right" :disabled="!user.admin" @click="addNotice()">
+                        <span class="icon is-small">
+                            <i class="fas fa-plus"></i>
+                        </span>
+                      </button>
+                    </td>
+                </tr>
+              </table>
+              
+              <alert-banner v-bind:alerts="alerts"></alert-banner>
+
+              <div v-if="!isLoading" class="has-text-centered">
+                <button class="button is-success" :disabled="!canSave" @click="save">Save</button>
+                <button class="button is-warning" @click="cancel">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+    </div>
+</body>
+</html>
+
+<script src="/component/header/bar.js?auto-version=14419" type="module"></script>
+<script src="/component/alert/banner.js?auto-version=14419" type="module"></script>
+<script src="/pages/notices/index.js?auto-version=14419" type="module"></script>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html class="has-background-white-ter">
+<head>
+  <title>uDeploy</title>
+
+  <link rel="stylesheet" type="text/css" href="/component/header/bar.css?auto-version=14419" />
+  <link rel="stylesheet" type="text/css" href="/pages/users/index.css?auto-version=14419"  />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.4/css/bulma.min.css" />
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+</head>
+<body>
+    <div id="users" v-cloak>
+        <header-bar v-bind:user="user" v-bind:page="page" v-bind:config="config"></header-bar>
+
+        <div class="container box is-family-primary">
+          <div class="content">
+            <div v-if="!isLoading" class="is-pulled-right">
+              <button class="button is-success" :disabled="!canSave" @click="save">Save</button>
+              <button class="button is-warning" @click="cancel">Cancel</button>
+            </div>
+            <h4><a href="/apps">APPS</a> > USERS</h4> 
+            <hr />
+           
+            <alert-banner v-bind:alerts="alerts"></alert-banner>
+
+            <progress v-if="isLoading" class="progress is-small is-dark" max="100"></progress>
+           
+            <div v-if="!isLoading">
+              <table>
+                  <tr><th>Email</th><th></th><th class="has-text-centered">Admin</th><th></th></tr>
+                  <tr v-for="(usr, index) in users">
+                      <td class="name">
+                          <div class="field"> 
+                            <input class="input" type="text" v-on:change="didEdit(usr.id)" v-model="usr.email" v-on:keyup="validateField($event, '[A-Za-z0-9._%+-]+@[A-Za-z0-9_%+-]+[\.]{1}[A-Za-z]+', 'REQUIRED: User Email', index)" title="User's email address. The OAuth provider may be case sensitive when attempting the authentication." placeholder="user@domain.com">
+                          </div>
+                          <div v-if="usr.showPolicy" class="field"> 
+                            <textarea class="textarea" v-on:change="didEdit(usr.id)" v-model="usr.policy" v-on:keyup="validatePolicy($event, index)" placeholder="" rows="30" title="The policy defines which apps this user can view and which instances they can deploy, start/stop, or edit. Admins can edit any instance, without an edit claim, for apps listed in the policy."></textarea>
+                          </div>
+                      </td>
+                      <td>
+                          <div class="field"> 
+                            <button class="button is-info" @click="usr.showPolicy ? usr.showPolicy = false : usr.showPolicy = true">Policy</button>
+                          </div>
+                          <div v-if="usr.showPolicy">
+                            <article class="message is-primary">
+                                <div class="message-header">
+                                    Example Policy
+                                </div>
+                                <div class="message-body">
+                                  <p>Allows the user to view "udeploy-app" and grants "edit", "deploy", and "start/stop" permissions for the "dev" instance only.</p>
+                                  <p>
+                                  {
+                                    "udeploy-app": {
+                                          "claims": {
+                                              "dev": [
+                                                    "scale",
+                                                    "deploy",
+                                                    "edit"
+                                              ]
+                                          }
+                                    }
+                                  }
+                                  </p>
+                                </div>
+                            </article>
+                            <article class="message is-primary">
+                                <div class="message-header">
+                                    Choose from Available Permissions
+                                </div>
+                                <div class="message-body">
+                                    <table>
+                                    <tr><th>Claim</th><th>Description</th><th>Admin</th></tr>
+                                    <tr><td>edit</td><td>Grants user edit permission for instance.</td><td>automatic</td></tr>
+                                    <tr><td>scale</td><td>Grants user start/stop permissions for instance.</td><td>specify</td></tr>
+                                    <tr><td>deploy</td><td>Grants user deploy permission for instance.</td><td>specify</td></tr>
+                                    </table>
+                                </div>
+                            </article>
+                            <article class="message is-primary">
+                                <div class="message-header">
+                                    Choose from Available Applications
+                                </div>
+                                <div class="message-body">
+                                    <div class="scroll">
+                                        <li v-for="a in apps.map(a => a.name).sort()">
+                                            {{ a }}
+                                        </li>
+                                    </div>
+                                </div>
+                            </article>
+                           
+                          </div>
+                      </td>
+                      <td class="has-text-centered">
+                          <label class="checkbox">
+                              <input type="checkbox" v-on:change="didEdit(usr.id)" v-model="usr.admin">
+                          </label>
+                      </td>
+                      <td>
+                          <button title="Delete instance." class="button is-pulled-right" :disabled="!user.admin" @click="deleteUser(index)">
+                            <span class="icon is-small">
+                                <i class="fas fa-trash-alt"></i>
+                            </span>
+                          </button>
+                      </td>
+                  </tr>
+                  <tr><td></td><td></td><td></td>
+                    <td>
+                      <button title="Add user." class="button is-pulled-right" :disabled="!user.admin" @click="addUser()">
+                        <span class="icon is-small">
+                            <i class="fas fa-plus"></i>
+                        </span>
+                      </button>
+                    </td>
+                </tr>
+              </table>
+              
+              <alert-banner v-bind:alerts="alerts"></alert-banner>
+
+              <div v-if="!isLoading" class="has-text-centered">
+                <button class="button is-success" :disabled="!canSave" @click="save">Save</button>
+                <button class="button is-warning" @click="cancel">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+    </div>
+</body>
+</html>
+
+<script src="/component/header/bar.js?auto-version=14419" type="module"></script>
+<script src="/component/alert/banner.js?auto-version=14419" type="module"></script>
+<script src="/pages/users/index.js?auto-version=14419" type="module"></script>

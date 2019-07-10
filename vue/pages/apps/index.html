@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html class="has-background-white-ter">
+<head>
+  <title>uDeploy</title>
+
+  <link rel="stylesheet" type="text/css" href="/component/header/bar.css?auto-version=14419" />
+  <link rel="stylesheet" type="text/css" href="./pages/apps/index.css?auto-version=14419"  />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.4/css/bulma.min.css" />
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+</head>
+<body>
+    <div id="app" v-cloak>
+        <header-bar v-bind:user="user" v-bind:page="page" v-bind:config="config"></header-bar>
+
+        <div class="container is-family-primary">
+            <p>    
+                <div class="columns">
+                    <div class="column is-5">
+                        <div class="field">
+                            <p class="control has-icons-left has-icons-right">
+                                <input class="input name" type="text" v-model="filter" title="Enter application name to filter." placeholder="application">
+                                <span class="icon is-small is-left">
+                                <i class="fas fa-filter"></i>
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="column is-1">
+                        <div v-if="filter.length > 0" class="block">
+                            <span class="tag has-background-grey-light">
+                                {{ Object.keys(matches).length }} matched
+                                <button class="delete is-small" @click.stop.prevent="filter = ''"></button>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="column is-5"></div>
+                    <div class="column is-1">
+                        <div class="buttons has-addons is-right">
+                            <button title="list" class="button" v-bind:class="{ 'is-primary': view.list }" :disabled="view.list" @click.stop.prevent="setView('list')">
+                                <span class="icon is-small">
+                                    <i class="fas fa-list"></i>
+                                </span>
+                            </button>
+                            <button title="grid" class="button" v-bind:class="{ 'is-primary': view.grid }" :disabled="view.grid" @click.stop.prevent="setView('grid')">
+                                <span class="icon is-small">
+                                    <i class="fas fa-th"></i>
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                </div>  
+            </p>   
+           
+            <alert-banner v-bind:alerts="alerts"></alert-banner>
+
+            <progress v-if="isLoading" class="progress is-small is-dark" max="100"></progress>
+
+            <div v-if="view.list && apps.length > 0" class="box">
+            <table class="table app-table">
+                <tbody>
+                <tr>
+                    <th>App</th>
+                    <th>Instance</th>
+                    <th>Version</th>
+                    <th></th>
+                    <th></th>
+                </tr>
+                <template v-for="app in sortApps(apps)">
+                    <tr :id="app.name" v-if="showApp(app.name)" 
+                        v-for="inst in sortInstances(app.instances)"
+                        class="app">
+                        <td>{{ app.name.toUpperCase() }}</td>
+                        <td><a :href="'/apps/'+app.name+'/instance/'+inst.name">{{ inst.name.toUpperCase() }}</a></td>
+                        <td id="box"
+                            draggable="true" 
+                            v-on:dragstart="dragStart($event, app, inst)" 
+                            v-on:dragend="dragEnd($event, inst)" 
+                            v-on:dragenter="dragEnter($event, app, inst)" 
+                            v-on:dragleave="dragLeave($event, app, inst)" 
+                            v-on:dragover.prevent="dragOver($event, inst)" 
+                            v-on:drop="dragDrop($event, app, inst)" 
+                            v-bind:class="statusClass(app, inst)" class="cell is-size-6 has-text-weight-bold has-text-white">
+                            {{ inst.version }} <span v-if="inst.revision > 0">({{ inst.revision }})</span>
+                            <div class="is-pulled-right">
+                                <button v-if="actions(app.type).restart && inst.isRunning" :disabled="!inst.claims.scale" title="restart instance" class="button" @click.stop.prevent="selected = { app: app, instance: inst }; modal.confirm = { show: true, code: inst.deployCode, message: 'Restart all running tasks for ' + inst.name + '.', action: restartInstance }">
+                                    <span class="icon is-small">
+                                        <i class="fas fa-undo"></i>
+                                    </span>
+                                </button>
+                                <button v-if="actions(app.type).scale && inst.isRunning" :disabled="!inst.claims.scale" title="scale instance" class="button" @click.stop.prevent="selected = { app: app, instance: inst }; modal.scale = { show: true, action: 'Scale' }">
+                                    <span class="icon is-small">
+                                        <i class="fas fa-arrows-alt-h"></i>
+                                    </span>
+                                </button> 
+                                <button v-if="actions(app.type).start && !inst.isRunning" v-bind:class="{ 'is-loading': inst.deployment.isPending }" :disabled="!inst.claims.scale" title="start" class="button" @click.stop.prevent="selected = { app: app, instance: inst }; modal.scale = { show: true, action: 'Start' }">
+                                    <span class="icon">
+                                        <i class="fas fa-play"></i>
+                                    </span>
+                                </button>
+                                <button v-else-if="actions(app.type).stop" v-bind:class="{ 'is-loading': inst.deployment.isPending }" :disabled="!inst.claims.scale" title="stop" class="button" @click.stop.prevent="selected = { app: app, instance: inst }; modal.confirm = { show: true, code: inst.deployCode, message: 'Stop all running tasks for ' + inst.name + '.', action: stopInstance }">
+                                    <span class="icon">
+                                        <i class="fas fa-stop"></i>
+                                    </span>
+                                </button>
+                            </div>
+                        </td>
+                        <td>
+                            <button :disabled="!inst.claims.deploy" title="Opens deployment modal." class="button is-success" @click.stop.prevent="selected = { app: app, instance: inst }; modal.deploy = { show: true }">
+                                Deploy
+                            </button>
+                        </td>
+                        <td class="has-text-right">
+                            <a v-if="hasEditPermission(app)" title="Modify application." class="button" :href="'/apps/' + app.name">
+                                <span class="icon is-small">
+                                    <i class="fas fa-edit"></i>
+                                </span>
+                            </a>
+                        </td>
+                    </tr>
+                </template>
+                </tbody>
+            </table>
+            </div>
+           
+            <div v-if="view.grid" v-for="app in sortApps(apps)">
+                <div v-if="showApp(app.name)" :id="app.name" class="app box">
+                    <div class="columns">
+                        <div class="column is-10 has-text-weight-bold is-size-4 u-margin-top">
+                            {{ app.name.toUpperCase() }}
+                        </div>
+                        <div class="column is-2">
+                            <div class="buttons has-addons is-pulled-right">
+                                <a v-if="hasEditPermission(app)" title="Modify application." class="button" :href="'/apps/' + app.name">
+                                    <span class="icon is-small">
+                                        <i class="fas fa-edit"></i>
+                                    </span>
+                                </a>
+                                <a title="Near real-time updates are automatic. But, if something is not adding up, force a sync with AWS." class="button" v-bind:class="{'is-loading': app.isRefreshing}" @click="cacheApp(app)">
+                                    <span class="icon is-small">
+                                        <i class="fas fa-sync"></i>
+                                    </span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="columns">
+                        <div v-for="inst in sortInstances(app.instances)" class="column is-2">
+                            
+                            <p class="has-text-weight-bold">{{ inst.name.toUpperCase() }}</p>
+                            <a :href="'/apps/'+app.name+'/instance/'+inst.name">
+                            <div id="box" class="box has-text-centered content instance" 
+                                draggable="true" 
+                                v-on:dragstart="dragStart($event, app, inst)" 
+                                v-on:dragend="dragEnd($event, inst)" 
+                                v-on:dragenter="dragEnter($event, app, inst)" 
+                                v-on:dragleave="dragLeave($event, app, inst)" 
+                                v-on:dragover.prevent="dragOver($event, inst)" 
+                                v-on:drop="dragDrop($event, app, inst)" 
+                                v-bind:class="statusClass(app, inst)">
+
+                                <div class="text has-text-white">
+                                    <p class="is-size-6 has-text-weight-bold is-marginless" :title="inst.version">{{ formatVersion(inst.version) }}</p>
+                                    <p class="is-size-7"><span v-if="inst.revision > 0">revision {{ inst.revision }}</span></p>
+
+                                    <div v-if="inst.deployment.isPending">
+                                        <progress class="progress is-small" v-bind:class="{'is-secondary': inst.deployment.isPending}" max="100">15%</progress>
+                                    </div>
+                                    <div v-else>
+                                        <div v-if="inst.error.length == 0">
+                                           
+                                            <div v-if="inst.isRunning" class="buttons has-addons is-centered">
+                                                <button v-if="actions(app.type).stop" :disabled="!inst.claims.scale" title="stop instance" class="button is-small is-rounded" @click.stop.prevent="selected = { app: app, instance: inst }; modal.confirm = { show: true, code: inst.deployCode, message: 'Stop all running tasks for ' + inst.name + '.', action: stopInstance }">
+                                                    <span class="icon is-small">
+                                                        <i class="fas fa-stop"></i>
+                                                    </span>
+                                                </button>
+                                                <button v-if="actions(app.type).restart" :disabled="!inst.claims.scale" title="restart instance" class="button is-small is-rounded" @click.stop.prevent="selected = { app: app, instance: inst }; modal.confirm = { show: true, code: inst.deployCode, message: 'Restart all running tasks for ' + inst.name + '.', action: restartInstance }">
+                                                    <span class="icon is-small">
+                                                        <i class="fas fa-undo"></i>
+                                                    </span>
+                                                </button>
+                                                <button v-if="actions(app.type).scale" :disabled="!inst.claims.scale" title="scale instance" class="button is-small is-rounded" @click.stop.prevent="selected = { app: app, instance: inst }; modal.scale = { show: true, action: 'Scale' }">
+                                                    <span class="icon is-small">
+                                                        <i class="fas fa-arrows-alt-h"></i>
+                                                    </span>
+                                                </button>   
+                                            </div>
+
+                                            <button v-else-if="actions(app.type).start" :disabled="!inst.claims.scale" title="start instance" class="button is-small is-rounded" @click.stop.prevent="selected = { app: app, instance: inst }; modal.scale = { show: true, action: 'Start' }">
+                                                <span class="icon is-small">
+                                                    <i class="fas fa-play"></i>
+                                                </span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div v-else>
+                                        <p class="is-size-7">{{ inst.error }}</p>
+                                    </div>
+                                </div>
+
+                                <button :disabled="!inst.claims.deploy" title="Opens deployment modal." class="button" @click.stop.prevent="selected = { app: app, instance: inst }; modal.deploy = { show: true }">Deploy</button>
+                            </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="!isLoading && user.admin" class="box has-text-weight-bold is-size-4" @click="addApp()">
+                ADD APPLICATION
+                <a title="Add application." class="button is-pulled-right">
+                    <span class="icon is-small">
+                        <i class="fas fa-plus"></i>
+                    </span>
+                </a>
+            </div>
+
+            <footer-bar v-bind:updated="updated" v-bind:version="version"></footer-bar>
+        </div>
+        <deploy-modal v-if="modal.deploy.show" @close="modal.deploy.show = false" :instance="selected.instance" :app="selected.app" :source="selected.source"></deploy-modal>
+        <scale-modal v-if="modal.scale.show" @close="modal.scale.show = false" :instance="selected.instance" :app="selected.app" :action="modal.scale.action"></scale-modal>
+        <confirm-modal v-if="modal.confirm.show" @close="modal.confirm.show = false" @continue="handleContinue" :code="modal.confirm.code" :message="modal.confirm.message"></confirm-modal>
+    </div>
+    
+    <div html-template="./component/deploy/modal/index.html"></div>
+    <div html-template="./component/scale/modal/index.html"></div>
+    <div html-template="./component/confirm/modal/index.html"></div>
+</body>
+</html>
+
+<script src="./component/html/include.js?auto-version=14419" type="module"></script>
+<script src="./component/header/bar.js?auto-version=14419" type="module"></script>
+<script src="./component/footer/bar.js?auto-version=14419" type="module"></script>
+<script src="./component/deploy/modal/index.js?auto-version=14419" type="module"></script>
+<script src="./component/scale/modal/index.js?auto-version=14419" type="module"></script>
+<script src="./component/confirm/modal/index.js?auto-version=14419" type="module"></script>
+<script src="./component/alert/banner.js?auto-version=14419" type="module"></script>
+<script src="./pages/apps/index.js?auto-version=14419" type="module"></script>

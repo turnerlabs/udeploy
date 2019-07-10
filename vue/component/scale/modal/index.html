@@ -1,0 +1,32 @@
+<script type="text/x-template" id="scale-modal-template">
+<div class="modal is-active">
+<div class="modal-background"></div>
+<div class="modal-card">
+    <header class="modal-card-head">
+        <p class="modal-card-title">{{ action }} {{ instance.name.toUpperCase() }}</p>
+        <button class="delete" @click="$emit('close')" aria-label="close"></button>
+    </header>
+    <section class="modal-card-body">
+        <div class="field is-horizontal">
+            <div class="field-label"><label class="label">Tasks</label></div>
+            <div class="field-body">
+            <div class="control">
+                <input class="input counter" v-model="count" type="number" v-on:keyup="validateStart" min="1" max="50">
+            </div>
+            </div>
+        </div>
+    </section>
+    <footer class="modal-card-foot content is-centered">
+        <div class="container has-text-centered">
+            <div v-if="instance.deployCode.length > 0" class="field is-horizontal">
+                <input class="input is-danger" v-model="code" type="text" v-on:keyup="validateStart" placeholder="authorization code required">
+            </div>
+            <div v-if="error.length > 0" class="box has-background-danger has-text-white content">
+                {{ error }}
+            </div>
+            <button class="button is-primary" v-bind:class="{ 'is-loading': starting }" :disabled="starting || !startAuthorized ? true : false" @click="scale">Start</button>
+        </div>
+    </footer>
+</div>
+</div>
+</script>

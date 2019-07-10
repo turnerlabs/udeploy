@@ -1,0 +1,385 @@
+package s3
+
+import (
+	"archive/zip"
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"log"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+
+	"github.com/aws/aws-sdk-go/aws/awserr"
+
+	"github.com/google/uuid"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+
+	"github.com/aws/aws-sdk-go/aws/session"
+
+	"github.com/turnerlabs/udeploy/component/integration/aws/task"
+	"github.com/turnerlabs/udeploy/model"
+)
+
+// Deploy ...
+func Deploy(ctx mongo.SessionContext, actionID primitive.ObjectID, source model.Instance, target model.Instance, revision int64, opts task.DeployOptions) error {
+
+	if opts.OverrideSecrets() {
+		return errors.New("s3 does not support secrets")
+	}
+
+	sess := session.New()
+
+	workingDir := fmt.Sprintf("tmp/%s", uuid.New())
+	if err := os.MkdirAll(workingDir, os.ModePerm); err != nil {
+		return err
+	}
+
+	defer func() {
+		if err := os.RemoveAll(workingDir); err != nil {
+			log.Println(err)
+		}
+	}()
+
+	version, build, err := getRevisionDetails(source, revision, sess)
+	if err != nil {
+		return err
+	}
+
+	zipPath, err := download(source, revision, workingDir, sess)
+	if err != nil {
+		return err
+	}
+
+	unzippedPath := fmt.Sprintf("%s/contents", workingDir)
+	_, err = unzip(zipPath, unzippedPath)
+	if err != nil {
+		return err
+	}
+
+	metadata := map[string]*string{
+		"version":  aws.String(version),
+		"build":    aws.String(build),
+		"revision": aws.String(strconv.FormatInt(revision, 10)),
+	}
+
+	if !opts.OverrideEnvironment() {
+		if opts.Environment, err = buildConfig(source, target, sess); err != nil {
+			return err
+		}
+	}
+
+	if err := createConfigFile(unzippedPath, target, opts.Environment); err != nil {
+		return err
+	}
+
+	if err = purge(target, sess); err != nil {
+		return err
+	}
+
+	if err = upload(target, unzippedPath, metadata, sess); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func createConfigFile(unzippedPath string, target model.Instance, env map[string]string) error {
+
+	configPath := fmt.Sprintf("%s/%s", unzippedPath, target.S3ConfigKey)
+
+	if err := os.MkdirAll(filepath.Dir(configPath), 0700); err != nil {
+		return err
+	}
+
+	file, err := os.Create(configPath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	if err := json.NewEncoder(file).Encode(env); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func getRevisionDetails(source model.Instance, revision int64, sess *session.Session) (string, string, error) {
+	svc := s3.New(sess)
+
+	o, err := svc.GetObject(&s3.GetObjectInput{
+		Bucket: aws.String(source.S3RegistryBucket),
+		Key:    aws.String(fmt.Sprintf("%s/%d.zip", source.S3RegistryPrefix, revision)),
+	})
+	if err != nil {
+		return "", "", err
+	}
+
+	version, build, _, err := extractMetadata(o.Metadata)
+	if err != nil {
+		return "", "", err
+	}
+
+	return version, build, nil
+}
+
+func buildConfig(source, target model.Instance, sess *session.Session) (map[string]string, error) {
+
+	if len(target.S3Prefix) > 0 {
+		target.S3ConfigKey = fmt.Sprintf("%s/%s", target.S3Prefix, target.S3ConfigKey)
+	}
+
+	if len(source.S3Prefix) > 0 {
+		source.S3ConfigKey = fmt.Sprintf("%s/%s", source.S3Prefix, source.S3ConfigKey)
+	}
+
+	buff := bytes.NewBuffer([]byte{})
+	if err := json.NewEncoder(buff).Encode(map[string]string{}); err != nil {
+		return map[string]string{}, err
+	}
+
+	downloader := s3manager.NewDownloader(sess)
+
+	dlBuff := aws.NewWriteAtBuffer(buff.Bytes())
+
+	_, err := downloader.Download(dlBuff, &s3.GetObjectInput{
+		Bucket: aws.String(target.S3Bucket),
+		Key:    aws.String(target.S3ConfigKey),
+	})
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case s3.ErrCodeNoSuchKey:
+			default:
+				return map[string]string{}, err
+			}
+		} else {
+			return map[string]string{}, err
+		}
+	}
+
+	newConfig := map[string]string{}
+	if err := json.Unmarshal(dlBuff.Bytes(), &newConfig); err != nil {
+		return newConfig, err
+	}
+
+	if len(target.Task.CloneEnvVars) > 0 {
+		sourceBuff := aws.NewWriteAtBuffer([]byte{})
+
+		_, err = downloader.Download(sourceBuff, &s3.GetObjectInput{
+			Bucket: aws.String(source.S3Bucket),
+			Key:    aws.String(source.S3ConfigKey),
+		})
+		if err != nil {
+			return newConfig, err
+		}
+
+		sourceConfig := map[string]string{}
+
+		if err := json.Unmarshal(sourceBuff.Bytes(), &sourceConfig); err != nil {
+			return newConfig, err
+		}
+
+		for _, k := range target.Task.CloneEnvVars {
+			if v, found := sourceConfig[k]; found {
+				newConfig[k] = v
+			}
+		}
+	}
+
+	return newConfig, nil
+}
+
+func purge(target model.Instance, sess *session.Session) error {
+	svc := s3.New(sess)
+
+	listInput := &s3.ListObjectsInput{
+		Bucket: aws.String(target.S3Bucket),
+	}
+
+	if len(target.S3Prefix) > 0 {
+		listInput.SetPrefix(target.S3Prefix)
+	}
+
+	o, err := svc.ListObjects(listInput)
+	if err != nil {
+		return err
+	}
+
+	if len(o.Contents) == 0 {
+		return nil
+	}
+
+	input := s3.DeleteObjectsInput{
+		Bucket: aws.String(target.S3Bucket),
+		Delete: &s3.Delete{},
+	}
+
+	objs := []*s3.ObjectIdentifier{}
+
+	for _, obj := range o.Contents {
+		if *obj.Key == target.S3FullConfigKey() {
+			continue
+		}
+
+		objs = append(objs, &s3.ObjectIdentifier{
+			Key: obj.Key,
+		})
+	}
+
+	input.Delete.SetObjects(objs)
+
+	_, err = svc.DeleteObjects(&input)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func upload(target model.Instance, workingDir string, metadata map[string]*string, sess *session.Session) error {
+	uploader := s3manager.NewUploader(sess)
+
+	objects := []s3manager.BatchUploadObject{}
+
+	fileList := []string{}
+	filepath.Walk(workingDir, func(path string, f os.FileInfo, err error) error {
+		dir, err := isDirectory(path)
+		if err != nil {
+			return err
+		}
+		if dir {
+			return nil
+		}
+
+		fileList = append(fileList, path)
+		log.Printf("UPLOADING: %s\n", path)
+
+		return nil
+	})
+
+	for _, filePath := range fileList {
+		file, err := os.Open(filePath)
+		if err != nil {
+			log.Println("Failed to open file", filePath, err)
+		}
+
+		key := strings.Replace(filePath, workingDir, "", 1)
+		if len(target.S3Prefix) > 0 {
+			key = fmt.Sprintf("%s/%s", target.S3Prefix, key)
+		}
+
+		objects = append(objects, s3manager.BatchUploadObject{
+			Object: &s3manager.UploadInput{
+				Key:      aws.String(key),
+				Bucket:   aws.String(target.S3Bucket),
+				Body:     file,
+				Metadata: metadata,
+			},
+		})
+
+		defer file.Close()
+	}
+
+	iter := &s3manager.UploadObjectsIterator{Objects: objects}
+
+	return uploader.UploadWithIterator(context.Background(), iter)
+}
+
+func download(source model.Instance, revision int64, workingDir string, sess *session.Session) (string, error) {
+	downloader := s3manager.NewDownloader(sess)
+
+	zipFile := fmt.Sprintf("%s/deployment.zip", workingDir)
+
+	file, err := os.Create(zipFile)
+	if err != nil {
+		return zipFile, err
+	}
+	defer file.Close()
+
+	_, err = downloader.Download(file, &s3.GetObjectInput{
+		Bucket: aws.String(source.S3RegistryBucket),
+		Key:    aws.String(fmt.Sprintf("%s/%d.zip", source.S3RegistryPrefix, revision)),
+	})
+	if err != nil {
+		return zipFile, err
+	}
+
+	return zipFile, nil
+}
+
+func unzip(src string, dest string) ([]string, error) {
+
+	var filenames []string
+
+	r, err := zip.OpenReader(src)
+	if err != nil {
+		return filenames, err
+	}
+	defer r.Close()
+
+	for _, f := range r.File {
+
+		fpath := filepath.Join(dest, f.Name)
+
+		if !strings.HasPrefix(fpath, filepath.Clean(dest)+string(os.PathSeparator)) {
+			return filenames, fmt.Errorf("%s: illegal file path", fpath)
+		}
+
+		filenames = append(filenames, fpath)
+
+		if f.FileInfo().IsDir() {
+			os.MkdirAll(fpath, os.ModePerm)
+			continue
+		}
+
+		if err = os.MkdirAll(filepath.Dir(fpath), os.ModePerm); err != nil {
+			return filenames, err
+		}
+
+		outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+		if err != nil {
+			return filenames, err
+		}
+
+		rc, err := f.Open()
+		if err != nil {
+			return filenames, err
+		}
+
+		_, err = io.Copy(outFile, rc)
+
+		outFile.Close()
+		rc.Close()
+
+		if err != nil {
+			return filenames, err
+		}
+	}
+	return filenames, nil
+}
+
+func isDirectory(path string) (bool, error) {
+	fd, err := os.Stat(path)
+	if err != nil {
+		return false, err
+	}
+	switch mode := fd.Mode(); {
+	case mode.IsDir():
+		return true, nil
+	case mode.IsRegular():
+		return false, nil
+	}
+	return false, nil
+}

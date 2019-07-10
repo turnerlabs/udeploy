@@ -1,0 +1,41 @@
+.app {
+  margin-bottom: 50px;
+}
+
+.app-table {
+  width: 100%;
+}
+
+.instance {
+  height: 200px;
+}
+
+.can-drop {
+  filter: brightness(50%) !important;
+}
+
+.instance:hover {
+  filter: brightness(110%) !important;
+}
+
+.cell:hover {
+  filter: brightness(110%) !important;
+}
+
+.text {
+  height: 120px;
+  overflow-y:auto
+}
+
+.scroll {
+  overflow:auto;
+  max-height:300px;
+}
+
+.counter {
+  width: 50px !important;
+}
+
+[v-cloak] {
+  display: none;
+}

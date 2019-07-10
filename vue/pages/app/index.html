@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html class="has-background-white-ter">
+<head>
+  <title>uDeploy</title>
+
+  <link rel="stylesheet" type="text/css" href="/component/header/bar.css?auto-version=14419" />
+  <link rel="stylesheet" type="text/css" href="/pages/app/index.css?auto-version=14419"  />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.4/css/bulma.min.css" />
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+</head>
+<body>
+    <div id="app" v-cloak>
+        <header-bar v-bind:user="user" v-bind:page="page" v-bind:config="config"></header-bar>
+
+        <div class="container box is-family-primary">
+          <div class="content">
+            <div v-if="!isLoading" class="is-pulled-right">
+              <button class="button is-success" :disabled="!canSave" @click="save">Save</button>
+              <button class="button is-warning" @click="cancel">Cancel</button>
+              <button class="button is-danger" v-if="!isNew()" v-bind:class="{'is-loading': isDeleting}" :disabled="!canSave" @click.stop.prevent="modal.confirm = { show: true, message: 'Enter application name to delete.', code: app.name, action: trash }">Delete</button>
+            </div>
+            <h4><a href="/apps">APPS</a> > {{ params.app.toUpperCase() }}</h4> 
+            <hr />
+            
+            <alert-banner v-bind:alerts="alerts"></alert-banner>
+
+            <progress v-if="isLoading" class="progress is-small is-dark" max="100"></progress>
+           
+            <div v-if="!isLoading">
+              <article class="message is-primary">
+                <div class="message-header">
+                    Application
+                </div>
+                <div class="message-body">
+                    <div class="field is-horizontal">
+                      <div class="field-label is-normal">
+                        <label class="label">Name</label>
+                      </div>
+                      <div class="field-body">
+                          <div class="field">
+                            <p class="control">  
+                              <input class="input name" v-on:keyup="validateField($event, /^[a-z0-9-]+$/, 'REQUIRED: Application Name - Only lower case letters, numbers, and dashes supported.', 'app')"  :disabled="!user.admin" type="text" v-model="app.name" placeholder="application name" title="The application display name.">
+                              <label class="help">Changing an application name starts a new audit trail.</label>
+                            </p>
+                          </div>
+                      </div>
+                    </div>
+                    <div class="field is-horizontal">
+                      <div class="field-label is-normal">
+                        <label class="label">Type</label>
+                      </div>
+                      <div class="field-body">
+                        <div class="field">
+                            <div class="select">
+                              <select v-model="app.type" :disabled="!user.admin" title="The the type of application. Services are always running and scheduled tasks are triggered periodically by CloudWatch event rules.">
+                                <option value="service">Service (Fargate)</option>
+                                <option value="scheduled-task">Scheduled Task (Fargate)</option>
+                                <option value="lambda">Lambda Function</option>
+                                <option value="s3">S3 Bucket</option>
+                              </select>
+                            </div>
+                            <span v-if="app.type == 's3'" class="help">Deploy files from one S3 bucket to the same S3 bucket under a different prefix or to another S3 bucket. Requires zipped artifacts to be uploaded to an S3 bucket registry prefix with metadata for the version, build, and revision numbers.</span>
+                            <span v-if="app.type == 'lambda'" class="help">Deploy versioned code from one Lambda function to another Lambda function and update an alias to point to the new version.</span>
+                            <span v-if="app.type == 'service'" class="help">Deploy an existing task definition or ECR image to a Fargate service.</span>
+                            <span v-if="app.type == 'scheduled-task'" class="help">Deploy an existing task definition or ECR image to a scheduled Fargate task by specifying the Cloudwatch rule that triggers the task.</span>
+                        </div>
+                      </div>
+                    </div>
+                </div>
+              </article>
+              <article class="message is-primary">
+                <div class="message-header">
+                    Instances
+                </div>
+                <div class="message-body">
+                  <article class="message is-primary" v-for="(i, index) in app.instances">
+                    <button title="Delete instance." class="button is-pulled-right" :disabled="!user.admin" @click="deleteInstance(index)">
+                        <span class="icon is-small">
+                            <i class="fas fa-trash-alt"></i>
+                        </span>
+                      </button>
+                    <div class="message-body">
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                              <label class="label">Name</label>
+                            </div>
+                            <div class="field-body">
+                              <div class="field">
+                                <p class="control">
+                                  <input class="input instance" v-on:keyup="validateField($event, /^[a-z0-9-]+$/, 'REQUIRED: Instance Name - Only lower case letters, numbers, and dashes supported.', index)" :disabled="!i.claims['edit'] && !user.admin" type="text" v-on:change="instanceNameChanged(i.name)"  v-model="i.name" placeholder="dev" title="The instance/environment display name.">
+                                  <label class="help">Changing an instance name starts a new audit trail.</label>
+                                </p>
+                              </div>
+                            </div>
+                        </div>
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                              <label class="label">Display Order</label>
+                            </div>
+                            <div class="field-body">
+                              <div class="field">
+                                <p class="control">
+                                  <input class="input counter" :disabled="!i.claims['edit'] && !user.admin" type="number" min="1" max="10" v-model.number="i.order" placeholder="1" title="The order instances/environments will be displayed from left to right.">
+                                </p>
+                              </div>
+                            </div>
+                        </div>
+                        <div v-if="app.type == 'service' || app.type == 'scheduled-task'" class="field is-horizontal">
+                            <div class="field-label is-normal">
+                              <label class="label">Cluster</label>
+                            </div>
+                            <div class="field-body">
+                              <div class="field">
+                                <p class="control">
+                                  <input class="input name" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.cluster" title="The cluster name containing the service.">
+                                </p>
+                              </div>
+                            </div>
+                        </div>
+                        <div v-if="app.type == 'service' || app.type == 'scheduled-task'" class="field is-horizontal">
+                            <div class="field-label is-normal">
+                              <label class="label">Service</label>
+                            </div>
+                            <div class="field-body">
+                              <div class="field">
+                                <p class="control">
+                                  <input class="input name" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.service" title="The service name containing any running tasks.">
+                                </p>
+                              </div>
+                            </div>
+                        </div>
+                        <div v-if="app.type == 'scheduled-task'" class="field is-horizontal">
+                            <div class="field-label is-normal">
+                              <label class="label">Event Rule</label>
+                            </div>
+                            <div class="field-body">
+                              <div class="field">
+                                <p class="control">
+                                  <input class="input name" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.eventRule" title="The name of the CloudWatch event rule that triggers the scheduled task.">
+                                </p>
+                              </div>
+                            </div>
+                        </div>
+                        <div v-if="app.type == 'lambda'" class="field is-horizontal">
+                            <div class="field-label is-normal">
+                              <label class="label">Lambda Function</label>
+                            </div>
+                            <div class="field-body">
+                              <div class="field">
+                                <p class="control">
+                                  <input class="input name" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.functionName" title="The name of the lambda function.">
+                                </p>
+                              </div>
+                            </div>
+                        </div>
+                        <div v-if="app.type == 'lambda'" class="field is-horizontal">
+                            <div class="field-label is-normal">
+                              <label class="label">Lambda Alias</label>
+                            </div>
+                            <div class="field-body">
+                              <div class="field">
+                                <p class="control">
+                                  <input class="input name" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.functionAlias" title="The name of the lambda alias that deployments will update.">
+                                </p>
+                              </div>
+                            </div>
+                        </div>
+                        <div v-if="app.type == 's3'" class="field is-horizontal">
+                            <div class="field-label is-normal">
+                              <label class="label">S3 Bucket</label>
+                            </div>
+                            <div class="field-body">
+                              <div class="field">
+                                <p class="control">
+                                  <input class="input name" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.s3Bucket" title="Name of the S3 bucket where files are deployed.">
+                                </p>
+                              </div>
+                            </div>
+                        </div>
+                        <div v-if="app.type == 's3'" class="field is-horizontal">
+                            <div class="field-label is-normal">
+                              <label class="label">S3 Prefix</label>
+                            </div>
+                            <div class="field-body">
+                              <div class="field">
+                                <p class="control">
+                                  <input class="input name" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.s3Prefix" title="S3 prefix where files are deployed. If blank, files are deployed to root.">
+                                </p>
+                              </div>
+                            </div>
+                        </div>
+                        <div v-if="app.type == 's3'" class="field is-horizontal">
+                            <div class="field-label is-normal">
+                              <label class="label">S3 Config Key</label>
+                            </div>
+                            <div class="field-body">
+                              <div class="field">
+                                <p class="control">
+                                  <input class="input name" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.s3ConfigKey" title="S3 key to the JSON file containing environment configuration.">
+                                </p>
+                              </div>
+                            </div>
+                        </div>
+                        <div v-if="app.type == 's3'" class="field is-horizontal">
+                            <div class="field-label is-normal">
+                              <label class="label">S3 Registry Bucket</label>
+                            </div>
+                            <div class="field-body">
+                              <div class="field">
+                                <p class="control">
+                                  <input class="input name" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.s3RegistryBucket" title="S3 bucket containing versioned and zipped artifacts for deployments.">
+                                </p>
+                              </div>
+                            </div>
+                        </div>
+                        <div v-if="app.type == 's3'" class="field is-horizontal">
+                            <div class="field-label is-normal">
+                              <label class="label">S3 Registry Prefix</label>
+                            </div>
+                            <div class="field-body">
+                              <div class="field">
+                                <p class="control">
+                                  <input class="input name" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.s3RegistryPrefix" title="S3 bucket prefix for artifacts. Optional">
+                                </p>
+                              </div>
+                            </div>
+                        </div>
+                        <div v-if="app.type == 'service' || app.type == 'scheduled-task'" class="field is-horizontal">
+                            <div class="field-label is-normal">
+                              <label class="label">Task Definition Family</label>
+                            </div>
+                            <div class="field-body">
+                              <div class="field">
+                                <div class="control">
+                                  <input class="input name" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.task.family">
+                                </div>
+                              </div>
+                            </div>
+                        </div>
+                        <div v-if="app.type != 's3'" class="field is-horizontal">
+                            <div class="field-label is-normal">
+                              <label class="label">
+                                  Version RegEx 
+                                  <label class="help">
+                                  <template v-if="app.type == 'lambda'" >(parse function description)</template>
+                                  <template v-else >(parse image tag)</template>
+                                  </label>
+                              </label>
+                            </div>
+                            <div class="field-body">
+                              <div class="field">
+                                <p class="control">
+                                  <template v-if="app.type == 'lambda'">
+                                    <input class="input name" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.task.imageTagEx" :placeholder="lambdaRegex" title="The first regex capture group defines the version number and the second the build number that will be displayed when the version is deployed."> 
+                                    <button class="button" title="default to semantic version" @click="i.task.imageTagEx = lambdaRegex">
+                                        <span class="icon is-small">
+                                            <i class="fas fa-arrow-left"></i>
+                                        </span>
+                                    </button>
+                                  </template>
+                                  <template v-else>
+                                    <input class="input name" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.task.imageTagEx" :placeholder="serviceRegex" title="The first regex capture group defines the version number and the second the build number that will be displayed when the version is deployed.">
+                                    <button class="button" title="default to semantic version" @click="i.task.imageTagEx = serviceRegex">
+                                        <span class="icon is-small">
+                                            <i class="fas fa-arrow-left"></i>
+                                        </span>
+                                    </button>
+                                  </template>
+                                </p>
+                              </div>
+                            </div>
+                        </div>
+                        <div v-if="app.type == 'service' || app.type == 'scheduled-task'" class="field is-horizontal">
+                            <div class="field-label is-normal">
+                              <label class="label">ECR Repository</label>
+                            </div>
+                            <div class="field-body">
+                              <div class="field">
+                                <p class="control">
+                                  <input class="input repo" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.repository" placeholder="{ACCOUNT}.dkr.ecr.{REGION}}.amazonaws.com/{REPOSITORY}:VERSION.BUILD" title="The ECR repository that is considered when displaying deployable versions.">
+                                </p>
+                              </div>
+                            </div>
+                        </div>
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                              <label class="label">Deploy From (default)</label>
+                            </div>
+                            <div class="field-body">
+                              <div class="field">
+                                <div class="control">
+                                  <input class="input instance" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.task.registry" placeholder="dev" title="The default instance name that should be used when populating the images dropdown before a deployment.">
+                                </div>
+                                <label class="help" title="Automatically propagate version deployements."><input type="checkbox" v-model="i.autoPropagate"/> Enable Auto-Propagation</label>
+                              </div>
+                            </div>
+                        </div>
+                        <div v-if="app.type == 'service' || app.type == 'scheduled-task'" class="field is-horizontal">
+                            <div class="field-label is-normal">
+                              <label class="label">Revisions Scanned</label>
+                            </div>
+                            <div class="field-body">
+                              <div class="field">
+                                <p class="control">
+                                  <input class="input counter" :disabled="!i.claims['edit'] && !user.admin" type="number" min="1" v-model.number="i.task.revisions" placeholder="50" title="The number of task definition revisions scanned for images, starting with the most recent, when displaying deployable versions">
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        <div class="field is-horizontal">
+                          <div class="field-label is-normal">
+                            <label class="label">Authorization Code</label>
+                          </div>
+                          <div class="field-body">
+                            <div class="field">
+                              <p class="control">
+                                <input class="input name" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.deployCode" title="The authorization code that must be entered before starting, stopping, or deploying the instance.">
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="field is-horizontal">
+                          <div class="field-label is-normal">
+                              <label class="label">Env Variable Names</label>
+                              <p class="help">During deployments, the listed variables will be copied from the source to the target. Not applicable for image deployments from ECR.</p>
+                          </div>
+                          <div class="field-body">
+                              <div class="field">  
+                                <p class="control">
+                                  <textarea class="textarea" :disabled="!i.claims['edit'] && !user.admin" v-model="i.task.cloneEnvVars" placeholder="CONFIG_VERSION&#x0a;LOG_LEVEL&#x0a;AWS_REGION" rows="5"></textarea>
+                                </p>
+                              </div>
+                          </div>
+                        </div>
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label">Related Links</label>
+                                <p class="help">Add links to an instance's details page to provide quick access to related resources like build servers, logs, repositories, documentation, or project dashboards.</p>
+                            </div>
+                            <div class="field-body">
+                              <div class="box links">
+                              <table>
+                                  <tr><th>Name</th><th>URL</th><th>Description</th><td></td></tr>
+                                  <tr v-for="(l, lIndex) in i.links" :key="l.id">
+                                    <td>
+                                        <input class="input" :disabled="(!i.claims['edit'] && !user.admin) || l.generated" type="text" v-model="l.name">
+                                    </td>
+                                    <td>
+                                        <input class="input" :disabled="(!i.claims['edit'] && !user.admin) || l.generated" type="text" v-model="l.url">
+                                    </td>
+                                    <td>
+                                        <input class="input" :disabled="(!i.claims['edit'] && !user.admin) || l.generated" type="text" v-model="l.description">
+                                    </td>
+                                    <td>
+                                      <button title="Remove link" class="button is-pulled-right" v-if="(i.claims['edit'] || user.admin) && !l.generated" @click="removeLink(index, lIndex)">
+                                        <span class="icon is-small">
+                                            <i class="fas fa-minus"></i>
+                                        </span>
+                                      </button>
+                                    </td>
+                                  </tr>
+                                  <tr><td></td><td></td><td></td>
+                                    <td>
+                                      <button title="Add link" class="button is-pulled-right" :disabled="!i.claims['edit'] && !user.admin" @click="addLink(index)">
+                                        <span class="icon is-small">
+                                            <i class="fas fa-plus"></i>
+                                        </span>
+                                      </button>
+                                    </td>
+                                </tr>
+                              </table>
+                              </div>
+                          </div>
+                        </div>
+                    </div>
+                    <hr />
+                  </article>
+                  <article class="message is-primary has-text-right">
+                    <button title="Add instance." class="button" :disabled="!user.admin" @click="addInstance()">
+                      <span class="icon is-small">
+                          <i class="fas fa-plus"></i>
+                      </span>
+                    </button>
+                  </article>
+                </div>
+              </article>  
+             
+              <alert-banner v-bind:alerts="alerts"></alert-banner>
+
+              <div v-if="!isLoading" class="has-text-centered">
+                <button class="button is-success" :disabled="!canSave" @click="save">Save</button>
+                <button class="button is-warning" @click="cancel">Cancel</button>
+                <button class="button is-danger" v-if="!isNew()" v-bind:class="{'is-loading': isDeleting}" :disabled="!canSave" @click.stop.prevent="modal.confirm = { show: true, message: 'Enter application name to delete.', code: app.name, action: trash }">Delete</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <confirm-modal v-if="modal.confirm.show" @close="modal.confirm.show = false" @continue="handleContinue" :code="modal.confirm.code" :message="modal.confirm.message"></confirm-modal>
+    </div>
+
+    <div html-template="../component/confirm/modal/index.html"></div>
+</body>
+</html>
+
+<script src="/component/html/include.js?auto-version=14419" type="module"></script>
+<script src="/component/alert/banner.js?auto-version=14419" type="module"></script>
+<script src="/component/header/bar.js?auto-version=14419" type="module"></script>
+<script src="/component/confirm/modal/index.js?auto-version=14419" type="module"></script>
+<script src="/pages/app/index.js?auto-version=14419" type="module"></script>

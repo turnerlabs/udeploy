@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html class="has-background-white-ter">
+<head>
+  <title>uDeploy</title>
+
+  <link rel="stylesheet" type="text/css" href="/component/header/bar.css?auto-version=14419" />
+  <link rel="stylesheet" type="text/css" href="/pages/instance/index.css?auto-version=14419"  />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.4/css/bulma.min.css" />
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+
+  <script src="https://unpkg.com/cronstrue@1.65.0/dist/cronstrue.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+</head>
+<body>
+    <div id="instance" v-cloak>
+        <header-bar v-bind:user="user" v-bind:page="page" v-bind:config="config"></header-bar>
+
+        <div class="container box is-family-primary">
+          <div class="content">
+            <h4><a href="/apps">APPS</a> > <a :href="'/apps#' + params.app">{{ params.app.toUpperCase() }}</a> > {{ params.instance.toUpperCase() }}</h4> 
+            <hr />
+                        
+            <alert-banner v-bind:alerts="alerts"></alert-banner>
+
+            <progress v-if="isLoading" class="progress is-small is-dark" max="100"></progress>
+            
+            <div v-for="c in instance.containers">
+                <article class="message is-primary">
+                  <div class="message-header">
+                    Application
+                  </div>
+                  <div class="message-body">
+                      <p>{{ c.image }}</p>
+                      
+                      <div v-if="instance.cronExpression">
+                          <span class="tags has-addons">  
+                              <span class="tag is-primary" v-if="instance.cronEnabled">ENABLED</span>
+                              <span class="tag is-danger" v-if="!instance.cronEnabled">DISABLED</span>
+                              <span class="tag is-dark">Runs {{ formatCron(instance.cronExpression) }} UTC</span>
+                          </span>
+                      </div>      
+                  </div>
+                </article>
+
+                <article class="message is-primary" v-if="c.environment && Object.keys(c.environment).length > 0">
+                  <div class="message-header">
+                    Environment
+                  </div>
+                  <div class="message-body">
+                      <table>
+                          <tr v-for="(v, k) in c.environment"><td>{{ k }}</td><td>{{ v }}</td></tr>
+                      </table>
+                  </div>
+                </article>
+
+                <article class="message is-primary" v-if="c.secrets && Object.keys(c.secrets).length > 0">
+                  <div class="message-header">
+                    Secrets
+                  </div>
+                  <div class="message-body">
+                    <table>
+                        <tr v-for="(v, k) in c.secrets"><td>{{ k }}</td><td>{{ v }}</td></tr>
+                    </table> 
+                  </div>
+                </article>
+
+                <article class="message is-primary" v-if="instance.task.tasksInfo && instance.task.tasksInfo.length > 0">
+                  <div class="message-header">
+                      Tasks<a title="refresh page" class="button is-pulled-right is-small" v-bind:class="{'is-loading': isPartialLoading}"  @click="refresh()"><span class="icon is-small"><i class="fas fa-sync"></i></span></a>
+                  </div>
+                  <div class="message-body">
+                    <table>
+                        <tr><th>ID Prefix</th><th>Version</th><th>Status</th><th>Reason</th></tr>
+                        <tr v-for="ti in instance.task.tasksInfo">
+                          <td :title="ti.taskID">
+                            {{ ti.taskID.substring(0, 8) }} (<a class="link" v-bind:href="ti.logLink" target="_blank">logs</a>)
+                          </td>
+                          <td>{{ ti.version }}</td>
+                          <td>{{ formatStatus(ti.lastStatus, new Date(ti.lastStatusTime)) }}</td>
+                          <td>{{ ti.reason }}</td>
+                        </tr>
+                    </table>
+                  </div>
+                </article>
+
+                <article class="message is-primary" v-if="instance.links && instance.links.length > 0">
+                  <div class="message-header">
+                    Links
+                  </div>
+                  <div class="message-body">
+                    <table>
+                        <tr><th>Link</th><th>Description</th></tr>
+                        <tr v-for="l in instance.links">
+                          <td>
+                            <a class="link" v-bind:href="l.url" target="_blank">{{ l.name }}</a>
+                          </td>
+                          <td>{{ l.description }}</td>
+                        </tr>
+                    </table>
+                  </div>
+                </article>
+
+                <article class="message is-primary" v-if="audit.entries.length > 0">
+                  <div class="message-header">
+                    Audit
+                  </div>
+                  <div class="message-body">
+                      <div class="scroll">
+                        <table>
+                          <tr v-for="e in sortEntries(audit.entries)">
+                            <td>{{ formatTime(new Date(e.time)) }}</td>
+                            <td>{{ e.user }}</td>
+                            <td>{{ e.action }}</td>
+                          </tr>
+                        </table>
+                      </div>
+                  </div>
+                </article>
+            </div>
+          </div>
+        </div>
+
+    </div>
+</body>
+</html>
+
+<script src="/component/html/include.js?auto-version=14419" type="module"></script>
+<script src="/component/header/bar.js?auto-version=14419" type="module"></script>
+<script src="/component/footer/bar.js?auto-version=14419" type="module"></script>
+<script src="/component/alert/banner.js?auto-version=14419" type="module"></script>
+<script src="/pages/instance/index.js?auto-version=14419" type="module"></script>

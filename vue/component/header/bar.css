@@ -1,0 +1,15 @@
+.nav {
+  margin-bottom: 50px;
+}
+
+.options {
+  margin-top: 10px;
+}
+
+.options .signout {
+  padding-left: 10px;
+}
+
+.options .email {
+  padding-top: 5px;
+}

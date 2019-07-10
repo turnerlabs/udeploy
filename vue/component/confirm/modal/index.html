@@ -1,0 +1,22 @@
+<script type="text/x-template" id="confirm-modal-template">
+<div class="modal is-active">
+<div class="modal-background"></div>
+<div class="modal-card">
+    <header class="modal-card-head">
+        <p class="modal-card-title">Are you sure?</p>
+        <button class="delete" @click="$emit('close')" aria-label="close"></button>
+    </header>
+    <section class="modal-card-body">
+        <div class="level">{{ message }}</div>
+    </section>
+    <footer class="modal-card-foot content is-centered">
+        <div class="container has-text-centered">
+            <div v-if="code.length > 0" class="field is-horizontal">
+                <input class="input is-danger" type="text" v-on:keyup="validateCode" placeholder="authorization code required">
+            </div>
+            <button class="button is-primary" v-bind:class="{ 'is-loading': confirming }" :disabled="confirming || !authorized ? true : false" @click="confirm">Continue</button>
+        </div>
+    </footer>
+</div>
+</div>
+</script>
