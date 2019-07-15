@@ -72,6 +72,109 @@
               </article>
               <article class="message is-primary">
                 <div class="message-header">
+                    GitHub Integration
+                </div>
+                <div class="message-body">
+                    <div class="field is-horizontal">
+                      <div class="field-label is-normal">
+                        <label class="label">Organization</label>
+                      </div>
+                      <div class="field-body">
+                          <div class="field">
+                            <p class="control">  
+                              <input class="input name" :disabled="!user.admin" type="text" v-model="app.repo.org" title="The GitHub repository organization.">
+                              <label class="help"></label>
+                            </p>
+                          </div>
+                      </div>
+                    </div>
+                    <div class="field is-horizontal">
+                      <div class="field-label is-normal">
+                        <label class="label">Repository Name</label>
+                      </div>
+                      <div class="field-body">
+                          <div class="field">
+                            <p class="control">  
+                              <input class="input name" :disabled="!user.admin" type="text" v-model="app.repo.name" title="The GitHub repository name.">
+                              <label class="help"></label>
+                            </p>
+                          </div>
+                      </div>
+                    </div>
+                    <div class="field is-horizontal">
+                      <div class="field-label is-normal">
+                        <label class="label">Personal Access Token</label>
+                      </div>
+                      <div class="field-body">
+                          <div class="field">
+                            <p class="control">  
+                              <input class="input name" :disabled="!user.admin" type="password" v-model="app.repo.accessToken" title="A GitHub personal access token that has repository access.">
+                              <label class="help"></label>
+                            </p>
+                          </div>
+                      </div>
+                    </div>
+                   
+                    <hr />
+
+                    <div class="field is-horizontal">
+                      <div class="field-label is-normal">
+                        <label class="label">Commit Limit</label>
+                      </div>
+                      <div class="field-body">
+                          <div class="field">
+                            <p class="control">  
+                              <input class="input counter" :disabled="!user.admin" type="number" min="1" max="100" v-model.number="app.repo.commitConfig.limit" title="Limit the number of commits displayed for a version.">
+                            </p>
+                          </div>
+                      </div>
+                    </div>
+                    <div class="field is-horizontal">
+                      <div class="field-label is-normal">
+                        <label class="label">Commit Filter</label>
+                      </div>
+                      <div class="field-body">
+                          <div class="field">
+                            <p class="control">  
+                              <input class="input name" :disabled="!user.admin" type="text" v-model="app.repo.commitConfig.filter" placeholder="[A-Z]{7}-\d*" title="Only display commits matching this regular expression. Leave blank to show all commits.">
+                              <label class="help">Only display commits matching this regular expression.</label>
+                            </p>
+                          </div>
+                      </div>
+                    </div>
+
+                    <hr />
+                    
+                    <div class="field is-horizontal">
+                      <div class="field-label is-normal">
+                        <label class="label">Find Text</label>
+                      </div>
+                      <div class="field-body">
+                          <div class="field">
+                            <p class="control">  
+                              <input class="input name" :disabled="!user.admin" type="text" v-model="app.repo.commitConfig.existingValue" placeholder="[A-Z]{7}-\d*" title="A regular expression specifying values in each commit that should be replaced. Supports regular expressions.">
+                            </p>
+                          </div>
+                      </div>
+                    </div>
+                    <div class="field is-horizontal">
+                      <div class="field-label is-normal">
+                        <label class="label">Replace With</label>
+                      </div>
+                      <div class="field-body">
+                          <div class="field">
+                            <p class="control">  
+                              <textarea class="textarea" :disabled="!user.admin" type="text" v-model="app.repo.commitConfig.newValue" title="A new value to replace the matched text. Supports HTML." rows="3"></textarea>
+                              <label class="help">Tokens: {EXISTING_VALUE}, {COMMIT_HASH}, {VERSION}</label>
+                            </p>
+                          </div>
+                      </div>
+                    </div>
+                    
+                </div>
+              </article>
+              <article class="message is-primary">
+                <div class="message-header">
                     Instances
                 </div>
                 <div class="message-body">

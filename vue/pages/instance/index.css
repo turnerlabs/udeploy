@@ -2,6 +2,10 @@
   margin-bottom: 50px;
 }
 
+.tip {
+  margin-right: 15px;
+}
+
 .scroll {
   overflow:auto;
   max-height:300px;

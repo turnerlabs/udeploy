@@ -32,6 +32,11 @@ includeTenplates().then(() => {
             defaultApp: {
                 "name": "application-name",
                 "type": "service",
+                "repo": { 
+                    "commitConfig" : {
+                        "limit": 20,
+                    },
+                },
                 "instances": [{
                     "edited": true,
                     "name":"dev",
@@ -46,7 +51,7 @@ includeTenplates().then(() => {
                         "registry":"",
                         "imageTagEx":"",
                         "revisions":50,
-                    } ,
+                    },
                     "claims": {
                         "edit": true,
                     }  

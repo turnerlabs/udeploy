@@ -13,6 +13,7 @@ includeTenplates().then(() => {
             config: {consoleLink: ""},
 
             alerts: [],
+            commits: [],
 
             app: {},
             instance: {},
@@ -27,6 +28,7 @@ includeTenplates().then(() => {
 
             isLoading: false,
             isPartialLoading: false,
+            isLoadingCommits: false,
 
             page: {},
             updated: ""
@@ -37,16 +39,42 @@ includeTenplates().then(() => {
 
             this.getConfig();
 
-            this.isLoading = true 
-            
             this.refresh();
 
             this.watchForUpdates();
 
             this.getAudit();
+
+            this.getCommits();
         },
 
         methods: {
+            getCommits() {
+                let that = this
+
+                that.isLoadingCommits = true; 
+
+                fetch('/v1/apps/'+this.params.app+"/instances/"+this.params.instance+"/commits")
+                .then(function(response) {
+                    return response.json()
+                })
+                .then(function(data) {
+                    if (data.message) {
+                        return Promise.reject(new Error(data.message))
+                    }
+
+                    return Promise.resolve(data);
+                })
+                .then(function(commits) {
+                    that.commits = commits;
+                })
+                .catch(function(e) {
+                    that.alerts.push({ error: e });
+                })
+                .finally(function() {
+                    that.isLoadingCommits = false; 
+                });
+            },
             getAudit() {
                 let that = this
                 fetch('/v1/apps/'+this.params.app+"/instances/"+this.params.instance+"/audit")
@@ -69,7 +97,8 @@ includeTenplates().then(() => {
             },
             refresh() {
                 this.isPartialLoading = true;
-
+                this.isLoading = true 
+            
                 let that = this;
 
                 fetch('/v1/apps/'+this.params.app)
@@ -102,13 +131,13 @@ includeTenplates().then(() => {
                         })
                     }
 
-                    that.isPartialLoading = false;
-                    that.isLoading = false
-
                     that.updateTime();
                     
                 }).catch(function(e) {
                     that.alerts.push({ error: e });
+                }).finally(function() {
+                    that.isPartialLoading = false;
+                    that.isLoading = false
                 }); 
             },
             updateTime: function () {

@@ -100,6 +100,27 @@
                   </div>
                 </article>
 
+                <article class="message is-primary" v-if="app.repo.org.length > 0">
+                  <div class="message-header">
+                    Commits 
+                    
+                    <span class="is-pulled-right">
+                      <span class="tip">(displays up to {{ app.repo.commitConfig.limit }} commits)</span>
+                      <a title="refresh commits" class="button is-small" v-bind:class="{'is-loading': isLoadingCommits}" @click="getCommits()"><span class="icon is-small"><i class="fas fa-sync"></i></span></a>
+                    </span>
+                  </div>
+                  <div class="message-body">
+                      <div v-if="!isLoadingCommits" class="scroll">
+                        <table>
+                          <tr v-for="c in commits">
+                            <td v-html="c.message"></td>
+                            <td>{{ c.tag }} <a class="link" target="_github" v-bind:href="c.url">{{ c.sha.substring(1, 7) }}</a></td>
+                          </tr>
+                        </table>
+                      </div>
+                  </div>
+                </article>
+
                 <article class="message is-primary" v-if="audit.entries.length > 0">
                   <div class="message-header">
                     Audit

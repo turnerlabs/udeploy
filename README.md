@@ -25,6 +25,7 @@ Supports: Chrome, Security: OAuth2
 |AWS Log Links|:white_check_mark:|:white_check_mark:|:white_check_mark:||
 |Deployment Propagation|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|
 |Environment Migration|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|
+|GitHub Integration|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|
 
 
 ### Get Started ###

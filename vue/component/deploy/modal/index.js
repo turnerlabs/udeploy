@@ -1,4 +1,5 @@
 import {env} from "../../env/parse.js";
+import {obj} from "../../copy/object.js";
 
 const BUILD_TYPE_REVISION = "BUILD_TYPE_REVISION"
 const BUILD_TYPE_IMAGE = "BUILD_TYPE_IMAGE"
@@ -17,6 +18,7 @@ Vue.component('deploy-modal', {
             
             selectedSource: "",
             selectedVersion: "",
+            baseVersion: "",
 
             override: {
                 env: false
@@ -27,6 +29,10 @@ Vue.component('deploy-modal', {
 
             deploying: false,
             deployAuthorized: (this.instance.deployCode.length == 0),
+
+            commits: [],
+            showChanges: false,
+            loadingChanges: false,
 
             error: "",
         }
@@ -40,6 +46,13 @@ Vue.component('deploy-modal', {
     },
 
     watch: {
+        selectedVersion: function(key) {
+            let build = this.versions.data[key];
+
+            this.baseVersion = build.version
+
+            this.getCommits(build.version);
+        },
         selectedSource: function (instance) {
             let that = this 
 
@@ -52,27 +65,28 @@ Vue.component('deploy-modal', {
 
                 for (let i in that.app.instances) {
                     if (that.selectedSource == that.app.instances[i].name) {
-                        versions[that.app.instances[i].version] = {
+                        versions[that.app.instances[i].formattedVersion] = {
                             type: BUILD_TYPE_REVISION,
-                            revision: that.app.instances[i].revision
+                            revision: that.app.instances[i].revision,
+                            version: that.app.instances[i].version
                         }
 
-                        that.selectedVersion = that.app.instances[i].version;
+                        that.selectedVersion = that.app.instances[i].formattedVersion;
                     }
                 }
 
                 that.versions.data = {}
 
                 Object.keys(versions).map(function(key, index) {
-                    let ver = versions[key];
+                    let build = versions[key];
 
-                    if (ver.type === BUILD_TYPE_IMAGE) {
-                        ver.revision = that.instance.revision;
+                    if (build.type === BUILD_TYPE_IMAGE) {
+                        build.revision = that.instance.revision;
                     }
 
-                    ver.display = that.formatVersion(key, ver.revision, ver.type)
-
-                    that.versions.data[key] = ver;
+                    build.display = that.formatVersion(key, build.revision, build.type)
+                    
+                    that.versions.data[key] = build;
                 });
 
                 that.versions.isLoading = false
@@ -90,10 +104,11 @@ Vue.component('deploy-modal', {
         for (let i in this.app.instances) {
             if (this.app.instances[i].name == registry) {
                 this.selectedSource = this.app.instances[i].name
-                this.selectedVersion = this.app.instances[i].version;
+                this.selectedVersion = this.app.instances[i].formattedVersion;
 
                 this.versions.data[this.selectedVersion] = {
                     revision: this.app.instances[i].revision,
+                    version: this.app.instances[i].version,
                     display: this.formatVersion(this.selectedVersion, this.app.instances[i].revision)
                 }
             }
@@ -101,6 +116,39 @@ Vue.component('deploy-modal', {
     },
 
     methods: {
+        sortInstances: function (instances) {
+            let temp = obj.copy(instances)
+            
+            return temp.sort(function(a,b) {
+                return a.order - b.order;
+            });
+        },
+        getCommits(version) {
+            this.commits = [];
+            this.loadingChanges = true
+
+            let that = this
+            fetch('/v1/apps/'+this.app.name+"/version/range/"+this.instance.version+"/to/"+version+"/commits")
+            .then(function(response) {
+                return response.json()
+            })
+            .then(function(data) {
+                if (data.message) {
+                    return Promise.reject(new Error(data.message))
+                }
+
+                return Promise.resolve(data);
+            })
+            .then(function(commits) {
+                that.commits = commits;
+            })
+            .catch(function(e) {
+                that.alerts.push({ error: e });
+            })
+            .finally(function() {
+                that.loadingChanges = false
+            });
+        },
         deploy: function (instance) {
             this.error = ""
             this.deploying = true
@@ -142,11 +190,7 @@ Vue.component('deploy-modal', {
             })
         },
         loadVersions: function (instance) {
-            return fetch('/v1/apps/' + this.app.name + "/instances/" + instance + "/registry", {
-                headers: {
-                    "x-user": localStorage.getItem("user")
-                }
-            })
+            return fetch('/v1/apps/' + this.app.name + "/instances/" + instance + "/registry")
             .then(function(response) {
                 return response.json()
             })

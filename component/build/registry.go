@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/turnerlabs/udeploy/component/version"
+
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/turnerlabs/udeploy/component/integration/aws/s3"
@@ -25,6 +27,7 @@ const (
 type buildView struct {
 	Type       string                `json:"type"`
 	Revision   int64                 `json:"revision"`
+	Version    string                `json:"version"`
 	Containers []model.ContainerView `json:"containers"`
 }
 
@@ -77,10 +80,11 @@ func GetBuilds(c echo.Context) error {
 
 	viewBuilds := map[string]buildView{}
 
-	for version, details := range builds {
+	for ver, details := range builds {
 		revision := buildView{
 			Type:     buildTypeRevision,
 			Revision: details.Revision,
+			Version:  details.Version,
 		}
 
 		revision.Containers = append(revision.Containers, model.ContainerView{
@@ -89,7 +93,7 @@ func GetBuilds(c echo.Context) error {
 			Secrets:     details.Secrets,
 		})
 
-		viewBuilds[version] = revision
+		viewBuilds[ver] = revision
 	}
 
 	if len(sourceRegistry.Repository) > 0 {
@@ -108,8 +112,11 @@ func GetBuilds(c echo.Context) error {
 				continue
 			}
 
+			ver, _ := version.Extract(*i.ImageTag, sourceRegistry.Task.ImageTagEx)
+			
 			viewBuilds[*i.ImageTag] = buildView{
-				Type: buildTypeImage,
+				Type:    buildTypeImage,
+				Version: ver,
 				Containers: []model.ContainerView{
 					model.ContainerView{
 						Image: *i.ImageTag,

@@ -30,8 +30,9 @@ type InstanceView struct {
 	Task          TaskView `json:"task"`
 
 	// Calculated Fields
-	Version  string `json:"version"`
-	Revision int64  `json:"revision"`
+	FormattedVersion string `json:"formattedVersion"`
+	Version          string `json:"version"`
+	Revision         int64  `json:"revision"`
 
 	Containers []ContainerView `json:"containers"`
 	Deployment DeploymentView  `json:"deployment"`
@@ -301,7 +302,8 @@ func (i Instance) ToView(name string, appClaim AppClaim) InstanceView {
 
 	v := InstanceView{
 		Name:             name,
-		Version:          i.FormatVersion(),
+		FormattedVersion: i.FormatVersion(),
+		Version:          i.Version(),
 		Containers:       []ContainerView{},
 		IsRunning:        i.CurrentState.IsRunning,
 		DesiredCount:     i.CurrentState.DesiredCount,

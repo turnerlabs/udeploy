@@ -13,7 +13,7 @@
             <div class="control">
                 <div class="select">
                     <select id="source-instance" v-model="selectedSource">
-                        <option v-for="inst in app.instances" :value="inst.name">{{inst.name}}</option>
+                        <option v-for="inst in sortInstances(app.instances)" :value="inst.name">{{inst.name}}</option>
                     </select>
                 </div>
             </div>
@@ -23,14 +23,39 @@
             <div class="field-label"><label class="label">Version</label></div>
             <div class="field-body">
             <div class="control">
-                <div class="select" v-bind:class="{ 'is-loading': versions.isLoading }">
-                    <select id="source-version" v-model="selectedVersion">
-                        <option v-for="(ver, key) in versions.data" :value="key">{{ ver.display }}</option>
-                    </select>
-                </div>
+                <table>
+                <tr>
+                    <td>
+                        <div class="select" v-bind:class="{ 'is-loading': versions.isLoading }"> 
+                            <select id="source-version" v-model="selectedVersion">
+                                <option v-for="(build, key) in versions.data" :value="key">{{ build.display }}</option>
+                            </select>
+                        </div>
+                    </td>
+                    <td style="padding-left: 10px">
+                        <button :disabled="commits.length == 0" class="button" v-bind:class="{ 'is-loading': loadingChanges }" @click="showChanges ? showChanges = false : showChanges = true" title="Show version changes when GitHub integration is set up.">
+                            <span class="icon">
+                                <i class="fas fa-question"></i>
+                            </span>
+                        </button>
+                    </td>
+                </tr>
+                </table>
             </div>
             </div>
         </div>
+
+        <div v-if="showChanges" v-bind:class="{ 'is-hidden': loadingChanges }" class="box has-background-light is-size-7 content">
+            <h6>The latest build for version {{ baseVersion }} contains...</h6>
+            <table>
+            <tr v-for="c in commits">
+                <td v-html="c.message"></td>
+                <td style="width: 80px;">{{ c.tag }} <a class="link" target="_github" v-bind:href="c.url">{{ c.sha.substring(1, 7) }}</a></td>
+            </tr>
+            </table>
+            <p class="is-pulled-right">(displays up to {{ app.repo.commitConfig.limit }} changes)</p>
+        </div> 
+
         <div class="field is-horizontal">
             <div class="field-label"><label class="label">Environment</label></div>
             <div class="field-body">

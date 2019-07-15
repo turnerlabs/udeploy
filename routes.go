@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/turnerlabs/udeploy/component/commit"
+
 	mongosession "github.com/kendavis2/mongo"
 
 	"github.com/turnerlabs/udeploy/component/db"
@@ -156,6 +158,12 @@ func startRouter(changeNotifier *broker.Broker) {
 	v1.POST("/apps/:app/instances/:instance/deploy/:registryInstance/:revision", func(c echo.Context) error {
 		return deploy.Revision(c)
 	}, request.Context, auth.RequireDeploy, cache.EnsureCache, audit.Audit)
+	v1.GET("/apps/:app/instances/:instance/commits", func(c echo.Context) error {
+		return commit.GetInstanceCommits(c)
+	}, request.Context, cache.EnsureCache)
+	v1.GET("/apps/:app/version/range/:current/to/:target/commits", func(c echo.Context) error {
+		return commit.GetVersionCommitsByRange(c)
+	}, request.Context, cache.EnsureCache)
 	v1.GET("/apps/:app/instances/:instance/audit", func(c echo.Context) error {
 		return audit.GetAuditEntries(c)
 	}, request.Context)
