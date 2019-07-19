@@ -64,7 +64,7 @@ func BuildRelease(org, repo, targetTag, currentTag, url, accessToken string, max
 		}
 
 		if isRange(currentTag, targetTag) {
-			if reachedCurrentTag(commit.SHA, currentTag, tags) {
+			if reachedCurrentTag(commit.Parents[0].SHA, currentTag, tags) {
 				break
 			}
 		}
