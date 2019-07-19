@@ -4,28 +4,28 @@ A simple web based deployment [portal](/docs/PORTAL.md) for AWS resources.
 
 Deployments can be performed in moments, from anywhere, by any authorized user, at any time.
 
+- Supports: Chrome
+- Security: OAuth2
+
 ### Features ###
 
-Supports: Chrome, Security: OAuth2
-
-|| Fargate Service | Fargate Task | Lambda Function | S3 Contents |
-|---|---|---|---|---|
-|User Permissions|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|
-|View Instance Version|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|
-|View Instance Status|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|
-|View Instance Tasks|:white_check_mark:|:white_check_mark:|||
-|Deploy Version|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|
-|Start Instance|:white_check_mark:|:white_check_mark:|:white_check_mark:||
-|Scale Instance|:white_check_mark:|:white_check_mark:|:white_check_mark:||
-|Stop Instance|:white_check_mark:|:white_check_mark:|||
-|Deployment Notifications|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|
-|Error Notifications|:white_check_mark:|:white_check_mark:|:white_check_mark:||
-|Audit Deployments|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|
-|Quick Linking|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|
-|AWS Log Links|:white_check_mark:|:white_check_mark:|:white_check_mark:||
-|Deployment Propagation|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|
-|Environment Migration|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|
-|GitHub Integration|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|
+|| Fargate Service | Fargate Task | Lambda Function | S3 Contents ||
+|---|---|---|---|---|---|
+|User Permissions|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Supports user permissions for editing and deploying environment instances. |
+|View Instance Version|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Provides a view into an instance's deployed version details.|
+|View Instance Status|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Provides a view into an instances status showing deployments in progress, erroring containers or lambdas, and scaling services and tasks.|
+|View Instance Tasks|:white_check_mark:|:white_check_mark:|||Provides a view into what version of a service's tasks are starting or stopping at any given moment.|
+|Deploy Version|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Allows drag and drop deployments for all supported AWS resources.|
+|Start Instance|:white_check_mark:|:white_check_mark:|:white_check_mark:||Supports quickly starting a stopped service or task.|
+|Scale Instance|:white_check_mark:|:white_check_mark:|:white_check_mark:||Supports quickly scaling any service or task.|
+|Stop Instance|:white_check_mark:|:white_check_mark:|||Supports quickly  stopping a running service or task.|
+|Deployment Notifications|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Sends SNS notifications for AWS resource deployments and other changes in status.|
+|Error Notifications|:white_check_mark:|:white_check_mark:|:white_check_mark:||Sends SNS notifications for AWS resource errors. |
+|Audit Deployments|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Tracks user deployments via an audit trail.|
+|Quick Linking|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Provides direct links to AWS logs, GitHub commits, Jira stories, and many more without browsing through the websites.|
+|Deployment Propagation|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Provides option for automatically pushing deployments to QA, UAT, or PROD without user interation keeping environments in sync.|
+|Environment Migration|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Supports configuring specific environment variables to be automatically migrated between environments.|
+|GitHub Integration|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Provides a quick view into version changes before and after deployments.|
 
 
 ### Get Started ###
@@ -49,12 +49,13 @@ uDeploy currently services resources within a single AWS account.
 
 ### Goals ###
 
-* Provide a deployment portal for simple AWS service, task, and lambda deployments.
-* Provide notifications for instance/environment statuses.
+* Provide monitoring and deployment portal for AWS resources.
+* Provide status notifications for instances and environments.
+* Provide alternative solution to [Harbor UI](https://github.com/turnerlabs/harbor-ui).
 
 ### Non-Goals ###
 
-* Duplicate the AWS console.
+* Duplicate AWS console functionality.
 * Display or modify infrastructure details.
 
 ### Tech Stack ###
