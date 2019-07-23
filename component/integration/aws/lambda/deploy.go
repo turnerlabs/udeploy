@@ -1,6 +1,7 @@
 package lambda
 
 import (
+	"github.com/turnerlabs/udeploy/component/app"
 	"errors"
 	"fmt"
 	"io"
@@ -16,11 +17,10 @@ import (
 	"github.com/aws/aws-sdk-go/service/lambda"
 	"github.com/google/uuid"
 	"github.com/turnerlabs/udeploy/component/integration/aws/task"
-	"github.com/turnerlabs/udeploy/model"
 )
 
 // Deploy ...
-func Deploy(source model.Instance, target model.Instance, revision int64, opts task.DeployOptions) error {
+func Deploy(source app.Instance, target app.Instance, revision int64, opts task.DeployOptions) error {
 
 	if opts.OverrideSecrets() {
 		return errors.New("lambda functions do not support secrets")
@@ -97,7 +97,7 @@ func Deploy(source model.Instance, target model.Instance, revision int64, opts t
 	return nil
 }
 
-func deployConfig(target model.Instance, sourceEnvironment map[string]*string, opts task.DeployOptions, svc *lambda.Lambda) error {
+func deployConfig(target app.Instance, sourceEnvironment map[string]*string, opts task.DeployOptions, svc *lambda.Lambda) error {
 	to, err := svc.GetFunction(&lambda.GetFunctionInput{
 		FunctionName: aws.String(target.FunctionName),
 	})

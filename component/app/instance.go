@@ -1,10 +1,12 @@
-package model
+package app
 
 import (
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/turnerlabs/udeploy/component/user"
 )
 
 // InstanceView ...
@@ -298,7 +300,7 @@ func (v InstanceView) ToBusiness() Instance {
 }
 
 // ToView ...
-func (i Instance) ToView(name string, appClaim AppClaim) InstanceView {
+func (i Instance) ToView(name string, appClaim user.AppClaim) InstanceView {
 
 	v := InstanceView{
 		Name:             name,

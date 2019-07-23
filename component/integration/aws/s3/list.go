@@ -1,6 +1,7 @@
 package s3
 
 import (
+	"github.com/turnerlabs/udeploy/component/app"
 	"fmt"
 	"log"
 	"strconv"
@@ -9,20 +10,19 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/turnerlabs/udeploy/model"
 )
 
 const ext = ".zip"
 
 // ListTaskDefinitions ...
-func ListTaskDefinitions(instance model.Instance) (map[string]model.Definition, error) {
+func ListTaskDefinitions(instance app.Instance) (map[string]app.Definition, error) {
 
 	results, err := List(instance.S3RegistryBucket, instance.S3RegistryPrefix)
 	if err != nil {
 		return nil, err
 	}
 
-	versions := map[string]model.Definition{}
+	versions := map[string]app.Definition{}
 
 	for _, o := range results {
 		if !strings.Contains(*o.Key, ext) {
@@ -55,7 +55,7 @@ func ListTaskDefinitions(instance model.Instance) (map[string]model.Definition, 
 			continue
 		}
 
-		def := model.Definition{
+		def := app.Definition{
 			Version:  version,
 			Build:    build,
 			Revision: n,

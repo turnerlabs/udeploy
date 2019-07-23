@@ -1,12 +1,11 @@
 package commit
 
 import (
+	"github.com/turnerlabs/udeploy/component/app"
 	"errors"
 	"fmt"
 	"regexp"
 	"strings"
-
-	"github.com/turnerlabs/udeploy/model"
 
 	"github.com/turnerlabs/udeploy/component/integration/github"
 )
@@ -22,7 +21,7 @@ type Change struct {
 }
 
 // BuildRelease ...
-func BuildRelease(org, repo, targetTag, currentTag, url, accessToken string, maxCommits int, commitConfig model.CommitConfig) ([]Change, error) {
+func BuildRelease(org, repo, targetTag, currentTag, url, accessToken string, maxCommits int, commitConfig app.CommitConfig) ([]Change, error) {
 
 	tags, err := github.GetTags(org, repo, url, accessToken)
 	if err != nil {

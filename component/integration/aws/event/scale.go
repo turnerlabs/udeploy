@@ -4,16 +4,19 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/turnerlabs/udeploy/component/app"
+	"github.com/turnerlabs/udeploy/component/user"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudwatchevents"
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/turnerlabs/udeploy/component/integration/aws/task"
-	"github.com/turnerlabs/udeploy/model"
+	sess "github.com/turnerlabs/udeploy/component/session"
 )
 
-func Scale(ctx context.Context, instance model.Instance, desiredCount int64, restart bool) error {
-	usr := ctx.Value(model.ContextKey("user")).(model.User)
+func Scale(ctx context.Context, instance app.Instance, desiredCount int64, restart bool) error {
+	usr := ctx.Value(sess.ContextKey("user")).(user.User)
 	evtSvc := cloudwatchevents.New(session.New())
 	ecsSvc := ecs.New(session.New())
 	input := &cloudwatchevents.ListTargetsByRuleInput{
@@ -61,8 +64,8 @@ func Scale(ctx context.Context, instance model.Instance, desiredCount int64, res
 	return nil
 }
 
-func stopTasks(ctx context.Context, instance model.Instance, taskArn *string, svc *ecs.ECS) error {
-	usr := ctx.Value(model.ContextKey("user")).(model.User)
+func stopTasks(ctx context.Context, instance app.Instance, taskArn *string, svc *ecs.ECS) error {
+	usr := ctx.Value(sess.ContextKey("user")).(user.User)
 
 	tasks, err := task.List(instance, svc, aws.String("RUNNING"))
 	if err != nil {

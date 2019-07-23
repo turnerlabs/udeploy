@@ -6,6 +6,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/turnerlabs/udeploy/component/app"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
@@ -19,7 +21,6 @@ import (
 	"github.com/turnerlabs/udeploy/component/integration/aws/lambda"
 	"github.com/turnerlabs/udeploy/component/integration/aws/service"
 	"github.com/turnerlabs/udeploy/component/integration/aws/task"
-	"github.com/turnerlabs/udeploy/model"
 )
 
 const (
@@ -29,28 +30,28 @@ const (
 	appTypeS3            = "s3"
 )
 
-func deploy(ctx mongo.SessionContext, app model.Application, target, source string, revision int64, opts deployOptions) (model.Instance, error) {
+func deploy(ctx mongo.SessionContext, application app.Application, target, source string, revision int64, opts deployOptions) (app.Instance, error) {
 
-	instances := app.GetInstances([]string{target, source})
+	instances := application.GetInstances([]string{target, source})
 
-	instances, err := supplement.Instances(ctx, app.Type, instances, false)
+	instances, err := supplement.Instances(ctx, application.Type, instances, false)
 	if err != nil {
-		return model.Instance{}, err
+		return app.Instance{}, err
 	}
 
 	targetInstance, targetExists := instances[target]
 	if !targetExists {
-		return model.Instance{}, err
+		return app.Instance{}, err
 	}
 
 	registryInstance, sourceExists := instances[source]
 	if !sourceExists {
-		return model.Instance{}, err
+		return app.Instance{}, err
 	}
 
 	id, err := action.Start(ctx, targetInstance.Task.Definition.ID, "deploy")
 	if err != nil {
-		return model.Instance{}, err
+		return app.Instance{}, err
 	}
 
 	go func() {
@@ -93,7 +94,7 @@ func deploy(ctx mongo.SessionContext, app model.Application, target, source stri
 		if err := mongo.WithSession(jobctx, sess, func(sctx mongo.SessionContext) error {
 			//time.Sleep(time.Minute * 5)
 
-			err := deployByType(sctx, id, app.Type, registryInstance, targetInstance, revision, opts.ToBusiness(registryInstance.Repo()))
+			err := deployByType(sctx, id, application.Type, registryInstance, targetInstance, revision, opts.ToBusiness(registryInstance.Repo()))
 
 			return action.Stop(sctx, id, err)
 
@@ -102,17 +103,17 @@ func deploy(ctx mongo.SessionContext, app model.Application, target, source stri
 		}
 	}()
 
-	instances, err = supplement.Instances(ctx, app.Type, app.GetInstances([]string{target}), false)
+	instances, err = supplement.Instances(ctx, application.Type, application.GetInstances([]string{target}), false)
 	if err != nil {
-		return model.Instance{}, err
+		return app.Instance{}, err
 	}
 
-	cache.Apps.UpdateInstances(app.Name, instances)
+	cache.Apps.UpdateInstances(application.Name, instances)
 
 	return instances[target], nil
 }
 
-func deployByType(ctx mongo.SessionContext, actionID primitive.ObjectID, appType string, source, target model.Instance, revision int64, opts task.DeployOptions) error {
+func deployByType(ctx mongo.SessionContext, actionID primitive.ObjectID, appType string, source, target app.Instance, revision int64, opts task.DeployOptions) error {
 
 	switch appType {
 	case appTypeService:

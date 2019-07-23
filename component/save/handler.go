@@ -4,6 +4,10 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/turnerlabs/udeploy/component/user"
+
+	"github.com/turnerlabs/udeploy/component/session"
+
 	"github.com/turnerlabs/udeploy/component/cfg"
 	"github.com/turnerlabs/udeploy/component/integration/aws/lambda"
 
@@ -11,8 +15,6 @@ import (
 	"github.com/turnerlabs/udeploy/component/app"
 	"github.com/turnerlabs/udeploy/component/cache"
 	"github.com/turnerlabs/udeploy/component/notice"
-	"github.com/turnerlabs/udeploy/component/user"
-	"github.com/turnerlabs/udeploy/model"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -21,9 +23,9 @@ const appTypeLambda = "lambda"
 // App ...
 func App(c echo.Context) error {
 	ctx := c.Get("ctx").(mongo.SessionContext)
-	usr := ctx.Value(model.ContextKey("user")).(model.User)
+	usr := ctx.Value(session.ContextKey("user")).(user.User)
 
-	v := model.AppView{}
+	v := app.AppView{}
 	if err := c.Bind(&v); err != nil {
 		return err
 	}
@@ -84,7 +86,7 @@ func App(c echo.Context) error {
 func User(c echo.Context) error {
 	ctx := c.Get("ctx").(mongo.SessionContext)
 
-	usr := model.User{}
+	usr := user.User{}
 	if err := c.Bind(&usr); err != nil {
 		return err
 	}
@@ -100,7 +102,7 @@ func User(c echo.Context) error {
 func Notice(c echo.Context) error {
 	ctx := c.Get("ctx").(mongo.SessionContext)
 
-	n := model.Notice{}
+	n := notice.Notice{}
 	if err := c.Bind(&n); err != nil {
 		return err
 	}

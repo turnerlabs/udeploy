@@ -5,10 +5,10 @@ import (
 	"regexp"
 
 	"github.com/aws/aws-sdk-go/service/lambda"
-	"github.com/turnerlabs/udeploy/model"
+	"github.com/turnerlabs/udeploy/component/app"
 )
 
-func extractVersion(instance model.Instance, config *lambda.FunctionConfiguration) (string, string, error) {
+func extractVersion(instance app.Instance, config *lambda.FunctionConfiguration) (string, string, error) {
 	tag := regexp.MustCompile(instance.Task.ImageTagEx)
 
 	matches := tag.FindStringSubmatch(*config.Description)

@@ -3,7 +3,8 @@ package cache
 import (
 	"sync"
 
-	"github.com/turnerlabs/udeploy/model"
+	"github.com/turnerlabs/udeploy/component/app"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -12,21 +13,21 @@ var Apps appCache
 
 func init() {
 	Apps = appCache{
-		apps:          map[string]model.Application{},
+		apps:          map[string]app.Application{},
 		lookup:        map[string]string{},
-		Notifications: make(chan model.Application),
+		Notifications: make(chan app.Application),
 	}
 }
 
 type appCache struct {
-	apps   map[string]model.Application
+	apps   map[string]app.Application
 	lookup map[string]string
 	mux    sync.Mutex
 
-	Notifications chan model.Application
+	Notifications chan app.Application
 }
 
-func (c *appCache) Update(app model.Application) {
+func (c *appCache) Update(app app.Application) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 
@@ -48,7 +49,7 @@ func (c *appCache) Update(app model.Application) {
 	c.Notifications <- app
 }
 
-func (c *appCache) UpdateInstances(appName string, instances map[string]model.Instance) {
+func (c *appCache) UpdateInstances(appName string, instances map[string]app.Instance) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 
@@ -98,14 +99,14 @@ func (c *appCache) RemoveByID(appID primitive.ObjectID) {
 	}
 }
 
-func (c *appCache) GetAll() map[string]model.Application {
+func (c *appCache) GetAll() map[string]app.Application {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 
 	return c.apps
 }
 
-func (c *appCache) Get(appName string) (model.Application, bool) {
+func (c *appCache) Get(appName string) (app.Application, bool) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 
@@ -114,7 +115,7 @@ func (c *appCache) Get(appName string) (model.Application, bool) {
 	return app, found
 }
 
-func (c *appCache) GetByID(appID primitive.ObjectID) model.Application {
+func (c *appCache) GetByID(appID primitive.ObjectID) app.Application {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 
@@ -124,27 +125,27 @@ func (c *appCache) GetByID(appID primitive.ObjectID) model.Application {
 		}
 	}
 
-	return model.Application{}
+	return app.Application{}
 }
 
-func (c *appCache) GetByDefinitionID(taskDefinition string) (model.Application, bool) {
+func (c *appCache) GetByDefinitionID(taskDefinition string) (app.Application, bool) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 
 	appName, found := c.lookup[taskDefinition]
 	if !found {
-		return model.Application{}, false
+		return app.Application{}, false
 	}
 
-	app, found := c.apps[appName]
+	a, found := c.apps[appName]
 	if !found {
-		return model.Application{}, false
+		return app.Application{}, false
 	}
 
-	return app, found
+	return a, found
 }
 
-func (c *appCache) UpdateInstance(instance model.Instance) {
+func (c *appCache) UpdateInstance(instance app.Instance) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 

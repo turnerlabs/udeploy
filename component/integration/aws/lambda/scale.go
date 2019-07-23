@@ -1,16 +1,16 @@
 package lambda
 
 import (
+	"github.com/turnerlabs/udeploy/component/app"
 	"context"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/lambda"
-	"github.com/turnerlabs/udeploy/model"
 )
 
 // Scale ...
-func Scale(ctx context.Context, instance model.Instance, desiredCount int64) error {
+func Scale(ctx context.Context, instance app.Instance, desiredCount int64) error {
 
 	if desiredCount == 0 {
 		return nil

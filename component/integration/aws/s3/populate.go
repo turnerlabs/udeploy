@@ -6,16 +6,17 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/turnerlabs/udeploy/component/app"
+
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/turnerlabs/udeploy/model"
 )
 
 // Populate ...
-func Populate(instances map[string]model.Instance, details bool) (map[string]model.Instance, error) {
+func Populate(instances map[string]app.Instance, details bool) (map[string]app.Instance, error) {
 
 	sess := session.New()
 
@@ -40,8 +41,8 @@ func Populate(instances map[string]model.Instance, details bool) (map[string]mod
 	return instances, nil
 }
 
-func populateInst(i model.Instance, svc *s3.S3, downloader *s3manager.Downloader) (model.Instance, model.State, error) {
-	state := model.State{
+func populateInst(i app.Instance, svc *s3.S3, downloader *s3manager.Downloader) (app.Instance, app.State, error) {
+	state := app.State{
 		DesiredCount: 1,
 	}
 
@@ -55,7 +56,7 @@ func populateInst(i model.Instance, svc *s3.S3, downloader *s3manager.Downloader
 		root = fmt.Sprintf("%s/%s", i.S3Bucket, i.S3Prefix)
 	}
 
-	i.Task.Definition = model.NewDefinition(id)
+	i.Task.Definition = app.NewDefinition(id)
 
 	oo, err := svc.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(i.S3Bucket),
@@ -93,7 +94,7 @@ func populateInst(i model.Instance, svc *s3.S3, downloader *s3manager.Downloader
 		return i, state, err
 	}
 
-	i.Links = append(i.Links, model.Link{
+	i.Links = append(i.Links, app.Link{
 		Generated:   true,
 		Description: "Root Path",
 		Name:        "S3",

@@ -6,11 +6,11 @@ import (
 
 	"github.com/turnerlabs/udeploy/component/auth"
 
+	sess "github.com/turnerlabs/udeploy/component/session"
 	"github.com/turnerlabs/udeploy/component/user"
 
 	"github.com/labstack/echo/v4"
 	"github.com/turnerlabs/udeploy/component/db"
-	"github.com/turnerlabs/udeploy/model"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -36,7 +36,7 @@ func Context(next echo.HandlerFunc) echo.HandlerFunc {
 				return err
 			}
 
-			ctx = context.WithValue(ctxParent, model.ContextKey("user"), user)
+			ctx = context.WithValue(ctxParent, sess.ContextKey("user"), user)
 
 			return nil
 		}); err != nil {

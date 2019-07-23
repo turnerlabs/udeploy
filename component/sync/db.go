@@ -1,6 +1,8 @@
 package sync
 
 import (
+	"github.com/turnerlabs/udeploy/component/action"
+	"github.com/turnerlabs/udeploy/component/app"
 	"log"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -12,7 +14,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/turnerlabs/udeploy/component/cfg"
-	"github.com/turnerlabs/udeploy/model"
 )
 
 // WatchDatabaseApps ...
@@ -37,7 +38,7 @@ func WatchDatabaseApps(ctx mongo.SessionContext) error {
 				ID primitive.ObjectID `bson:"_id"`
 			} `bson:"documentKey"`
 			OperationType string            `bson:"operationType"`
-			App           model.Application `bson:"fullDocument"`
+			App           app.Application `bson:"fullDocument"`
 		}{}
 
 		if err := cur.Decode(&change); err != nil {
@@ -90,7 +91,7 @@ func WatchDatabaseActions(ctx mongo.SessionContext) error {
 				ID primitive.ObjectID `bson:"_id"`
 			} `bson:"documentKey"`
 			OperationType string       `bson:"operationType"`
-			Action        model.Action `bson:"fullDocument"`
+			Action        action.Action `bson:"fullDocument"`
 		}{}
 
 		if err := cur.Decode(&change); err != nil {

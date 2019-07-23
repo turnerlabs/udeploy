@@ -1,17 +1,17 @@
 package app
 
 import (
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"context"
+
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/turnerlabs/udeploy/component/cfg"
 	"github.com/turnerlabs/udeploy/component/db"
-	"github.com/turnerlabs/udeploy/model"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
 // Set ...
-func Set(ctx context.Context, appName string, app model.Application) error {
+func Set(ctx context.Context, appName string, app Application) error {
 	collection := db.Client().Database(cfg.Get["DB_NAME"]).Collection("apps")
 
 	match := bson.M{"name": appName}

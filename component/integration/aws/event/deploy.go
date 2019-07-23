@@ -6,10 +6,10 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudwatchevents"
 	"github.com/turnerlabs/udeploy/component/integration/aws/task"
-	"github.com/turnerlabs/udeploy/model"
+	"github.com/turnerlabs/udeploy/component/app"
 )
 
-func Deploy(source model.Instance, target model.Instance, revision int64, opts task.DeployOptions) error {
+func Deploy(source app.Instance, target app.Instance, revision int64, opts task.DeployOptions) error {
 	svc := cloudwatchevents.New(session.New())
 
 	newOutput, err := task.Deploy(source, target, revision, source.Version(), opts)
@@ -25,7 +25,7 @@ func Deploy(source model.Instance, target model.Instance, revision int64, opts t
 	return nil
 }
 
-func updateTargetRevision(instance model.Instance, svc *cloudwatchevents.CloudWatchEvents, taskArn *string) error {
+func updateTargetRevision(instance app.Instance, svc *cloudwatchevents.CloudWatchEvents, taskArn *string) error {
 	input := &cloudwatchevents.ListTargetsByRuleInput{
 		Rule: &instance.EventRule,
 	}

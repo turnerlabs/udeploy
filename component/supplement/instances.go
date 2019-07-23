@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/turnerlabs/udeploy/component/app"
+
 	"github.com/turnerlabs/udeploy/component/action"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -13,7 +15,6 @@ import (
 	"github.com/turnerlabs/udeploy/component/integration/aws/event"
 	"github.com/turnerlabs/udeploy/component/integration/aws/lambda"
 	"github.com/turnerlabs/udeploy/component/integration/aws/service"
-	"github.com/turnerlabs/udeploy/model"
 )
 
 const (
@@ -24,7 +25,7 @@ const (
 )
 
 // Instances ...
-func Instances(ctx mongo.SessionContext, appType string, instances map[string]model.Instance, details bool) (insts map[string]model.Instance, err error) {
+func Instances(ctx mongo.SessionContext, appType string, instances map[string]app.Instance, details bool) (insts map[string]app.Instance, err error) {
 	switch appType {
 	case appTypeService:
 		insts, err = service.Populate(instances, details)
@@ -46,7 +47,7 @@ func Instances(ctx mongo.SessionContext, appType string, instances map[string]mo
 
 }
 
-func checkCurrentActions(ctx mongo.SessionContext, instances map[string]model.Instance) (map[string]model.Instance, error) {
+func checkCurrentActions(ctx mongo.SessionContext, instances map[string]app.Instance) (map[string]app.Instance, error) {
 
 	for key, i := range instances {
 		a, err := action.GetLatestBy(ctx, i.Task.Definition.ID)
@@ -58,12 +59,12 @@ func checkCurrentActions(ctx mongo.SessionContext, instances map[string]model.In
 			return instances, err
 		}
 
-		if a.Is(model.Pending) {
+		if a.Is(app.Pending) {
 			i.CurrentState.IsPending = true
 			i.CurrentState.IsRunning = false
 		}
 
-		if a.Is(model.Error) {
+		if a.Is(app.Error) {
 			if i.CurrentState.Error != nil {
 				i.CurrentState.Error = fmt.Errorf("%s: %s", a.Info, i.CurrentState.Error)
 			} else {

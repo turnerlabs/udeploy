@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/turnerlabs/udeploy/component/app"
+
 	"github.com/turnerlabs/udeploy/component/cache"
 	"github.com/turnerlabs/udeploy/component/integration/aws/event"
 	"github.com/turnerlabs/udeploy/component/integration/aws/lambda"
 	"github.com/turnerlabs/udeploy/component/integration/aws/service"
-	"github.com/turnerlabs/udeploy/model"
 )
 
 const (
@@ -19,7 +20,7 @@ const (
 )
 
 // Start ...
-func Start(ctx context.Context, appType string, instance model.Instance, desiredCount int64, restart bool) error {
+func Start(ctx context.Context, appType string, instance app.Instance, desiredCount int64, restart bool) error {
 	switch appType {
 	case appTypeService:
 		return service.Scale(instance, desiredCount, restart)
@@ -42,13 +43,13 @@ func Start(ctx context.Context, appType string, instance model.Instance, desired
 	}
 }
 
-func changeStatusToDone(instance model.Instance) {
-	if app, found := cache.Apps.GetByDefinitionID(instance.Task.Definition.ID); found {
-		for name, inst := range app.Instances {
+func changeStatusToDone(instance app.Instance) {
+	if application, found := cache.Apps.GetByDefinitionID(instance.Task.Definition.ID); found {
+		for name, inst := range application.Instances {
 			if inst.Task.Definition.ID == instance.Task.Definition.ID {
 				inst.CurrentState.IsPending = false
 
-				cache.Apps.UpdateInstances(app.Name, map[string]model.Instance{name: inst})
+				cache.Apps.UpdateInstances(application.Name, map[string]app.Instance{name: inst})
 			}
 		}
 	}

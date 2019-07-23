@@ -6,8 +6,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/turnerlabs/udeploy/component/app"
 	"github.com/turnerlabs/udeploy/component/version"
-	"github.com/turnerlabs/udeploy/model"
 )
 
 // DeployOptions ...
@@ -38,7 +38,7 @@ func (do DeployOptions) DeployImage() bool {
 }
 
 // Deploy ...
-func Deploy(source model.Instance, target model.Instance, sourceRevision int64, sourceVersion string, opts DeployOptions) (td *ecs.TaskDefinition, err error) {
+func Deploy(source app.Instance, target app.Instance, sourceRevision int64, sourceVersion string, opts DeployOptions) (td *ecs.TaskDefinition, err error) {
 	svc := ecs.New(session.New())
 
 	sourceTaskArn := fmt.Sprintf("%s:%d", source.Task.Family, sourceRevision)

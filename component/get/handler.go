@@ -3,6 +3,8 @@ package get
 import (
 	"net/http"
 
+	"github.com/turnerlabs/udeploy/component/session"
+
 	"github.com/turnerlabs/udeploy/component/notice"
 
 	"github.com/labstack/echo/v4"
@@ -10,14 +12,13 @@ import (
 	"github.com/turnerlabs/udeploy/component/cache"
 	"github.com/turnerlabs/udeploy/component/supplement"
 	"github.com/turnerlabs/udeploy/component/user"
-	"github.com/turnerlabs/udeploy/model"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // App ..
 func App(c echo.Context) error {
 	ctx := c.Get("ctx").(mongo.SessionContext)
-	usr := ctx.Value(model.ContextKey("user")).(model.User)
+	usr := ctx.Value(session.ContextKey("user")).(user.User)
 
 	apps, err := app.Get(ctx, c.Param("app"))
 	if err != nil {
@@ -37,7 +38,7 @@ func App(c echo.Context) error {
 // Apps ..
 func Apps(c echo.Context) error {
 	ctx := c.Get("ctx").(mongo.SessionContext)
-	usr := ctx.Value(model.ContextKey("user")).(model.User)
+	usr := ctx.Value(session.ContextKey("user")).(user.User)
 
 	appNames := []string{}
 
@@ -51,7 +52,7 @@ func Apps(c echo.Context) error {
 		}
 	}
 
-	views := []model.AppView{}
+	views := []app.AppView{}
 
 	for _, name := range appNames {
 

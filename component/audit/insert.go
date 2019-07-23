@@ -1,14 +1,16 @@
 package audit
 
 import (
+	"github.com/turnerlabs/udeploy/component/user"
 	"context"
 	"fmt"
 	"log"
 	"time"
 
+	"github.com/turnerlabs/udeploy/component/session"
+
 	"github.com/turnerlabs/udeploy/component/cfg"
 	"github.com/turnerlabs/udeploy/component/db"
-	"github.com/turnerlabs/udeploy/model"
 )
 
 // Entry ...
@@ -29,7 +31,7 @@ func CreateEntry(ctx context.Context, app, instance, action string) error {
 		Action:   action,
 	}
 
-	if usr, ok := ctx.Value(model.ContextKey("user")).(model.User); ok {
+	if usr, ok := ctx.Value(session.ContextKey("user")).(user.User); ok {
 		e.User = usr.Email
 	}
 

@@ -16,7 +16,6 @@ import (
 	"github.com/turnerlabs/udeploy/component/integration/aws/lambda"
 	"github.com/turnerlabs/udeploy/component/integration/aws/task"
 	"github.com/turnerlabs/udeploy/component/supplement"
-	"github.com/turnerlabs/udeploy/model"
 )
 
 const (
@@ -25,10 +24,10 @@ const (
 )
 
 type buildView struct {
-	Type       string                `json:"type"`
-	Revision   int64                 `json:"revision"`
-	Version    string                `json:"version"`
-	Containers []model.ContainerView `json:"containers"`
+	Type       string              `json:"type"`
+	Revision   int64               `json:"revision"`
+	Version    string              `json:"version"`
+	Containers []app.ContainerView `json:"containers"`
 }
 
 const (
@@ -56,7 +55,7 @@ func GetBuilds(c echo.Context) error {
 
 	sourceRegistry := instances[c.Param("registryInstance")]
 
-	builds := map[string]model.Definition{}
+	builds := map[string]app.Definition{}
 
 	switch apps[0].Type {
 	case appTypeService, appTypeScheduledTask:
@@ -87,7 +86,7 @@ func GetBuilds(c echo.Context) error {
 			Version:  details.Version,
 		}
 
-		revision.Containers = append(revision.Containers, model.ContainerView{
+		revision.Containers = append(revision.Containers, app.ContainerView{
 			Image:       details.Description,
 			Environment: details.Environment,
 			Secrets:     details.Secrets,
@@ -113,12 +112,12 @@ func GetBuilds(c echo.Context) error {
 			}
 
 			ver, _ := version.Extract(*i.ImageTag, sourceRegistry.Task.ImageTagEx)
-			
+
 			viewBuilds[*i.ImageTag] = buildView{
 				Type:    buildTypeImage,
 				Version: ver,
-				Containers: []model.ContainerView{
-					model.ContainerView{
+				Containers: []app.ContainerView{
+					app.ContainerView{
 						Image: *i.ImageTag,
 					},
 				},

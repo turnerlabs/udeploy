@@ -1,6 +1,7 @@
-package model
+package notice
 
 import (
+	"github.com/turnerlabs/udeploy/component/app"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -32,7 +33,7 @@ type NoticeEvents struct {
 }
 
 // Matches ...
-func (n Notice) Matches(instance string, inst Instance) bool {
+func (n Notice) Matches(instance string, inst app.Instance) bool {
 
 	switch inst.String() {
 	case "error":

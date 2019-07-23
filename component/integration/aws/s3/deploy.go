@@ -27,12 +27,12 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws/session"
 
+	"github.com/turnerlabs/udeploy/component/app"
 	"github.com/turnerlabs/udeploy/component/integration/aws/task"
-	"github.com/turnerlabs/udeploy/model"
 )
 
 // Deploy ...
-func Deploy(ctx mongo.SessionContext, actionID primitive.ObjectID, source model.Instance, target model.Instance, revision int64, opts task.DeployOptions) error {
+func Deploy(ctx mongo.SessionContext, actionID primitive.ObjectID, source app.Instance, target app.Instance, revision int64, opts task.DeployOptions) error {
 
 	if opts.OverrideSecrets() {
 		return errors.New("s3 does not support secrets")
@@ -94,7 +94,7 @@ func Deploy(ctx mongo.SessionContext, actionID primitive.ObjectID, source model.
 	return nil
 }
 
-func createConfigFile(unzippedPath string, target model.Instance, env map[string]string) error {
+func createConfigFile(unzippedPath string, target app.Instance, env map[string]string) error {
 
 	configPath := fmt.Sprintf("%s/%s", unzippedPath, target.S3ConfigKey)
 
@@ -115,7 +115,7 @@ func createConfigFile(unzippedPath string, target model.Instance, env map[string
 	return nil
 }
 
-func getRevisionDetails(source model.Instance, revision int64, sess *session.Session) (string, string, error) {
+func getRevisionDetails(source app.Instance, revision int64, sess *session.Session) (string, string, error) {
 	svc := s3.New(sess)
 
 	o, err := svc.GetObject(&s3.GetObjectInput{
@@ -134,7 +134,7 @@ func getRevisionDetails(source model.Instance, revision int64, sess *session.Ses
 	return version, build, nil
 }
 
-func buildConfig(source, target model.Instance, sess *session.Session) (map[string]string, error) {
+func buildConfig(source, target app.Instance, sess *session.Session) (map[string]string, error) {
 
 	if len(target.S3Prefix) > 0 {
 		target.S3ConfigKey = fmt.Sprintf("%s/%s", target.S3Prefix, target.S3ConfigKey)
@@ -201,7 +201,7 @@ func buildConfig(source, target model.Instance, sess *session.Session) (map[stri
 	return newConfig, nil
 }
 
-func purge(target model.Instance, sess *session.Session) error {
+func purge(target app.Instance, sess *session.Session) error {
 	svc := s3.New(sess)
 
 	listInput := &s3.ListObjectsInput{
@@ -248,7 +248,7 @@ func purge(target model.Instance, sess *session.Session) error {
 	return nil
 }
 
-func upload(target model.Instance, workingDir string, metadata map[string]*string, sess *session.Session) error {
+func upload(target app.Instance, workingDir string, metadata map[string]*string, sess *session.Session) error {
 	uploader := s3manager.NewUploader(sess)
 
 	objects := []s3manager.BatchUploadObject{}
@@ -297,7 +297,7 @@ func upload(target model.Instance, workingDir string, metadata map[string]*strin
 	return uploader.UploadWithIterator(context.Background(), iter)
 }
 
-func download(source model.Instance, revision int64, workingDir string, sess *session.Session) (string, error) {
+func download(source app.Instance, revision int64, workingDir string, sess *session.Session) (string, error) {
 	downloader := s3manager.NewDownloader(sess)
 
 	zipFile := fmt.Sprintf("%s/deployment.zip", workingDir)

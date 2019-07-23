@@ -5,14 +5,13 @@ import (
 
 	"github.com/turnerlabs/udeploy/component/cfg"
 	"github.com/turnerlabs/udeploy/component/db"
-	"github.com/turnerlabs/udeploy/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // Set ...
-func Set(ctx context.Context, notice model.Notice) error {
+func Set(ctx context.Context, notice Notice) error {
 	collection := db.Client().Database(cfg.Get["DB_NAME"]).Collection("notices")
 
 	if notice.ID.IsZero() {

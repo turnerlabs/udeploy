@@ -6,17 +6,16 @@ import (
 
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"github.com/turnerlabs/udeploy/model"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Start ...
 func Start(ctx context.Context, definitionID, aType string) (primitive.ObjectID, error) {
-	return Set(ctx, model.Action{
+	return Set(ctx, Action{
 		DefinitionID: definitionID,
 
 		Type:    aType,
-		Status:  model.Pending,
+		Status:  Pending,
 		Started: time.Now().UTC(),
 	})
 }
@@ -29,10 +28,10 @@ func Stop(ctx mongo.SessionContext, id primitive.ObjectID, actionErr error) erro
 		return err
 	}
 
-	a.Status = model.Complete
+	a.Status = Complete
 
 	if actionErr != nil {
-		a.Status = model.Error
+		a.Status = Error
 		a.Info = actionErr.Error()
 	}
 

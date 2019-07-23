@@ -6,11 +6,11 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/lambda"
-	"github.com/turnerlabs/udeploy/model"
+	"github.com/turnerlabs/udeploy/component/app"
 )
 
 // ListDefinitions ...
-func ListDefinitions(instance model.Instance) (map[string]model.Definition, error) {
+func ListDefinitions(instance app.Instance) (map[string]app.Definition, error) {
 
 	svc := lambda.New(session.New())
 	o, err := svc.ListVersionsByFunction(&lambda.ListVersionsByFunctionInput{
@@ -20,7 +20,7 @@ func ListDefinitions(instance model.Instance) (map[string]model.Definition, erro
 		return nil, err
 	}
 
-	versions := map[string]model.Definition{}
+	versions := map[string]app.Definition{}
 	for _, funcVersion := range o.Versions {
 
 		revision, err := strconv.ParseInt(*funcVersion.Version, 10, 64)
@@ -39,7 +39,7 @@ func ListDefinitions(instance model.Instance) (map[string]model.Definition, erro
 			env[k] = value
 		}
 
-		def := model.Definition{
+		def := app.Definition{
 			Description: version,
 
 			Version:  version,

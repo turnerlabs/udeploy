@@ -5,16 +5,17 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/turnerlabs/udeploy/component/app"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/applicationautoscaling"
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/turnerlabs/udeploy/component/integration/aws/task"
-	"github.com/turnerlabs/udeploy/model"
 )
 
 // Populate ...
-func Populate(instances map[string]model.Instance, details bool) (map[string]model.Instance, error) {
+func Populate(instances map[string]app.Instance, details bool) (map[string]app.Instance, error) {
 	session := session.New()
 
 	svc := ecs.New(session)
@@ -38,14 +39,14 @@ func Populate(instances map[string]model.Instance, details bool) (map[string]mod
 
 	for name, instance := range instances {
 
-		go func(innerName string, innerInstance model.Instance, innerSvc *ecs.ECS) {
-			state := model.State{}
+		go func(innerName string, innerInstance app.Instance, innerSvc *ecs.ECS) {
+			state := app.State{}
 
 			td, svcs, err := getServiceInfo(innerInstance, innerSvc)
 			if err != nil {
 				state.Error = err
 			} else {
-				innerInstance.Task.Definition = model.DefinitionFrom(td, innerInstance.Task.ImageTagEx)
+				innerInstance.Task.Definition = app.DefinitionFrom(td, innerInstance.Task.ImageTagEx)
 
 				state.IsPending = isPending(svcs)
 				state.IsRunning = isRunning(svcs)
@@ -71,7 +72,7 @@ func Populate(instances map[string]model.Instance, details bool) (map[string]mod
 
 				region, err := getRegion(*td.TaskDefinitionArn)
 				if err == nil {
-					innerInstance.Links = append(innerInstance.Links, model.Link{
+					innerInstance.Links = append(innerInstance.Links, app.Link{
 						Generated:   true,
 						Description: "AWS Console Service Logs",
 						Name:        "logs",
@@ -107,7 +108,7 @@ func Populate(instances map[string]model.Instance, details bool) (map[string]mod
 
 type chanModel struct {
 	name     string
-	instance model.Instance
+	instance app.Instance
 }
 
 func getRegion(arn string) (string, error) {
@@ -125,7 +126,7 @@ func getRegion(arn string) (string, error) {
 	return "", errors.New("failed to get region")
 }
 
-func getError(svc *ecs.ECS, inst model.Instance) error {
+func getError(svc *ecs.ECS, inst app.Instance) error {
 
 	tasks, err := getTaskDetails(svc, inst, []*ecs.Task{}, "")
 	if err != nil {
@@ -139,7 +140,7 @@ func getError(svc *ecs.ECS, inst model.Instance) error {
 	return nil
 }
 
-func getTaskDetails(svc *ecs.ECS, inst model.Instance, tasks []*ecs.Task, nextToken string) ([]*ecs.Task, error) {
+func getTaskDetails(svc *ecs.ECS, inst app.Instance, tasks []*ecs.Task, nextToken string) ([]*ecs.Task, error) {
 	input := &ecs.ListTasksInput{
 		Cluster:       aws.String(inst.Cluster),
 		ServiceName:   aws.String(inst.Service),
@@ -198,7 +199,7 @@ func isRunning(svc *ecs.Service) bool {
 	return *svc.RunningCount > 0 && *svc.RunningCount == *svc.DesiredCount
 }
 
-func getServiceInfo(instance model.Instance, svc *ecs.ECS) (*ecs.TaskDefinition, *ecs.Service, error) {
+func getServiceInfo(instance app.Instance, svc *ecs.ECS) (*ecs.TaskDefinition, *ecs.Service, error) {
 	o, err := svc.DescribeServices(&ecs.DescribeServicesInput{
 		Cluster:  aws.String(instance.Cluster),
 		Services: aws.StringSlice([]string{instance.Service}),

@@ -6,15 +6,16 @@ import (
 	"regexp"
 	"strconv"
 
+	"github.com/turnerlabs/udeploy/component/app"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudwatch"
 	"github.com/aws/aws-sdk-go/service/lambda"
-	"github.com/turnerlabs/udeploy/model"
 )
 
 // Populate ...
-func Populate(instances map[string]model.Instance, details bool) (map[string]model.Instance, error) {
+func Populate(instances map[string]app.Instance, details bool) (map[string]app.Instance, error) {
 
 	sess := session.New()
 
@@ -39,9 +40,9 @@ func Populate(instances map[string]model.Instance, details bool) (map[string]mod
 	return instances, nil
 }
 
-func populateInst(i model.Instance, svc *lambda.Lambda, cwsvc *cloudwatch.CloudWatch) (model.Instance, model.State, error) {
+func populateInst(i app.Instance, svc *lambda.Lambda, cwsvc *cloudwatch.CloudWatch) (app.Instance, app.State, error) {
 
-	state := model.State{
+	state := app.State{
 		DesiredCount: 1,
 	}
 
@@ -93,7 +94,7 @@ func populateInst(i model.Instance, svc *lambda.Lambda, cwsvc *cloudwatch.CloudW
 		return i, state, err
 	}
 
-	i.Task.Definition = model.Definition{
+	i.Task.Definition = app.Definition{
 		ID:          fmt.Sprintf("%s-%s", i.FunctionName, i.FunctionAlias),
 		Description: fmt.Sprintf("%s.%s", version, build),
 
@@ -112,7 +113,7 @@ func populateInst(i model.Instance, svc *lambda.Lambda, cwsvc *cloudwatch.CloudW
 		return i, state, err
 	}
 
-	i.Links = append(i.Links, model.Link{
+	i.Links = append(i.Links, app.Link{
 		Generated:   true,
 		Description: "CloudWatch logs",
 		Name:        "logs",

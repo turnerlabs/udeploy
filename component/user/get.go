@@ -8,52 +8,51 @@ import (
 
 	"github.com/turnerlabs/udeploy/component/cfg"
 	"github.com/turnerlabs/udeploy/component/db"
-	"github.com/turnerlabs/udeploy/model"
 	"gopkg.in/mgo.v2/bson"
 )
 
 // GetAll ...
-func GetAll(ctx context.Context) ([]model.User, error) {
+func GetAll(ctx context.Context) ([]User, error) {
 	collection := db.Client().Database(cfg.Get["DB_NAME"]).Collection("users")
 
 	cur, err := collection.Find(ctx, bson.M{})
 	if err != nil {
-		return []model.User{}, err
+		return []User{}, err
 	}
 	defer cur.Close(ctx)
 
-	users := []model.User{}
+	users := []User{}
 	for cur.Next(ctx) {
-		user := &model.User{}
+		user := &User{}
 
 		if err := cur.Decode(user); err != nil {
-			return []model.User{}, err
+			return []User{}, err
 		}
 
 		users = append(users, *user)
 	}
 
 	if err := cur.Err(); err != nil {
-		return []model.User{}, err
+		return []User{}, err
 	}
 
 	return users, nil
 }
 
 // Get ...
-func Get(ctx context.Context, user string) (model.User, error) {
+func Get(ctx context.Context, user string) (User, error) {
 
 	collection := db.Client().Database(cfg.Get["DB_NAME"]).Collection("users")
 
 	match := bson.M{"email": user}
 
-	usr := model.User{}
+	usr := User{}
 	if err := collection.FindOne(ctx, match).Decode(&usr); err != nil {
 		if err.Error() == mongo.ErrNoDocuments.Error() {
-			return model.User{}, fmt.Errorf("%s is not a valid user", user)
+			return User{}, fmt.Errorf("%s is not a valid user", user)
 		}
 
-		return model.User{}, err
+		return User{}, err
 	}
 
 	return usr, nil

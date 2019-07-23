@@ -9,12 +9,11 @@ import (
 
 	"github.com/turnerlabs/udeploy/component/cfg"
 	"github.com/turnerlabs/udeploy/component/db"
-	"github.com/turnerlabs/udeploy/model"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
 // Set ...
-func Set(ctx context.Context, a model.Action) (primitive.ObjectID, error) {
+func Set(ctx context.Context, a Action) (primitive.ObjectID, error) {
 	collection := db.Client().Database(cfg.Get["DB_NAME"]).Collection("actions")
 
 	if a.ID.IsZero() {

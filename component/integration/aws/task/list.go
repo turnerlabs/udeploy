@@ -7,11 +7,11 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/turnerlabs/udeploy/component/app"
 	"github.com/turnerlabs/udeploy/component/version"
-	"github.com/turnerlabs/udeploy/model"
 )
 
-func List(instance model.Instance, svc *ecs.ECS, status *string) (tasks []*ecs.Task, err error) {
+func List(instance app.Instance, svc *ecs.ECS, status *string) (tasks []*ecs.Task, err error) {
 	output, err := svc.ListTasks(&ecs.ListTasksInput{
 		Cluster:       &instance.Cluster,
 		Family:        aws.String(instance.Task.Family),
@@ -33,7 +33,7 @@ func List(instance model.Instance, svc *ecs.ECS, status *string) (tasks []*ecs.T
 	return tasksOutput.Tasks, nil
 }
 
-func ListDefinitions(taskDefinition model.Task) (map[string]model.Definition, error) {
+func ListDefinitions(taskDefinition app.Task) (map[string]app.Definition, error) {
 
 	arns := []*string{}
 
@@ -50,21 +50,21 @@ func ListDefinitions(taskDefinition model.Task) (map[string]model.Definition, er
 	return keepMostRecentRevisions(tds, taskDefinition.ImageTagEx), nil
 }
 
-func GetTasksInfo(instance model.Instance, svc *ecs.ECS) ([]model.TaskInfo, error) {
+func GetTasksInfo(instance app.Instance, svc *ecs.ECS) ([]app.TaskInfo, error) {
 	runningTasks, err := List(instance, svc, aws.String("RUNNING"))
 	if err != nil {
-		return []model.TaskInfo{}, err
+		return []app.TaskInfo{}, err
 	}
 	stoppedTasks, err := List(instance, svc, aws.String("STOPPED"))
 	if err != nil {
-		return []model.TaskInfo{}, err
+		return []app.TaskInfo{}, err
 	}
 	tasks := append(runningTasks, stoppedTasks...)
 	if len(tasks) == 0 {
-		return []model.TaskInfo{}, nil
+		return []app.TaskInfo{}, nil
 	}
 
-	tasksInfo := make([]model.TaskInfo, 0)
+	tasksInfo := make([]app.TaskInfo, 0)
 	for _, task := range tasks {
 		for _, container := range task.Containers {
 
@@ -76,12 +76,12 @@ func GetTasksInfo(instance model.Instance, svc *ecs.ECS) ([]model.TaskInfo, erro
 				TaskDefinition: task.TaskDefinitionArn,
 			})
 			if err != nil {
-				return []model.TaskInfo{}, err
+				return []app.TaskInfo{}, err
 			}
 
 			logLink := getLogLink(*o.TaskDefinition.ContainerDefinitions[0].LogConfiguration, taskID, *container.Name)
 
-			taskInfo := model.TaskInfo{
+			taskInfo := app.TaskInfo{
 				TaskID:     taskID,
 				LastStatus: *task.LastStatus,
 				Version:    version.FormatExtract(*o.TaskDefinition.ContainerDefinitions[0].Image, instance.Task.ImageTagEx),
@@ -114,11 +114,11 @@ func getLogLink(logConfig ecs.LogConfiguration, taskID string, containerName str
 	return logLink
 }
 
-func keepMostRecentRevisions(tds []*ecs.TaskDefinition, regex string) map[string]model.Definition {
-	releases := map[string]model.Definition{}
+func keepMostRecentRevisions(tds []*ecs.TaskDefinition, regex string) map[string]app.Definition {
+	releases := map[string]app.Definition{}
 
 	for _, td := range tds {
-		release := model.DefinitionFrom(td, regex)
+		release := app.DefinitionFrom(td, regex)
 		ver := release.FormatVersion()
 
 		if ver == "undetermined" {
@@ -128,10 +128,10 @@ func keepMostRecentRevisions(tds []*ecs.TaskDefinition, regex string) map[string
 		if len(ver) > 1 {
 			if tdv, found := releases[ver]; found {
 				if *td.Revision > tdv.Revision {
-					releases[ver] = model.DefinitionFrom(td, regex)
+					releases[ver] = app.DefinitionFrom(td, regex)
 				}
 			} else {
-				releases[ver] = model.DefinitionFrom(td, regex)
+				releases[ver] = app.DefinitionFrom(td, regex)
 			}
 		}
 	}

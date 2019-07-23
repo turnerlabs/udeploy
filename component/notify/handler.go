@@ -1,21 +1,24 @@
 package notify
 
 import (
+	"github.com/turnerlabs/udeploy/component/app"
+	"github.com/turnerlabs/udeploy/component/user"
 	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 
+	"github.com/turnerlabs/udeploy/component/session"
+
 	"github.com/labstack/echo/v4"
-	"github.com/turnerlabs/udeploy/model"
 )
 
 // Start ...
 func Start(c echo.Context, updatesChan chan interface{}) error {
 	ctx := c.Get("ctx").(context.Context)
 
-	usr := ctx.Value(model.ContextKey("user")).(model.User)
+	usr := ctx.Value(session.ContextKey("user")).(user.User)
 
 	for {
 		select {
@@ -31,7 +34,7 @@ func Start(c echo.Context, updatesChan chan interface{}) error {
 				break
 			}
 
-			app, ok := msg.(model.Application)
+			app, ok := msg.(app.Application)
 			if !ok {
 				log.Println("invalid message")
 				continue

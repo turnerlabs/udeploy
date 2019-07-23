@@ -3,17 +3,20 @@ package cache
 import (
 	"net/http"
 
+	"github.com/turnerlabs/udeploy/component/user"
+
+	"github.com/turnerlabs/udeploy/component/session"
+
 	"github.com/labstack/echo/v4"
 	"github.com/turnerlabs/udeploy/component/app"
 	"github.com/turnerlabs/udeploy/component/supplement"
-	"github.com/turnerlabs/udeploy/model"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // App ..
 func App(c echo.Context) error {
 	ctx := c.Get("ctx").(mongo.SessionContext)
-	usr := ctx.Value(model.ContextKey("user")).(model.User)
+	usr := ctx.Value(session.ContextKey("user")).(user.User)
 
 	apps, err := app.Get(ctx, c.Param("app"))
 	if err != nil {

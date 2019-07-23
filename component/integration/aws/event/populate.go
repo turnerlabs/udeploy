@@ -3,16 +3,17 @@ package event
 import (
 	"fmt"
 
+	"github.com/turnerlabs/udeploy/component/app"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudwatchevents"
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/turnerlabs/udeploy/component/integration/aws/task"
-	"github.com/turnerlabs/udeploy/model"
 )
 
 // Populate ...
-func Populate(instances map[string]model.Instance, details bool) (map[string]model.Instance, error) {
+func Populate(instances map[string]app.Instance, details bool) (map[string]app.Instance, error) {
 	sesssion := session.New()
 
 	evtSvc := cloudwatchevents.New(sesssion)
@@ -22,14 +23,14 @@ func Populate(instances map[string]model.Instance, details bool) (map[string]mod
 
 	for name, instance := range instances {
 
-		go func(innerName string, innerInstance model.Instance, innerEcs *ecs.ECS, innerEvt *cloudwatchevents.CloudWatchEvents) {
-			state := model.State{}
+		go func(innerName string, innerInstance app.Instance, innerEcs *ecs.ECS, innerEvt *cloudwatchevents.CloudWatchEvents) {
+			state := app.State{}
 
 			td, ruleOutput, target, err := getServiceInfo(innerInstance, innerEcs, innerEvt)
 			if err != nil {
 				state.Error = err
 			} else {
-				innerInstance.Task.Definition = model.DefinitionFrom(td, innerInstance.Task.ImageTagEx)
+				innerInstance.Task.Definition = app.DefinitionFrom(td, innerInstance.Task.ImageTagEx)
 
 				state.IsPending, state.IsRunning, err = getStatus(innerInstance, td, innerEcs)
 				if err != nil {
@@ -78,10 +79,10 @@ func isCronEnabled(state string) bool {
 
 type chanModel struct {
 	name     string
-	instance model.Instance
+	instance app.Instance
 }
 
-func getStatus(instance model.Instance, td *ecs.TaskDefinition, svc *ecs.ECS) (isPending bool, isRunning bool, err error) {
+func getStatus(instance app.Instance, td *ecs.TaskDefinition, svc *ecs.ECS) (isPending bool, isRunning bool, err error) {
 	tasks, err := task.List(instance, svc, aws.String("RUNNING"))
 	if err != nil {
 		return false, false, err
@@ -97,7 +98,7 @@ func getStatus(instance model.Instance, td *ecs.TaskDefinition, svc *ecs.ECS) (i
 	return false, true, nil
 }
 
-func getServiceInfo(instance model.Instance, ecsSvc *ecs.ECS, evtSvc *cloudwatchevents.CloudWatchEvents) (*ecs.TaskDefinition, *cloudwatchevents.DescribeRuleOutput, *cloudwatchevents.Target, error) {
+func getServiceInfo(instance app.Instance, ecsSvc *ecs.ECS, evtSvc *cloudwatchevents.CloudWatchEvents) (*ecs.TaskDefinition, *cloudwatchevents.DescribeRuleOutput, *cloudwatchevents.Target, error) {
 	ruleInput := &cloudwatchevents.DescribeRuleInput{
 		Name: &instance.EventRule,
 	}

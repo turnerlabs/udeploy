@@ -1,6 +1,7 @@
 package notify
 
 import (
+	"github.com/turnerlabs/udeploy/component/app"
 	"github.com/turnerlabs/udeploy/component/notice"
 	"fmt"
 	"log"
@@ -9,7 +10,6 @@ import (
 
 	"github.com/turnerlabs/udeploy/component/cfg"
 	"github.com/turnerlabs/udeploy/component/integration/aws/sns"
-	"github.com/turnerlabs/udeploy/model"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -17,13 +17,13 @@ import (
 func Watch(ctx mongo.SessionContext, messages chan interface{}) error {
 
 	for msg := range messages {
-		app, ok := msg.(model.Application)
+		application, ok := msg.(app.Application)
 		if !ok {
 			log.Println("invalid message")
 			continue
 		}
 
-		for instanceName, inst := range app.Instances {
+		for instanceName, inst := range application.Instances {
 
 			if changed, changes := inst.Changed(); changed {
 
@@ -31,7 +31,7 @@ func Watch(ctx mongo.SessionContext, messages chan interface{}) error {
 					log.Printf("CHANGED: %s [%s] %s\n", inst.Task.Definition.ID, t, c)
 				}
 
-				notifications, err := notice.Get(ctx, app.Name)
+				notifications, err := notice.Get(ctx, application.Name)
 				if err != nil {
 					log.Println(err)
 					continue
@@ -41,9 +41,9 @@ func Watch(ctx mongo.SessionContext, messages chan interface{}) error {
 
 					if n.Enabled && n.Matches(instanceName, inst) {
 
-						subject := fmt.Sprintf("%s: %s %s %s (%s)", n.Name, app.Name, instanceName, inst.FormatVersion(), inst.String())
+						subject := fmt.Sprintf("%s: %s %s %s (%s)", n.Name, application.Name, instanceName, inst.FormatVersion(), inst.String())
 
-						body := fmt.Sprintf("%s\n\n %s/apps/%s/instance/%s", subject, cfg.Get["URL"], app.Name, instanceName)
+						body := fmt.Sprintf("%s\n\n %s/apps/%s/instance/%s", subject, cfg.Get["URL"], application.Name, instanceName)
 						if inst.CurrentState.Error != nil {
 							body = fmt.Sprintf("%s \n\n %s", body, inst.CurrentState.Error)
 						}
@@ -54,7 +54,7 @@ func Watch(ctx mongo.SessionContext, messages chan interface{}) error {
 					}
 				}
 
-				cache.Apps.ResetChangeState(app.Name, instanceName)
+				cache.Apps.ResetChangeState(application.Name, instanceName)
 			}
 		}
 	}

@@ -5,12 +5,11 @@ import (
 
 	"github.com/turnerlabs/udeploy/component/cfg"
 	"github.com/turnerlabs/udeploy/component/db"
-	"github.com/turnerlabs/udeploy/model"
 	"gopkg.in/mgo.v2/bson"
 )
 
 // Get ...
-func Get(ctx context.Context, app string) ([]model.Notice, error) {
+func Get(ctx context.Context, app string) ([]Notice, error) {
 
 	collection := db.Client().Database(cfg.Get["DB_NAME"]).Collection("notices")
 
@@ -18,52 +17,52 @@ func Get(ctx context.Context, app string) ([]model.Notice, error) {
 
 	cur, err := collection.Find(ctx, match)
 	if err != nil {
-		return []model.Notice{}, err
+		return []Notice{}, err
 	}
 	defer cur.Close(ctx)
 
-	notifications := []model.Notice{}
+	notifications := []Notice{}
 	for cur.Next(ctx) {
-		n := &model.Notice{}
+		n := &Notice{}
 
 		if err := cur.Decode(n); err != nil {
-			return []model.Notice{}, err
+			return []Notice{}, err
 		}
 
 		notifications = append(notifications, *n)
 	}
 
 	if err := cur.Err(); err != nil {
-		return []model.Notice{}, err
+		return []Notice{}, err
 	}
 
 	return notifications, nil
 }
 
 // GetAll ...
-func GetAll(ctx context.Context) ([]model.Notice, error) {
+func GetAll(ctx context.Context) ([]Notice, error) {
 
 	collection := db.Client().Database(cfg.Get["DB_NAME"]).Collection("notices")
 
 	cur, err := collection.Find(ctx, bson.M{})
 	if err != nil {
-		return []model.Notice{}, err
+		return []Notice{}, err
 	}
 	defer cur.Close(ctx)
 
-	notifications := []model.Notice{}
+	notifications := []Notice{}
 	for cur.Next(ctx) {
-		n := &model.Notice{}
+		n := &Notice{}
 
 		if err := cur.Decode(n); err != nil {
-			return []model.Notice{}, err
+			return []Notice{}, err
 		}
 
 		notifications = append(notifications, *n)
 	}
 
 	if err := cur.Err(); err != nil {
-		return []model.Notice{}, err
+		return []Notice{}, err
 	}
 
 	return notifications, nil

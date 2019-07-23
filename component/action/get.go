@@ -13,7 +13,6 @@ import (
 
 	"github.com/turnerlabs/udeploy/component/cfg"
 	"github.com/turnerlabs/udeploy/component/db"
-	"github.com/turnerlabs/udeploy/model"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -21,26 +20,26 @@ import (
 const ErrNotFound = "not found"
 
 // Get ...
-func Get(ctx context.Context, id primitive.ObjectID) (model.Action, error) {
+func Get(ctx context.Context, id primitive.ObjectID) (Action, error) {
 
 	collection := db.Client().Database(cfg.Get["DB_NAME"]).Collection("actions")
 
 	match := bson.M{"_id": id}
 
-	action := model.Action{}
+	action := Action{}
 	if err := collection.FindOne(ctx, match).Decode(&action); err != nil {
 		if err.Error() == mongo.ErrNoDocuments.Error() {
-			return model.Action{}, fmt.Errorf("%s is not a valid action", id)
+			return Action{}, fmt.Errorf("%s is not a valid action", id)
 		}
 
-		return model.Action{}, err
+		return Action{}, err
 	}
 
 	return action, nil
 }
 
 // GetLatestBy ...
-func GetLatestBy(ctx context.Context, definitionID string) (model.Action, error) {
+func GetLatestBy(ctx context.Context, definitionID string) (Action, error) {
 
 	collection := db.Client().Database(cfg.Get["DB_NAME"]).Collection("actions")
 
@@ -54,19 +53,19 @@ func GetLatestBy(ctx context.Context, definitionID string) (model.Action, error)
 
 	cur, err := collection.Find(ctx, match, &opts)
 	if err != nil {
-		return model.Action{}, err
+		return Action{}, err
 	}
 	defer cur.Close(ctx)
 
 	for cur.Next(ctx) {
-		a := model.Action{}
+		a := Action{}
 
 		if err := cur.Decode(&a); err != nil {
-			return model.Action{}, err
+			return Action{}, err
 		}
 
 		return a, nil
 	}
 
-	return model.Action{}, errors.New(ErrNotFound)
+	return Action{}, errors.New(ErrNotFound)
 }

@@ -1,11 +1,13 @@
 package main
 
 import (
+	"github.com/turnerlabs/udeploy/component/user"
 	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/turnerlabs/udeploy/component/commit"
+	sess "github.com/turnerlabs/udeploy/component/session"
 
 	mongosession "github.com/kendavis2/mongo"
 
@@ -29,7 +31,6 @@ import (
 	"github.com/turnerlabs/udeploy/component/save"
 	"github.com/turnerlabs/udeploy/component/scale"
 	echosession "github.com/turnerlabs/udeploy/component/session"
-	"github.com/turnerlabs/udeploy/model"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -109,7 +110,7 @@ func startRouter(changeNotifier *broker.Broker) {
 
 	v1.GET("/user", func(c echo.Context) error {
 		ctx := c.Get("ctx").(mongo.SessionContext)
-		usr := ctx.Value(model.ContextKey("user")).(model.User)
+		usr := ctx.Value(sess.ContextKey("user")).(user.User)
 
 		return c.JSON(http.StatusOK, usr)
 	}, request.Context)

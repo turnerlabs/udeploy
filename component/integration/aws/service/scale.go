@@ -1,14 +1,14 @@
 package service
 
 import (
+	"github.com/turnerlabs/udeploy/component/app"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecs"
-	"github.com/turnerlabs/udeploy/model"
 )
 
 // Scale ...
-func Scale(instance model.Instance, desiredCount int64, restart bool) error {
+func Scale(instance app.Instance, desiredCount int64, restart bool) error {
 
 	svc := ecs.New(session.New())
 

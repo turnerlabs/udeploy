@@ -1,11 +1,13 @@
 package auth
 
 import (
+	"github.com/turnerlabs/udeploy/component/user"
 	"fmt"
 	"net/http"
 
+	"github.com/turnerlabs/udeploy/component/session"
+
 	"github.com/labstack/echo/v4"
-	"github.com/turnerlabs/udeploy/model"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -15,7 +17,7 @@ func RequireAdmin(next echo.HandlerFunc) echo.HandlerFunc {
 
 		ctx := c.Get("ctx").(mongo.SessionContext)
 
-		usr := ctx.Value(model.ContextKey("user")).(model.User)
+		usr := ctx.Value(session.ContextKey("user")).(user.User)
 
 		if usr.Admin {
 			return next(c)
@@ -31,7 +33,7 @@ func RequireDeploy(next echo.HandlerFunc) echo.HandlerFunc {
 
 		ctx := c.Get("ctx").(mongo.SessionContext)
 
-		usr := ctx.Value(model.ContextKey("user")).(model.User)
+		usr := ctx.Value(session.ContextKey("user")).(user.User)
 
 		if usr.HasPermission(c.Param("app"), c.Param("instance"), "deploy") {
 			return next(c)
@@ -47,7 +49,7 @@ func RequireScale(next echo.HandlerFunc) echo.HandlerFunc {
 
 		ctx := c.Get("ctx").(mongo.SessionContext)
 
-		usr := ctx.Value(model.ContextKey("user")).(model.User)
+		usr := ctx.Value(session.ContextKey("user")).(user.User)
 
 		if usr.HasPermission(c.Param("app"), c.Param("instance"), "scale") {
 			return next(c)

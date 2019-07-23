@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/turnerlabs/udeploy/component/app"
+
 	"github.com/turnerlabs/udeploy/component/audit"
-	"github.com/turnerlabs/udeploy/model"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -13,20 +14,20 @@ import (
 func Propagate(ctx mongo.SessionContext, messages chan interface{}) error {
 
 	for msg := range messages {
-		app, ok := msg.(model.Application)
+		application, ok := msg.(app.Application)
 		if !ok {
 			log.Println("invalid message")
 			continue
 		}
 
-		for name, inst := range app.Instances {
+		for name, inst := range application.Instances {
 
 			if changed, changes := inst.Changed(); changed {
 				if _, found := changes["VERSION"]; found {
 
-					for targetName, target := range app.Instances {
+					for targetName, target := range application.Instances {
 						if target.AutoPropagate && target.Task.Registry == name && targetName != name {
-							updatedInst, err := deploy(ctx, app, targetName, name, inst.Task.Definition.Revision, deployOptions{})
+							updatedInst, err := deploy(ctx, application, targetName, name, inst.Task.Definition.Revision, deployOptions{})
 							if err != nil {
 								log.Println(err)
 								continue
@@ -34,7 +35,7 @@ func Propagate(ctx mongo.SessionContext, messages chan interface{}) error {
 
 							action := fmt.Sprintf("automatic %s deployment trigger by %s deployment (%s)", targetName, name, updatedInst.FormatVersion())
 
-							if err := audit.CreateEntry(ctx, app.Name, targetName, action); err != nil {
+							if err := audit.CreateEntry(ctx, application.Name, targetName, action); err != nil {
 								return err
 							}
 						}
