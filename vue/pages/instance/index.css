@@ -11,6 +11,16 @@
   max-height:300px;
 }
 
+.env {
+  table-layout: fixed;
+  width: 100%;
+ 
+}
+
+.env td {
+  word-wrap: break-word;
+}
+
 .link {
   color: #3273dc !important;
   cursor: pointer !important;
