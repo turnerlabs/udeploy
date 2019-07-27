@@ -27,7 +27,7 @@ func Propagate(ctx mongo.SessionContext, messages chan interface{}) error {
 
 					for targetName, target := range application.Instances {
 						if target.AutoPropagate && target.Task.Registry == name && targetName != name {
-							updatedInst, err := deploy(ctx, application, targetName, name, inst.Task.Definition.Revision, deployOptions{})
+							updatedInst, err := Deploy(ctx, application, targetName, name, inst.Task.Definition.Revision, Options{})
 							if err != nil {
 								log.Println(err)
 								continue

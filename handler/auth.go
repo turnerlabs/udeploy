@@ -1,7 +1,9 @@
-package auth
+package handler
 
 import (
 	"errors"
+
+	"github.com/turnerlabs/udeploy/component/auth"
 
 	"github.com/turnerlabs/udeploy/component/cfg"
 	"github.com/turnerlabs/udeploy/component/integration/oauth"
@@ -17,7 +19,7 @@ import (
 // Logout ...
 func Logout(c echo.Context) error {
 	store := echosession.FromContext(c)
-	store.Delete(authSessionName)
+	store.Delete(auth.AuthSessionName)
 
 	if err := store.Save(); err != nil {
 		return err
@@ -28,7 +30,7 @@ func Logout(c echo.Context) error {
 
 // Login ...
 func Login(c echo.Context) error {
-	state, err := json.Marshal(oauth.UpdateState(c.QueryParam(userURLParam)))
+	state, err := json.Marshal(oauth.UpdateState(c.QueryParam(auth.UserURLParam)))
 	if err != nil {
 		return err
 	}
@@ -56,7 +58,7 @@ func Response(c echo.Context) error {
 	}
 
 	store := echosession.FromContext(c)
-	store.Set(authSessionName, token)
+	store.Set(auth.AuthSessionName, token)
 
 	if err := store.Save(); err != nil {
 		return err

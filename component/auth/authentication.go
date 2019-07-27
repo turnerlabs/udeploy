@@ -17,12 +17,15 @@ import (
 )
 
 const (
-	authSessionName   = "oauth"
+	// AuthSessionName defines session for the user.
+	AuthSessionName = "oauth"
+
 	invalidSessionErr = "invalid session"
 
 	loginBaseURL = "/oauth2/login"
 
-	userURLParam = "user_url"
+	// UserURLParam is the url to redirect the user back to after authentication is complete.
+	UserURLParam = "user_url"
 
 	// UserIDParam is stored in the request context for auditing, logging, notifications, etc...
 	UserIDParam = "user_id"
@@ -34,7 +37,7 @@ func UnAuthRedirect(next echo.HandlerFunc) echo.HandlerFunc {
 
 		user, err := ensureUserToken(c)
 		if err != nil {
-			loginURL := fmt.Sprintf("%s?%s=%s", loginBaseURL, userURLParam, c.Request().URL.Path)
+			loginURL := fmt.Sprintf("%s?%s=%s", loginBaseURL, UserURLParam, c.Request().URL.Path)
 
 			return c.Redirect(http.StatusTemporaryRedirect, loginURL)
 		}
@@ -62,7 +65,7 @@ func UnAuthError(next echo.HandlerFunc) echo.HandlerFunc {
 
 func ensureUserToken(c echo.Context) (string, error) {
 	store := echosession.FromContext(c)
-	v, ok := store.Get(authSessionName)
+	v, ok := store.Get(AuthSessionName)
 	if !ok {
 		return "", errors.New(invalidSessionErr)
 	}
@@ -93,7 +96,7 @@ func ensureUserToken(c echo.Context) (string, error) {
 			return "", err
 		}
 
-		store.Set(authSessionName, newToken)
+		store.Set(AuthSessionName, newToken)
 		if err := store.Save(); err != nil {
 			return "", err
 		}

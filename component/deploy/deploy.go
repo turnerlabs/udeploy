@@ -30,7 +30,29 @@ const (
 	appTypeS3            = "s3"
 )
 
-func deploy(ctx mongo.SessionContext, application app.Application, target, source string, revision int64, opts deployOptions) (app.Instance, error) {
+// Options ...
+type Options struct {
+	Env      map[string]string `json:"env"`
+	Secrets  map[string]string `json:"secrets"`
+	ImageTag string            `json:"imageTag"`
+}
+
+// ToBusiness ...
+func (o Options) ToBusiness(repository string) task.DeployOptions {
+	m := task.DeployOptions{
+		Environment: o.Env,
+		Secrets:     o.Secrets,
+	}
+
+	if len(repository) > 0 && len(o.ImageTag) > 0 {
+		m.Image = fmt.Sprintf("%s:%s", repository, o.ImageTag)
+	}
+
+	return m
+}
+
+// Deploy ...
+func Deploy(ctx mongo.SessionContext, application app.Application, target, source string, revision int64, opts Options) (app.Instance, error) {
 
 	instances := application.GetInstances([]string{target, source})
 

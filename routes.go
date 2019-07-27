@@ -1,15 +1,21 @@
 package main
 
 import (
-	"github.com/turnerlabs/udeploy/component/user"
 	"context"
-	"fmt"
 	"net/http"
 
-	"github.com/turnerlabs/udeploy/component/commit"
-	sess "github.com/turnerlabs/udeploy/component/session"
+	"github.com/turnerlabs/udeploy/component/audit"
+	"github.com/turnerlabs/udeploy/component/auth"
+	"github.com/turnerlabs/udeploy/component/broker"
+	"github.com/turnerlabs/udeploy/component/build"
+	"github.com/turnerlabs/udeploy/component/cache"
+	"github.com/turnerlabs/udeploy/component/cfg"
+	"github.com/turnerlabs/udeploy/component/logger"
+	"github.com/turnerlabs/udeploy/component/user"
+	"github.com/turnerlabs/udeploy/handler"
 
 	mongosession "github.com/kendavis2/mongo"
+	sess "github.com/turnerlabs/udeploy/component/session"
 
 	"github.com/turnerlabs/udeploy/component/db"
 	"github.com/turnerlabs/udeploy/component/request"
@@ -17,19 +23,7 @@ import (
 	"github.com/go-session/session"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/turnerlabs/udeploy/component/audit"
-	"github.com/turnerlabs/udeploy/component/auth"
-	"github.com/turnerlabs/udeploy/component/broker"
-	"github.com/turnerlabs/udeploy/component/build"
-	"github.com/turnerlabs/udeploy/component/cache"
-	"github.com/turnerlabs/udeploy/component/cfg"
-	"github.com/turnerlabs/udeploy/component/delete"
-	"github.com/turnerlabs/udeploy/component/deploy"
-	"github.com/turnerlabs/udeploy/component/get"
-	"github.com/turnerlabs/udeploy/component/logger"
-	"github.com/turnerlabs/udeploy/component/notify"
-	"github.com/turnerlabs/udeploy/component/save"
-	"github.com/turnerlabs/udeploy/component/scale"
+
 	echosession "github.com/turnerlabs/udeploy/component/session"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -40,7 +34,7 @@ func startRouter(changeNotifier *broker.Broker) {
 	e := echo.New()
 
 	//--------------------------------------------------
-	//- General middleware set up
+	//- Middleware
 	//--------------------------------------------------
 	e.Use(logger.LogErrors)
 	e.Use(middleware.Recover())
@@ -74,9 +68,9 @@ func startRouter(changeNotifier *broker.Broker) {
 	//- OAuth routes
 	//--------------------------------------------------
 	oauth := e.Group("/oauth2")
-	oauth.GET("/logout", func(c echo.Context) error { return auth.Logout(c) })
-	oauth.GET("/login", func(c echo.Context) error { return auth.Login(c) })
-	oauth.GET("/response", func(c echo.Context) error { return auth.Response(c) })
+	oauth.GET("/logout", handler.Logout)
+	oauth.GET("/login", handler.Login)
+	oauth.GET("/response", handler.Response)
 
 	//--------------------------------------------------
 	//- Redirects
@@ -85,89 +79,44 @@ func startRouter(changeNotifier *broker.Broker) {
 	e.GET("/apps/", func(c echo.Context) error { return c.Redirect(http.StatusMovedPermanently, "/apps") })
 
 	//--------------------------------------------------
-	//- Publish real-time app changes to clients
+	//- Broadcast real-time app changes to clients
 	//--------------------------------------------------
-	events := e.Group("/events", auth.UnAuthError)
-	events.GET("/app/changes", func(c echo.Context) error {
-		c.Response().Header().Set("Content-Type", "text/event-stream")
-		c.Response().Header().Set("Cache-Control", "no-cache")
-
-		fmt.Fprint(c.Response().Writer, "event: open\n\n")
-		if f, ok := c.Response().Writer.(http.Flusher); ok {
-			f.Flush()
-		}
-
-		changes := changeNotifier.Subscribe()
-		defer changeNotifier.Unsubscribe(changes)
-
-		return notify.Start(c, changes)
-	}, request.Context)
+	events := e.Group("/events", auth.UnAuthError, request.Context)
+	events.GET("/app/changes", func(c echo.Context) error { return handler.Change(c, changeNotifier) })
 
 	//--------------------------------------------------
-	//- v1 routes
+	//- V1 routes
 	//--------------------------------------------------
-	v1 := e.Group("/v1", auth.UnAuthError)
+	v1 := e.Group("/v1", auth.UnAuthError, request.Context)
 
 	v1.GET("/user", func(c echo.Context) error {
 		ctx := c.Get("ctx").(mongo.SessionContext)
 		usr := ctx.Value(sess.ContextKey("user")).(user.User)
-
 		return c.JSON(http.StatusOK, usr)
-	}, request.Context)
-	v1.GET("/users", func(c echo.Context) error {
-		return get.Users(c)
-	}, request.Context, auth.RequireAdmin)
-	v1.POST("/users/:id", func(c echo.Context) error {
-		return save.User(c)
-	}, request.Context, auth.RequireAdmin)
-	v1.DELETE("/users/:id", func(c echo.Context) error {
-		return delete.User(c)
-	}, request.Context, auth.RequireAdmin)
-	v1.GET("/notices", func(c echo.Context) error {
-		return get.Notices(c)
-	}, request.Context, auth.RequireAdmin)
-	v1.POST("/notices/:id", func(c echo.Context) error {
-		return save.Notice(c)
-	}, request.Context, auth.RequireAdmin)
-	v1.DELETE("/notices/:id", func(c echo.Context) error {
-		return delete.Notice(c)
-	}, request.Context, auth.RequireAdmin)
-	v1.GET("/apps", func(c echo.Context) error {
-		return get.Apps(c)
-	}, request.Context)
-	v1.GET("/apps/:app", func(c echo.Context) error {
-		return get.App(c)
-	}, request.Context)
-	v1.DELETE("/apps/:app", func(c echo.Context) error {
-		return delete.App(c)
-	}, request.Context, auth.RequireAdmin)
-	v1.PUT("/apps/:app/cache", func(c echo.Context) error {
-		return cache.App(c)
-	}, request.Context)
-	v1.POST("/apps/:app", func(c echo.Context) error {
-		return save.App(c)
-	}, request.Context)
-	v1.GET("/apps/:app/instances/:registryInstance/registry", func(c echo.Context) error {
-		return build.GetBuilds(c)
-	}, request.Context)
-	v1.PUT("/apps/:app/instances/:instance/scale/:desiredCount", func(c echo.Context) error {
-		return scale.Instance(c, false)
-	}, request.Context, auth.RequireScale, cache.EnsureCache, audit.Audit)
-	v1.PUT("/apps/:app/instances/:instance/restart/:desiredCount", func(c echo.Context) error {
-		return scale.Instance(c, true)
-	}, request.Context, auth.RequireScale, cache.EnsureCache, audit.Audit)
-	v1.POST("/apps/:app/instances/:instance/deploy/:registryInstance/:revision", func(c echo.Context) error {
-		return deploy.Revision(c)
-	}, request.Context, auth.RequireDeploy, cache.EnsureCache, audit.Audit)
-	v1.GET("/apps/:app/instances/:instance/commits", func(c echo.Context) error {
-		return commit.GetInstanceCommits(c)
-	}, request.Context, cache.EnsureCache)
-	v1.GET("/apps/:app/version/range/:current/to/:target/commits", func(c echo.Context) error {
-		return commit.GetVersionCommitsByRange(c)
-	}, request.Context, cache.EnsureCache)
-	v1.GET("/apps/:app/instances/:instance/audit", func(c echo.Context) error {
-		return audit.GetAuditEntries(c)
-	}, request.Context)
+	})
+	v1.GET("/users", handler.GetUsers, auth.RequireAdmin)
+	v1.POST("/users/:id", handler.SaveUser, auth.RequireAdmin)
+	v1.DELETE("/users/:id", handler.DeleteUser, auth.RequireAdmin)
+
+	v1.GET("/notices", handler.GetNotices, auth.RequireAdmin)
+	v1.POST("/notices/:id", handler.SaveNotice, auth.RequireAdmin)
+	v1.DELETE("/notices/:id", handler.DeleteNotice, auth.RequireAdmin)
+
+	v1.GET("/apps", handler.GetApps)
+	v1.GET("/apps/:app", handler.GetCachedApp)
+	v1.DELETE("/apps/:app", handler.DeleteApp, auth.RequireAdmin)
+	v1.PUT("/apps/:app/cache", handler.GetCachedApp)
+	v1.POST("/apps/:app", handler.SaveApp)
+	v1.GET("/apps/:app/instances/:registryInstance/registry", build.GetBuilds)
+
+	v1.PUT("/apps/:app/instances/:instance/restart/:desiredCount", handler.Restart, auth.RequireScale, cache.EnsureCache, audit.Audit)
+	v1.PUT("/apps/:app/instances/:instance/scale/:desiredCount", handler.Scale, auth.RequireScale, cache.EnsureCache, audit.Audit)
+
+	v1.POST("/apps/:app/instances/:instance/deploy/:registryInstance/:revision", handler.DeployRevision, auth.RequireDeploy, cache.EnsureCache, audit.Audit)
+
+	v1.GET("/apps/:app/instances/:instance/commits", handler.GetInstanceCommits, cache.EnsureCache)
+	v1.GET("/apps/:app/instances/:instance/audit", handler.GetAuditEntries)
+	v1.GET("/apps/:app/version/range/:current/to/:target/commits", handler.GetVersionCommitsByRange, cache.EnsureCache)
 
 	//--------------------------------------------------
 	//- UI static files

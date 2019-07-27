@@ -1,8 +1,10 @@
-package commit
+package handler
 
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/turnerlabs/udeploy/component/commit"
 
 	"github.com/labstack/echo/v4"
 	"github.com/turnerlabs/udeploy/component/cache"
@@ -27,7 +29,7 @@ func GetInstanceCommits(c echo.Context) error {
 		return fmt.Errorf("%s instance not found", c.Param("instance"))
 	}
 
-	commits, err := BuildRelease(app.Repo.Org, app.Repo.Name, inst.Version(), "", apiURL, app.Repo.AccessToken, 50, app.Repo.CommitConfig)
+	commits, err := commit.BuildRelease(app.Repo.Org, app.Repo.Name, inst.Version(), "", apiURL, app.Repo.AccessToken, 50, app.Repo.CommitConfig)
 	if err != nil {
 		return err
 	}
@@ -47,7 +49,7 @@ func GetVersionCommitsByRange(c echo.Context) error {
 		return c.JSON(http.StatusOK, []string{})
 	}
 
-	commits, err := BuildRelease(app.Repo.Org, app.Repo.Name, c.Param("target"), c.Param("current"), apiURL, app.Repo.AccessToken, 50, app.Repo.CommitConfig)
+	commits, err := commit.BuildRelease(app.Repo.Org, app.Repo.Name, c.Param("target"), c.Param("current"), apiURL, app.Repo.AccessToken, 50, app.Repo.CommitConfig)
 	if err != nil {
 		return err
 	}

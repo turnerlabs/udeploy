@@ -1,8 +1,9 @@
-package cache
+package handler
 
 import (
 	"net/http"
 
+	"github.com/turnerlabs/udeploy/component/cache"
 	"github.com/turnerlabs/udeploy/component/user"
 
 	"github.com/turnerlabs/udeploy/component/session"
@@ -13,8 +14,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// App ..
-func App(c echo.Context) error {
+// GetCachedApp ..
+func GetCachedApp(c echo.Context) error {
 	ctx := c.Get("ctx").(mongo.SessionContext)
 	usr := ctx.Value(session.ContextKey("user")).(user.User)
 
@@ -30,7 +31,7 @@ func App(c echo.Context) error {
 
 	apps[0].Instances = instances
 
-	Apps.Update(apps[0])
+	cache.Apps.Update(apps[0])
 
 	return c.JSON(http.StatusOK, apps[0].ToView(usr))
 }

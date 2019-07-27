@@ -1,6 +1,7 @@
-package audit
+package handler
 
 import (
+	"github.com/turnerlabs/udeploy/component/audit"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -11,7 +12,7 @@ import (
 func GetAuditEntries(c echo.Context) error {
 	ctx := c.Get("ctx").(mongo.SessionContext)
 
-	entries, err := GetEntriesByAppInstance(ctx, c.Param("app"), c.Param("instance"))
+	entries, err := audit.GetEntriesByAppInstance(ctx, c.Param("app"), c.Param("instance"))
 	if err != nil {
 		return err
 	}

@@ -1,17 +1,28 @@
-package scale
+package handler
 
 import (
 	"fmt"
 	"net/http"
 	"strconv"
 
+	"github.com/turnerlabs/udeploy/component/scale"
+
 	"github.com/labstack/echo/v4"
 	"github.com/turnerlabs/udeploy/component/cache"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// Instance ...
-func Instance(c echo.Context, restart bool) error {
+// Scale ...
+func Scale(c echo.Context) error {
+	return scaleInstance(c, false)
+}
+
+// Restart ...
+func Restart(c echo.Context) error {
+	return scaleInstance(c, true)
+}
+
+func scaleInstance(c echo.Context, restart bool) error {
 	ctx := c.Get("ctx").(mongo.SessionContext)
 
 	app, found := cache.Apps.Get(c.Param("app"))
@@ -29,11 +40,11 @@ func Instance(c echo.Context, restart bool) error {
 		return fmt.Errorf("%s instance not found", c.Param("instance"))
 	}
 
-	if err := Start(ctx, app.Type, targetInstance, desiredCount, restart); err != nil {
+	if err := scale.Start(ctx, app.Type, targetInstance, desiredCount, restart); err != nil {
 		return err
 	}
 
+	type success struct{}
+
 	return c.JSON(http.StatusOK, success{})
 }
-
-type success struct{}
