@@ -39,7 +39,7 @@ includeTenplates().then(() => {
 
             this.getConfig();
 
-            this.refresh();
+            this.refresh(true);
 
             this.watchForUpdates();
 
@@ -95,10 +95,13 @@ includeTenplates().then(() => {
                     that.alerts.push({ error: e });
                 });
             },
-            refresh() {
+            refresh(showPageLoading) {
                 this.isPartialLoading = true;
-                this.isLoading = true 
-            
+                
+                if (showPageLoading) {
+                    this.isLoading = true 
+                }
+                
                 let that = this;
 
                 fetch('/v1/apps/'+this.params.app)
@@ -164,7 +167,7 @@ includeTenplates().then(() => {
                         let app = JSON.parse(e.data);
 
                         if (that.app.name == app.name) {
-                            that.refresh()
+                            that.refresh(false)
                         }
                     }, false);
                 } else {

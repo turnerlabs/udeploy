@@ -160,6 +160,7 @@ Vue.component('deploy-modal', {
             }
 
             if (this.override.env) {
+                body.override = true
                 body.env = env.parse(this.environment, {});
                 body.secrets = env.parse(this.secrets, {});
             }
