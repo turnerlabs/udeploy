@@ -22,7 +22,9 @@ Vue.component('alert-banner', {
 <div v-if="alerts.length > 0" class="box has-background-danger has-text-white content">
     <a v-if="showReload" href="" class="button is-pulled-right">Try Reload</a>
     <p class="has-text-white has-text-weight-bold is-size-4">Alert</p>
-
-    <li v-for="a in alerts">{{ a.error.message }}</li>
+    
+    <div class="scroll">
+        <li v-for="a in alerts">{{ a.error.message }}</li>
+    </div>
 </div>`
 })
