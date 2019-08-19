@@ -49,6 +49,15 @@ includeTenplates().then(() => {
         },
 
         methods: {
+            addError(err) {
+                for (let a in this.alerts) {
+                    if (this.alerts[a].error.message == err.message) {
+                        return
+                    } 
+                } 
+
+                this.alerts.push({ error: err });
+            },
             getCommits() {
                 let that = this
 
@@ -123,7 +132,7 @@ includeTenplates().then(() => {
                             that.instance = app.instances[i]
 
                             if (that.instance.error && that.instance.error.length > 0) {
-                                that.alerts.push({ error: new Error(that.instance.error) })
+                                that.addError(new Error(that.instance.error));
                             }
                         }
                     }
@@ -137,7 +146,7 @@ includeTenplates().then(() => {
                     that.updateTime();
                     
                 }).catch(function(e) {
-                    that.alerts.push({ error: e });
+                    that.addError(e);
                 }).finally(function() {
                     that.isPartialLoading = false;
                     that.isLoading = false
