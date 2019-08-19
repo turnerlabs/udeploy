@@ -32,9 +32,11 @@ const (
 
 // Options ...
 type Options struct {
+	Override bool              `json:"override"`
 	Env      map[string]string `json:"env"`
 	Secrets  map[string]string `json:"secrets"`
-	ImageTag string            `json:"imageTag"`
+
+	ImageTag string `json:"imageTag"`
 }
 
 // ToBusiness ...
@@ -42,6 +44,7 @@ func (o Options) ToBusiness(repository string) task.DeployOptions {
 	m := task.DeployOptions{
 		Environment: o.Env,
 		Secrets:     o.Secrets,
+		Override:    o.Override,
 	}
 
 	if len(repository) > 0 && len(o.ImageTag) > 0 {
