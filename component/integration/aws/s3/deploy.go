@@ -34,7 +34,7 @@ import (
 // Deploy ...
 func Deploy(ctx mongo.SessionContext, actionID primitive.ObjectID, source app.Instance, target app.Instance, revision int64, opts task.DeployOptions) error {
 
-	if opts.OverrideSecrets() {
+	if len(opts.Secrets) > 0 {
 		return errors.New("s3 does not support secrets")
 	}
 
@@ -73,7 +73,7 @@ func Deploy(ctx mongo.SessionContext, actionID primitive.ObjectID, source app.In
 		"revision": aws.String(strconv.FormatInt(revision, 10)),
 	}
 
-	if !opts.OverrideEnvironment() {
+	if !opts.Override {
 		if opts.Environment, err = buildConfig(source, target, sess); err != nil {
 			return err
 		}

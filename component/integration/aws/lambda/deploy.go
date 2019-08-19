@@ -1,7 +1,6 @@
 package lambda
 
 import (
-	"github.com/turnerlabs/udeploy/component/app"
 	"errors"
 	"fmt"
 	"io"
@@ -10,6 +9,8 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+
+	"github.com/turnerlabs/udeploy/component/app"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -22,7 +23,7 @@ import (
 // Deploy ...
 func Deploy(source app.Instance, target app.Instance, revision int64, opts task.DeployOptions) error {
 
-	if opts.OverrideSecrets() {
+	if len(opts.Secrets) > 0 {
 		return errors.New("lambda functions do not support secrets")
 	}
 
@@ -32,7 +33,7 @@ func Deploy(source app.Instance, target app.Instance, revision int64, opts task.
 
 	sourceFuncArn := fmt.Sprintf("%s:%d", source.FunctionName, revision)
 
-	if source.FunctionName != target.FunctionName || opts.Override() {
+	if source.FunctionName != target.FunctionName || opts.Override {
 
 		sourceFunc, err := svc.GetFunction(&lambda.GetFunctionInput{
 			FunctionName: aws.String(sourceFuncArn),
@@ -113,7 +114,7 @@ func deployConfig(target app.Instance, sourceEnvironment map[string]*string, opt
 		}
 	}
 
-	if opts.OverrideEnvironment() {
+	if opts.Override {
 		input.Environment.SetVariables(aws.StringMap(opts.Environment))
 	}
 

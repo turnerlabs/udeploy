@@ -120,12 +120,18 @@ func (m message) toView() (MessageView, error) {
 				return MessageView{}, err
 			}
 
-			if detail.ErrorCode == "ClientException" {
+			switch detail.ErrorCode {
+			case "ClientException", "AccessDenied":
 				return MessageView{}, errors.New(unmonitoredMessageError)
 			}
 
+			id, err := detail.taskDefinition()
+			if err != nil {
+				return MessageView{}, err
+			}
+
 			return MessageView{
-				ID: detail.taskDefinition(),
+				ID: id,
 			}, nil
 		}
 	case "ECS Task State Change":
@@ -163,8 +169,12 @@ type logMessageDetail struct {
 	LogResponse logResponse `json:"responseElements"`
 }
 
-func (d logMessageDetail) taskDefinition() string {
-	return d.LogResponse.LogTaskDefinition.TaskDefinitionArn[strings.Index(d.LogResponse.LogTaskDefinition.TaskDefinitionArn, "/")+1 : strings.LastIndex(d.LogResponse.LogTaskDefinition.TaskDefinitionArn, ":")]
+func (d logMessageDetail) taskDefinition() (string, error) {
+	if len(d.LogResponse.LogTaskDefinition.TaskDefinitionArn) == 0 {
+		return "", errors.New("task definition not found")
+	}
+
+	return d.LogResponse.LogTaskDefinition.TaskDefinitionArn[strings.Index(d.LogResponse.LogTaskDefinition.TaskDefinitionArn, "/")+1 : strings.LastIndex(d.LogResponse.LogTaskDefinition.TaskDefinitionArn, ":")], nil
 }
 
 type logResponse struct {

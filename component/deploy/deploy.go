@@ -107,7 +107,6 @@ func Deploy(ctx mongo.SessionContext, application app.Application, target, sourc
 				if err := mongo.WithSession(context.Background(), sess, func(sctx mongo.SessionContext) error {
 					return action.Stop(sctx, id, fmt.Errorf("deployment timed out after %d minutes", maxJobRuntime))
 				}); err != nil {
-					fmt.Println("ended?????")
 					log.Println(err)
 				}
 			}

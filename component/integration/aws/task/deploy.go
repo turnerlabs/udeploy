@@ -12,24 +12,12 @@ import (
 
 // DeployOptions ...
 type DeployOptions struct {
+	Override bool
+
 	Environment map[string]string
 	Secrets     map[string]string
-	Image       string
-}
 
-// Override ...
-func (do DeployOptions) Override() bool {
-	return do.OverrideEnvironment() || do.OverrideSecrets()
-}
-
-// OverrideEnvironment ...
-func (do DeployOptions) OverrideEnvironment() bool {
-	return len(do.Environment) > 0
-}
-
-// OverrideSecrets ...
-func (do DeployOptions) OverrideSecrets() bool {
-	return len(do.Secrets) > 0
+	Image string
 }
 
 // DeployImage ...
@@ -66,7 +54,8 @@ func Deploy(source app.Instance, target app.Instance, sourceRevision int64, sour
 			targetContainer = targetContainer.SetImage(*sourceContainer.Image)
 
 			secrets := targetContainer.Secrets
-			if opts.OverrideSecrets() {
+
+			if opts.Override {
 				secrets = []*ecs.Secret{}
 
 				for n, v := range opts.Secrets {
@@ -94,12 +83,16 @@ func Deploy(source app.Instance, target app.Instance, sourceRevision int64, sour
 				environment = cloneEnvironment(sourceContainer.Environment, environment, target.Task.CloneEnvVars)
 			}
 
-			if opts.OverrideEnvironment() {
+			if opts.Override {
 				environment = newEnvironment(opts.Environment)
 			}
 
 			targetContainer = targetContainer.SetSecrets(secrets)
 			targetContainer = targetContainer.SetEnvironment(environment)
+
+			fmt.Printf("%+v \n", secrets)
+			fmt.Printf("%+v \n", environment)
+
 			containerDefinitions = append(containerDefinitions, targetContainer)
 		}
 	} else {
