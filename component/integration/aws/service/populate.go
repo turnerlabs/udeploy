@@ -196,7 +196,7 @@ func isPending(svc *ecs.Service) bool {
 }
 
 func isRunning(svc *ecs.Service) bool {
-	return *svc.RunningCount > 0 && *svc.RunningCount == *svc.DesiredCount
+	return *svc.RunningCount > 0 && *svc.RunningCount >= *svc.DesiredCount
 }
 
 func getServiceInfo(instance app.Instance, svc *ecs.ECS) (*ecs.TaskDefinition, *ecs.Service, error) {
