@@ -58,8 +58,6 @@ func Deploy(source app.Instance, target app.Instance, revision int64, opts task.
 			return err
 		}
 
-		fmt.Println(*sourceFunc.Configuration.Description)
-
 		lo, err := svc.ListVersionsByFunction(&lambda.ListVersionsByFunctionInput{
 			FunctionName: aws.String(target.FunctionName),
 		})
@@ -81,10 +79,6 @@ func Deploy(source app.Instance, target app.Instance, revision int64, opts task.
 
 		rev = *vo.Version
 	}
-
-	fmt.Println(target.FunctionAlias)
-	fmt.Println(target.FunctionName)
-	fmt.Println(rev)
 
 	_, err := svc.UpdateAlias(&lambda.UpdateAliasInput{
 		Name:            aws.String(target.FunctionAlias),

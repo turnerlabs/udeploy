@@ -90,9 +90,6 @@ func Deploy(source app.Instance, target app.Instance, sourceRevision int64, sour
 			targetContainer = targetContainer.SetSecrets(secrets)
 			targetContainer = targetContainer.SetEnvironment(environment)
 
-			fmt.Printf("%+v \n", secrets)
-			fmt.Printf("%+v \n", environment)
-
 			containerDefinitions = append(containerDefinitions, targetContainer)
 		}
 	} else {
