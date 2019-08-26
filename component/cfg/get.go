@@ -27,6 +27,8 @@ const (
 	snsAlarmTopicArn = "SNS_ALARM_TOPIC_ARN"
 
 	consoleLink = "CONSOLE_LINK"
+
+	preCache = "PRE_CACHE"
 )
 
 // Get ...
@@ -130,4 +132,11 @@ func init() {
 		log.Fatalf("environment variable %s required", consoleLink)
 	}
 	Get[consoleLink] = v
+
+	if v, exists = os.LookupEnv(preCache); exists {
+		Get[preCache] = v
+	} else {
+		Get[preCache] = "false"
+	}
+
 }

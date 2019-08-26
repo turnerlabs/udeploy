@@ -10,14 +10,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-const (
-	// Pending ...
-	Pending = "pending"
-
-	// Error ...
-	Error = "error"
-)
-
 // Application ...
 type Application struct {
 	ID primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`

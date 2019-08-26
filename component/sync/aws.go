@@ -1,6 +1,7 @@
 package sync
 
 import (
+	"github.com/turnerlabs/udeploy/component/action"
 	"github.com/turnerlabs/udeploy/component/app"
 	"github.com/turnerlabs/udeploy/component/cache"
 	"github.com/turnerlabs/udeploy/component/integration/aws/sqs"
@@ -32,6 +33,18 @@ func handleChange(ctx mongo.SessionContext, message sqs.MessageView) error {
 
 	for name, inst := range application.Instances {
 		if message.ID == inst.Task.Definition.ID {
+
+			if act, err := action.GetCurrentBy(ctx, inst.Task.Definition.ID); err == nil {
+
+				if act.Is(action.Pending) {
+					if err := action.Stop(ctx, act.ID, nil); err != nil {
+						return err
+					}
+				}
+
+			} else if err.Error() != action.ErrNotFound {
+				return err
+			}
 
 			instances, err := supplement.Instances(ctx, application.Type, map[string]app.Instance{name: inst}, false)
 			if err != nil {

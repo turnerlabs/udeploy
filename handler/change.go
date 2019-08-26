@@ -6,7 +6,6 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/turnerlabs/udeploy/component/broker"
-	"github.com/turnerlabs/udeploy/component/notify"
 )
 
 // Change ...
@@ -22,5 +21,5 @@ func Change(c echo.Context, changeNotifier *broker.Broker) error {
 	changes := changeNotifier.Subscribe()
 	defer changeNotifier.Unsubscribe(changes)
 
-	return notify.Start(c, changes)
+	return NotifyClients(c, changes)
 }

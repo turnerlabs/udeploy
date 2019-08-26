@@ -23,7 +23,7 @@ func Propagate(ctx mongo.SessionContext, messages chan interface{}) error {
 		for name, inst := range application.Instances {
 
 			if changed, changes := inst.Changed(); changed {
-				if _, found := changes["VERSION"]; found {
+				if _, found := changes[app.ChangeTypeVersion]; found {
 
 					for targetName, target := range application.Instances {
 						if target.AutoPropagate && target.Task.Registry == name && targetName != name {

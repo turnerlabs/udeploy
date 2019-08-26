@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -39,10 +38,12 @@ type InstanceView struct {
 	Containers []ContainerView `json:"containers"`
 	Deployment DeploymentView  `json:"deployment"`
 
-	Error        string `json:"error"`
-	IsRunning    bool   `json:"isRunning"`
-	DesiredCount int64  `json:"desiredCount"`
-	Edited       bool   `json:"edited"`
+	Error     string `json:"error"`
+	ErrorType string `json:"errorType"`
+
+	IsRunning    bool  `json:"isRunning"`
+	DesiredCount int64 `json:"desiredCount"`
+	Edited       bool  `json:"edited"`
 
 	CronExpression string `json:"cronExpression"`
 	CronEnabled    bool   `json:"cronEnabled"`
@@ -51,14 +52,6 @@ type InstanceView struct {
 	Tokens map[string]string `json:"tokens"`
 
 	Links []Link `json:"links"`
-}
-
-// Link ...
-type Link struct {
-	Name        string `json:"name" bson:"name"`
-	URL         string `json:"url" bson:"url"`
-	Description string `json:"description" bson:"decription"`
-	Generated   bool   `json:"generated" bson:"-"`
 }
 
 // DeploymentView ...
@@ -99,7 +92,7 @@ type Instance struct {
 
 	// Calculated Fields
 	CurrentState  State `json:"-" bson:"-"`
-	previousState State
+	PreviousState State
 }
 
 // S3FullConfigKey ...
@@ -111,114 +104,25 @@ func (i *Instance) S3FullConfigKey() string {
 	return i.S3ConfigKey
 }
 
-// SetState ...
+// SetState initializes state.
 func (i *Instance) SetState(s State) {
-	i.previousState = s
 	i.CurrentState = s
 }
 
-// RecordState ...
-func (i *Instance) RecordState(s State) {
-	i.previousState = s
+// BackupState saves previous state. Updating an instance's cache should always call this function
+// to ensure the state previously cached is stored on the current instance allowing state
+// changes in state to be compared to each other.
+func (i *Instance) BackupState(s State) {
+	i.PreviousState = s
 }
 
 // Changed ...
 func (i *Instance) Changed() (bool, map[string]Change) {
-	return i.CurrentState.ChangedFrom(i.previousState)
-}
-
-// Status ...
-func (i *Instance) String() string {
-	if !i.CurrentState.IsPending {
-		if i.CurrentState.Version != i.previousState.Version {
-			return "deployed"
-		}
+	if i.PreviousState.Is == "" {
+		return false, map[string]Change{}
 	}
 
-	if i.CurrentState.Error != nil {
-		return "error"
-	}
-
-	if i.CurrentState.IsPending {
-		if i.CurrentState.Version != i.previousState.Version {
-			return "deploying"
-		}
-
-		if i.CurrentState.IsRunning {
-			return "pending"
-		}
-
-		if i.CurrentState.DesiredCount > 0 {
-			return "starting"
-		}
-	}
-
-	if i.CurrentState.IsRunning {
-		return "running"
-	}
-
-	return "stopped"
-}
-
-// State ...
-type State struct {
-	Version      string `json:"-" bson:"-"`
-	IsPending    bool   `json:"-" bson:"-"`
-	IsRunning    bool   `json:"-" bson:"-"`
-	DesiredCount int64  `json:"-" bson:"-"`
-	Error        error  `json:"-" bson:"-"`
-}
-
-// Change ...
-type Change struct {
-	Before string
-	After  string
-}
-
-func (c Change) String() string {
-	return fmt.Sprintf("%s => %s", c.Before, c.After)
-}
-
-// ChangedFrom ...
-func (s State) ChangedFrom(prev State) (bool, map[string]Change) {
-	changes := map[string]Change{}
-
-	if s.Error != nil && prev.Error == nil {
-		changes["ERROR"] = Change{
-			Before: fmt.Sprintf("%s", prev.Error),
-			After:  fmt.Sprintf("%s", s.Error),
-		}
-	}
-
-	if s.IsPending != prev.IsPending {
-		changes["PENDING"] = Change{
-			Before: strconv.FormatBool(prev.IsPending),
-			After:  strconv.FormatBool(s.IsPending),
-		}
-	}
-
-	if s.IsRunning != prev.IsRunning {
-		changes["RUNNING"] = Change{
-			Before: strconv.FormatBool(prev.IsRunning),
-			After:  strconv.FormatBool(s.IsRunning),
-		}
-	}
-
-	if s.DesiredCount != prev.DesiredCount {
-		changes["COUNT"] = Change{
-			Before: strconv.FormatInt(prev.DesiredCount, 10),
-			After:  strconv.FormatInt(s.DesiredCount, 10),
-		}
-	}
-
-	if s.Version != prev.Version {
-		changes["VERSION"] = Change{
-			Before: prev.Version,
-			After:  s.Version,
-		}
-	}
-
-	return len(changes) > 0, changes
+	return i.CurrentState.ChangedFrom(i.PreviousState)
 }
 
 // TaskView ...
@@ -247,11 +151,13 @@ type Task struct {
 
 	// Calculated Fields
 	Definition     Definition `json:"-" bson:"-"`
+	DesiredCount   int64      `json:"-" bson:"-"`
 	CronExpression string     `json:"-" bson:"-"`
 	CronEnabled    bool       `json:"-" bson:"-"`
 	TasksInfo      []TaskInfo `json:"-" bson:"-"`
 }
 
+// TaskInfo ...
 type TaskInfo struct {
 	TaskID         string    `json:"taskID"`
 	LastStatus     string    `json:"lastStatus"`
@@ -259,6 +165,14 @@ type TaskInfo struct {
 	Version        string    `json:"version"`
 	LogLink        string    `json:"logLink"`
 	Reason         string    `json:"reason"`
+}
+
+// Link ...
+type Link struct {
+	Name        string `json:"name" bson:"name"`
+	URL         string `json:"url" bson:"url"`
+	Description string `json:"description" bson:"decription"`
+	Generated   bool   `json:"generated" bson:"-"`
 }
 
 // ToBusiness ...
@@ -307,8 +221,7 @@ func (i Instance) ToView(name string, appClaim user.AppClaim) InstanceView {
 		FormattedVersion: i.FormatVersion(),
 		Version:          i.Version(),
 		Containers:       []ContainerView{},
-		IsRunning:        i.CurrentState.IsRunning,
-		DesiredCount:     i.CurrentState.DesiredCount,
+		IsRunning:        i.CurrentState.IsRunning(),
 		CronExpression:   i.Task.CronExpression,
 		CronEnabled:      i.Task.CronEnabled,
 		Claims:           map[string]bool{},
@@ -337,7 +250,7 @@ func (i Instance) ToView(name string, appClaim user.AppClaim) InstanceView {
 			CloneEnvVars: strings.Join(i.Task.CloneEnvVars, "\n"),
 		},
 		Deployment: DeploymentView{
-			IsPending: i.CurrentState.IsPending,
+			IsPending: i.CurrentState.IsPending(),
 		},
 	}
 
@@ -357,9 +270,14 @@ func (i Instance) ToView(name string, appClaim user.AppClaim) InstanceView {
 
 	if i.CurrentState.Error != nil {
 		v.Error = i.CurrentState.Error.Error()
+
+		if se, ok := i.CurrentState.Error.(StatusError); ok {
+			v.ErrorType = se.Type
+		}
 	}
 
 	v.Revision = i.Task.Definition.Revision
+	v.DesiredCount = i.Task.DesiredCount
 
 	v.Containers = append(v.Containers, ContainerView{
 		Image:       i.Task.Definition.Description,

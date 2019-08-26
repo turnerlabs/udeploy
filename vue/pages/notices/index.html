@@ -129,41 +129,36 @@
                               <div class="message-header">
                                 Watch Events
                               </div>
-                              <div class="message-body">
+                              <div class="message-body">  
+                                  <div class="field">
+                                  <label class="checkbox">
+                                      <input type="checkbox" v-on:change="didEdit(index)" v-model="notice.events.stopped"> Stopped 
+                                      <span class="help">Resource is not currently running.</span>
+                                  </label>
+                                  </div>
+                                  <div class="field">
+                                  <label class="checkbox">
+                                      <input type="checkbox" v-on:change="didEdit(index)" v-model="notice.events.pending"> Pending 
+                                      <span class="help">Resource is transitioning between statuses.</span>
+                                  </label>
+                                  </div>
+                                  <div class="field">
+                                  <label class="checkbox">
+                                      <input type="checkbox" v-on:change="didEdit(index)" v-model="notice.events.running"> Running 
+                                      <span class="help">Resource is running and appears healthy.</span>
+                                  </label>
+                                  </div>
+                                  <div class="field">
+                                  <label class="checkbox">
+                                      <input type="checkbox" v-on:change="didEdit(index)" v-model="notice.events.deployed"> Deployed 
+                                      <span class="help">Version deployed, waiting for resource to start.</span>
+                                  </label>
+                                  </div>
                                   <div class="field">
                                     <label class="checkbox">
-                                        <input type="checkbox" v-on:change="didEdit(index)" v-model="notice.events.error"> Error
+                                        <input type="checkbox" v-on:change="didEdit(index)" v-model="notice.events.error"> Error 
+                                        <span class="help">The requested user action or resource is failing.</span>
                                     </label>
-                                  </div>
-                                  <div class="field">
-                                  <label class="checkbox">
-                                      <input type="checkbox" v-on:change="didEdit(index)" v-model="notice.events.stopped"> Stopped
-                                  </label>
-                                  </div>
-                                  <div class="field">
-                                  <label class="checkbox">
-                                      <input type="checkbox" v-on:change="didEdit(index)" v-model="notice.events.starting"> Starting
-                                  </label>
-                                  </div>
-                                  <div class="field">
-                                  <label class="checkbox">
-                                      <input type="checkbox" v-on:change="didEdit(index)" v-model="notice.events.pending"> Pending
-                                  </label>
-                                  </div>
-                                  <div class="field">
-                                  <label class="checkbox">
-                                      <input type="checkbox" v-on:change="didEdit(index)" v-model="notice.events.running"> Running
-                                  </label>
-                                  </div>
-                                  <div class="field">
-                                  <label class="checkbox">
-                                      <input type="checkbox" v-on:change="didEdit(index)" v-model="notice.events.deploying"> Deploying
-                                  </label>
-                                  </div>
-                                  <div class="field">
-                                  <label class="checkbox">
-                                      <input type="checkbox" v-on:change="didEdit(index)" v-model="notice.events.deployed"> Deployed
-                                  </label>
                                   </div>
                               </div>
                           </article>

@@ -15,7 +15,7 @@ import (
 )
 
 // Populate ...
-func Populate(instances map[string]app.Instance, details bool) (map[string]app.Instance, error) {
+func Populate(instances map[string]app.Instance) (map[string]app.Instance, error) {
 
 	sess := session.New()
 
@@ -30,8 +30,6 @@ func Populate(instances map[string]app.Instance, details bool) (map[string]app.I
 			state.Error = err
 		}
 
-		state.Version = i.FormatVersion()
-
 		i.SetState(state)
 
 		instances[key] = i
@@ -42,9 +40,7 @@ func Populate(instances map[string]app.Instance, details bool) (map[string]app.I
 
 func populateInst(i app.Instance, svc *lambda.Lambda, cwsvc *cloudwatch.CloudWatch) (app.Instance, app.State, error) {
 
-	state := app.State{
-		DesiredCount: 1,
-	}
+	state := app.NewState()
 
 	alarm, err := cwsvc.DescribeAlarms(&cloudwatch.DescribeAlarmsInput{
 		AlarmNames: aws.StringSlice([]string{
@@ -94,6 +90,7 @@ func populateInst(i app.Instance, svc *lambda.Lambda, cwsvc *cloudwatch.CloudWat
 		return i, state, err
 	}
 
+	i.Task.DesiredCount = 1
 	i.Task.Definition = app.Definition{
 		ID:          fmt.Sprintf("%s-%s", i.FunctionName, i.FunctionAlias),
 		Description: fmt.Sprintf("%s.%s", version, build),

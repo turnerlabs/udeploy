@@ -3,6 +3,7 @@ package main // import "github.com/turnerlabs/udeploy"
 import (
 	"context"
 	"log"
+	"strconv"
 
 	"github.com/turnerlabs/udeploy/component/broker"
 	"github.com/turnerlabs/udeploy/component/cache"
@@ -45,13 +46,15 @@ func main() {
 	//--------------------------------------------------
 	//- Cache applications
 	//--------------------------------------------------
-	go func() {
-		if err = mongo.WithSession(ctx, sess, func(sctx mongo.SessionContext) error {
-			return cache.Ensure(sctx)
-		}); err != nil {
-			log.Fatal(err)
-		}
-	}()
+	if preCache, err := strconv.ParseBool(cfg.Get["PRE_CACHE"]); err == nil && preCache {
+		go func() {
+			if err = mongo.WithSession(ctx, sess, func(sctx mongo.SessionContext) error {
+				return cache.Ensure(sctx)
+			}); err != nil {
+				log.Fatal(err)
+			}
+		}()
+	}
 
 	//--------------------------------------------------
 	//- Monitor for changes

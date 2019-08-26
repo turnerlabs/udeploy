@@ -1,21 +1,22 @@
-package notify
+package handler
 
 import (
-	"github.com/turnerlabs/udeploy/component/app"
-	"github.com/turnerlabs/udeploy/component/user"
 	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 
+	"github.com/turnerlabs/udeploy/component/app"
+	"github.com/turnerlabs/udeploy/component/user"
+
 	"github.com/turnerlabs/udeploy/component/session"
 
 	"github.com/labstack/echo/v4"
 )
 
-// Start ...
-func Start(c echo.Context, updatesChan chan interface{}) error {
+// NotifyClients ...
+func NotifyClients(c echo.Context, updatesChan chan interface{}) error {
 	ctx := c.Get("ctx").(context.Context)
 
 	usr := ctx.Value(session.ContextKey("user")).(user.User)

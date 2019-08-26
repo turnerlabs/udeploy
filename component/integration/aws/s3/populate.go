@@ -16,7 +16,7 @@ import (
 )
 
 // Populate ...
-func Populate(instances map[string]app.Instance, details bool) (map[string]app.Instance, error) {
+func Populate(instances map[string]app.Instance) (map[string]app.Instance, error) {
 
 	sess := session.New()
 
@@ -42,9 +42,7 @@ func Populate(instances map[string]app.Instance, details bool) (map[string]app.I
 }
 
 func populateInst(i app.Instance, svc *s3.S3, downloader *s3manager.Downloader) (app.Instance, app.State, error) {
-	state := app.State{
-		DesiredCount: 1,
-	}
+	state := app.NewState()
 
 	id := fmt.Sprintf("%s-%s", i.S3Bucket, i.S3ConfigKey)
 	configKey := i.S3ConfigKey
@@ -57,6 +55,7 @@ func populateInst(i app.Instance, svc *s3.S3, downloader *s3manager.Downloader) 
 	}
 
 	i.Task.Definition = app.NewDefinition(id)
+	i.Task.DesiredCount = 1
 
 	oo, err := svc.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(i.S3Bucket),

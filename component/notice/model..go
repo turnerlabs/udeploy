@@ -23,55 +23,53 @@ type NoticeOption struct {
 
 // NoticeEvents ...
 type NoticeEvents struct {
-	Error     bool `json:"error" bson:"error"`
-	Starting  bool `json:"starting" bson:"starting"`
-	Pending   bool `json:"pending" bson:"pending"`
-	Running   bool `json:"running" bson:"running"`
-	Stopped   bool `json:"stopped" bson:"stopped"`
-	Deployed  bool `json:"deployed" bson:"deployed"`
-	Deploying bool `json:"deploying" bson:"deploying"`
+	Error    bool `json:"error" bson:"error"`
+	Pending  bool `json:"pending" bson:"pending"`
+	Running  bool `json:"running" bson:"running"`
+	Stopped  bool `json:"stopped" bson:"stopped"`
+	Deployed bool `json:"deployed" bson:"deployed"`
 }
 
 // Matches ...
-func (n Notice) Matches(instance string, inst app.Instance) bool {
-
-	switch inst.String() {
-	case "error":
-		if !n.Events.Error {
-			return false
-		}
-	case "starting":
-		if !n.Events.Starting {
-			return false
-		}
-	case "pending":
-		if !n.Events.Pending {
-			return false
-		}
-	case "running":
-		if !n.Events.Running {
-			return false
-		}
-	case "stopped":
-		if !n.Events.Stopped {
-			return false
-		}
-	case "deployed":
-		if !n.Events.Deployed {
-			return false
-		}
-	case "deploying":
-		if !n.Events.Deploying {
-			return false
-		}
-	}
+func (n Notice) Matches(instance string, t string, change app.Change) bool {
 
 	if len(n.Instances) == 0 {
-		return true
+		return matchesEvent(n, t, change)
 	}
 
 	for _, i := range n.Instances {
-		if instance == i.Name {
+		if i.Name == instance {
+			return matchesEvent(n, t, change)
+		}
+	}
+
+	return false
+}
+
+func matchesEvent(n Notice, t string, change app.Change) bool {
+
+	switch t {
+	case app.ChangeTypeVersion:
+		if n.Events.Deployed {
+			return true
+		}
+	case app.ChangeTypeStatus:
+		switch change.After {
+		case app.Pending:
+			if n.Events.Pending {
+				return true
+			}
+		case app.Running:
+			if n.Events.Running {
+				return true
+			}
+		case app.Stopped:
+			if n.Events.Stopped {
+				return true
+			}
+		}
+	case app.ChangeTypeError:
+		if n.Events.Error {
 			return true
 		}
 	}

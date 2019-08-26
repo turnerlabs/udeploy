@@ -55,7 +55,7 @@ $ export OAUTH_AUTH_URL=XXXXXXX (i.e. https://login.microsoftonline.com/{{TENANT
 $ export OAUTH_TOKEN_URL=XXXXXXX (i.e. https://login.microsoftonline.com/{{TENANT_ID}}/oauth2/v2.0/token)
 $ export OAUTH_REDIRECT_URL=XXXXXXX (i.e. http://localhost:8080/oauth2/response)
 $ export OAUTH_SIGN_OUT_URL=XXXXXXX (i.e. https://login.microsoftonline.com/{{TENANT_ID}}/oauth2/logout?client_id={{CLIENT_ID}})
-$ export OAUTH_SESS_SIGN=XXXXXXX (i.e. F1Li3rvehgcrF8DMHJ7OyxO4w9Y3D)
+$ export OAUTH_SESSION_SIGN=XXXXXXX (i.e. F1Li3rvehgcrF8DMHJ7OyxO4w9Y3D)
 ```
 
 #### Configure Console ####

@@ -1,9 +1,10 @@
 package sync
 
 import (
+	"log"
+
 	"github.com/turnerlabs/udeploy/component/action"
 	"github.com/turnerlabs/udeploy/component/app"
-	"log"
 
 	"go.mongodb.org/mongo-driver/mongo"
 
@@ -37,7 +38,7 @@ func WatchDatabaseApps(ctx mongo.SessionContext) error {
 			DocumentKey struct {
 				ID primitive.ObjectID `bson:"_id"`
 			} `bson:"documentKey"`
-			OperationType string            `bson:"operationType"`
+			OperationType string          `bson:"operationType"`
 			App           app.Application `bson:"fullDocument"`
 		}{}
 
@@ -90,7 +91,7 @@ func WatchDatabaseActions(ctx mongo.SessionContext) error {
 			DocumentKey struct {
 				ID primitive.ObjectID `bson:"_id"`
 			} `bson:"documentKey"`
-			OperationType string       `bson:"operationType"`
+			OperationType string        `bson:"operationType"`
 			Action        action.Action `bson:"fullDocument"`
 		}{}
 

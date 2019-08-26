@@ -50,12 +50,19 @@ uDeploy currently services resources within a single AWS account.
 ### Goals ###
 
 * Provide monitoring and deployment portal for AWS resources.
-* Provide status notifications for instances and environments.
+* Provide consitent versioning across different resources.
+* Provide high level, easy to understand status notifications for specific environments.
+* Provide easily searchable list of project resources, versions, and documentation.
 * Provide alternative solution to [Harbor UI](https://github.com/turnerlabs/harbor-ui).
+* Provide simple drag-n-drop deployments regardless of the user's AWS experience.
+* Provide app and environment level permissions.
+* Provide an easy way for integration partners to monitor resources.
+* Remove the AWS account permission requirement from deployments and monitoring.
 
 ### Non-Goals ###
 
 * Duplicate AWS console functionality.
+* Provide continuous integration features.
 * Display or modify infrastructure details.
 
 ### Tech Stack ###
@@ -67,4 +74,3 @@ uDeploy currently services resources within a single AWS account.
     - Echo (go)
 - Database
     - MongoDB
-

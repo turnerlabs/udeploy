@@ -10,13 +10,15 @@ import (
 )
 
 // Start ...
-func Start(ctx context.Context, definitionID, aType string) (primitive.ObjectID, error) {
+func Start(ctx context.Context, definitionID, aType string, maxRuntime time.Duration) (primitive.ObjectID, error) {
 	return Set(ctx, Action{
 		DefinitionID: definitionID,
 
 		Type:    aType,
 		Status:  Pending,
 		Started: time.Now().UTC(),
+
+		Expiration: time.Now().Add(maxRuntime).UTC(),
 	})
 }
 
@@ -28,7 +30,7 @@ func Stop(ctx mongo.SessionContext, id primitive.ObjectID, actionErr error) erro
 		return err
 	}
 
-	a.Status = Complete
+	a.Status = Stopped
 
 	if actionErr != nil {
 		a.Status = Error

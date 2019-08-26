@@ -143,7 +143,7 @@ Vue.component('deploy-modal', {
                 that.commits = commits;
             })
             .catch(function(e) {
-                that.alerts.push({ error: e });
+                that.error = e.message;
             })
             .finally(function() {
                 that.loadingChanges = false

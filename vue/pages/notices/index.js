@@ -29,7 +29,6 @@ includeTenplates().then(() => {
             "instances": [],
             "events": {
                 "error": false,
-                "starting": false,
                 "pending": false,
                 "running": false,
                 "stopped": false,

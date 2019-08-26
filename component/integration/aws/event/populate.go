@@ -5,7 +5,6 @@ import (
 
 	"github.com/turnerlabs/udeploy/component/app"
 
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudwatchevents"
 	"github.com/aws/aws-sdk-go/service/ecs"
@@ -13,7 +12,7 @@ import (
 )
 
 // Populate ...
-func Populate(instances map[string]app.Instance, details bool) (map[string]app.Instance, error) {
+func Populate(instances map[string]app.Instance) (map[string]app.Instance, error) {
 	sesssion := session.New()
 
 	evtSvc := cloudwatchevents.New(sesssion)
@@ -24,29 +23,47 @@ func Populate(instances map[string]app.Instance, details bool) (map[string]app.I
 	for name, instance := range instances {
 
 		go func(innerName string, innerInstance app.Instance, innerEcs *ecs.ECS, innerEvt *cloudwatchevents.CloudWatchEvents) {
-			state := app.State{}
+			state := app.NewState()
 
 			td, ruleOutput, target, err := getServiceInfo(innerInstance, innerEcs, innerEvt)
 			if err != nil {
-				state.Error = err
+				state.SetError(err)
 			} else {
 				innerInstance.Task.Definition = app.DefinitionFrom(td, innerInstance.Task.ImageTagEx)
 
-				state.IsPending, state.IsRunning, err = getStatus(innerInstance, td, innerEcs)
+				runningTasks, err := task.List(innerInstance, innerEcs, "RUNNING")
 				if err != nil {
-					state.Error = err
+					state.SetError(err)
 				}
-				state.DesiredCount = *target.EcsParameters.TaskCount
+
+				stoppedTasks, err := task.List(innerInstance, innerEcs, "STOPPED")
+				if err != nil {
+					state.SetError(err)
+				}
+
+				isPending, isRunning, err := getStatus(innerInstance, td, runningTasks, stoppedTasks)
+
+				if err != nil {
+					state.SetError(err)
+				}
+
+				if isPending {
+					state.SetPending()
+				} else if isRunning {
+					state.SetRunning()
+				} else {
+					state.SetStopped()
+				}
+
 				state.Version = innerInstance.FormatVersion()
 
+				innerInstance.Task.DesiredCount = *target.EcsParameters.TaskCount
 				innerInstance.Task.CronEnabled = isCronEnabled(*ruleOutput.State)
 				innerInstance.Task.CronExpression = fmt.Sprintf("0 %s", (*ruleOutput.ScheduleExpression)[5:len(*ruleOutput.ScheduleExpression)-1])
 
-				if details {
-					innerInstance.Task.TasksInfo, err = task.GetTasksInfo(innerInstance, innerEcs)
-					if err != nil {
-						state.Error = err
-					}
+				innerInstance.Task.TasksInfo, err = task.GetTasksInfo(innerInstance, innerEcs, append(runningTasks, stoppedTasks...))
+				if err != nil {
+					state.SetError(err)
 				}
 			}
 
@@ -82,19 +99,34 @@ type chanModel struct {
 	instance app.Instance
 }
 
-func getStatus(instance app.Instance, td *ecs.TaskDefinition, svc *ecs.ECS) (isPending bool, isRunning bool, err error) {
-	tasks, err := task.List(instance, svc, aws.String("RUNNING"))
-	if err != nil {
-		return false, false, err
+func getStatus(instance app.Instance, td *ecs.TaskDefinition, runningTasks, stoppedTasks []*ecs.Task) (isPending bool, isRunning bool, err error) {
+	tasks := append(runningTasks, stoppedTasks...)
+
+	lastTask := &ecs.Task{}
+	for i, t := range tasks {
+		if i == 0 || (*t.CreatedAt).After(*lastTask.CreatedAt) {
+			lastTask = t
+		}
 	}
-	if len(tasks) == 0 {
+
+	if lastTask != nil && lastTask.LastStatus != nil && *lastTask.LastStatus != "RUNNING" {
+		for _, c := range lastTask.Containers {
+			if c.ExitCode != nil && *c.ExitCode != 0 {
+				return false, false, fmt.Errorf("container exited with code %d", *c.ExitCode)
+			}
+		}
+	}
+
+	if len(runningTasks) == 0 {
 		return false, false, nil
 	}
-	for _, task := range tasks {
+
+	for _, task := range runningTasks {
 		if *task.DesiredStatus != "RUNNING" || *task.LastStatus != "RUNNING" {
 			return true, false, nil
 		}
 	}
+
 	return false, true, nil
 }
 

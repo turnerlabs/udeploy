@@ -100,6 +100,13 @@ includeTenplates().then(() => {
         },
 
         methods: {
+            formatErrorPreview(error) {
+                if (error.length > 15) {
+                    return error.substring(0, 20) + "..."
+                }
+
+                return error
+            },
             setView(view) {
                 this.view.list = false;
                 this.view.grid = false;
@@ -417,29 +424,29 @@ includeTenplates().then(() => {
             },
             statusClass: function (app, inst) {
 
-                if (inst.error.length > 0) {
-                    return 'has-background-danger'
+                if (inst.error.length > 0 && inst.errorType != "action") {
+                    return 'has-background-danger has-text-white'
                 }
 
                 if (inst.deployment.isPending) {
-                    return 'has-background-grey-light'
+                    return 'has-background-warning has-text-black'
                 }
 
                 if (inst.isRunning) {
-                    return 'has-background-primary'
+                    return 'has-background-primary has-text-white'
                 }
 
                 if (app.type == 'lambda' || app.type == 's3') {
-                    return 'has-background-info'
+                    return 'has-background-info has-text-white'
                 }
                 
                 if (app.type == 'scheduled-task') {
                     if (inst.cronEnabled) {
-                        return 'has-background-info'
+                        return 'has-background-info has-text-white'
                     }
                 }
 
-                return 'has-background-grey-light'
+                return 'has-background-grey-light has-text-white'
             },
             actions: function(type) {
                 switch (type) {

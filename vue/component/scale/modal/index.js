@@ -22,6 +22,12 @@ Vue.component('scale-modal', {
         this.validateStart()
     },
 
+    watch: {
+        count: function (val) {
+            this.validateStart()
+        },
+    },
+
     methods: {
         validateStart: function (evt) {
             this.instance.deployCode.length > 0

@@ -11,7 +11,7 @@
             <div class="field-label"><label class="label">Tasks</label></div>
             <div class="field-body">
             <div class="control">
-                <input class="input counter" v-model="count" type="number" v-on:keyup="validateStart" min="1" max="50">
+                <input class="input counter" v-model.number="count" type="number" min="1" max="50">
             </div>
             </div>
         </div>

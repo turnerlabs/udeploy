@@ -67,7 +67,7 @@ func Scale(ctx context.Context, instance app.Instance, desiredCount int64, resta
 func stopTasks(ctx context.Context, instance app.Instance, taskArn *string, svc *ecs.ECS) error {
 	usr := ctx.Value(sess.ContextKey("user")).(user.User)
 
-	tasks, err := task.List(instance, svc, aws.String("RUNNING"))
+	tasks, err := task.List(instance, svc, "RUNNING")
 	if err != nil {
 		return err
 	}

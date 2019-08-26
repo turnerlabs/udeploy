@@ -38,12 +38,12 @@ func Get(ctx context.Context, id primitive.ObjectID) (Action, error) {
 	return action, nil
 }
 
-// GetLatestBy ...
-func GetLatestBy(ctx context.Context, definitionID string) (Action, error) {
+// GetCurrentBy ...
+func GetCurrentBy(ctx context.Context, definitionID string) (Action, error) {
 
 	collection := db.Client().Database(cfg.Get["DB_NAME"]).Collection("actions")
 
-	match := bson.M{"definitionId": definitionID}
+	match := bson.D{{"definitionId", definitionID}}
 
 	limit := int64(1.0)
 	opts := options.FindOptions{

@@ -11,11 +11,11 @@ import (
 	"github.com/turnerlabs/udeploy/component/version"
 )
 
-func List(instance app.Instance, svc *ecs.ECS, status *string) (tasks []*ecs.Task, err error) {
+func List(instance app.Instance, svc *ecs.ECS, status string) (tasks []*ecs.Task, err error) {
 	output, err := svc.ListTasks(&ecs.ListTasksInput{
 		Cluster:       &instance.Cluster,
 		Family:        aws.String(instance.Task.Family),
-		DesiredStatus: status,
+		DesiredStatus: aws.String(status),
 	})
 	if err != nil {
 		return make([]*ecs.Task, 0), err
@@ -50,20 +50,7 @@ func ListDefinitions(taskDefinition app.Task) (map[string]app.Definition, error)
 	return keepMostRecentRevisions(tds, taskDefinition.ImageTagEx), nil
 }
 
-func GetTasksInfo(instance app.Instance, svc *ecs.ECS) ([]app.TaskInfo, error) {
-	runningTasks, err := List(instance, svc, aws.String("RUNNING"))
-	if err != nil {
-		return []app.TaskInfo{}, err
-	}
-	stoppedTasks, err := List(instance, svc, aws.String("STOPPED"))
-	if err != nil {
-		return []app.TaskInfo{}, err
-	}
-	tasks := append(runningTasks, stoppedTasks...)
-	if len(tasks) == 0 {
-		return []app.TaskInfo{}, nil
-	}
-
+func GetTasksInfo(instance app.Instance, svc *ecs.ECS, tasks []*ecs.Task) ([]app.TaskInfo, error) {
 	tasksInfo := make([]app.TaskInfo, 0)
 	for _, task := range tasks {
 		for _, container := range task.Containers {

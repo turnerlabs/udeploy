@@ -1,7 +1,6 @@
 package supplement
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/turnerlabs/udeploy/component/app"
@@ -28,13 +27,13 @@ const (
 func Instances(ctx mongo.SessionContext, appType string, instances map[string]app.Instance, details bool) (insts map[string]app.Instance, err error) {
 	switch appType {
 	case appTypeService:
-		insts, err = service.Populate(instances, details)
+		insts, err = service.Populate(instances)
 	case appTypeScheduledTask:
-		insts, err = event.Populate(instances, details)
+		insts, err = event.Populate(instances)
 	case appTypeLambda:
-		insts, err = lambda.Populate(instances, details)
+		insts, err = lambda.Populate(instances)
 	case appTypeS3:
-		insts, err = s3.Populate(instances, details)
+		insts, err = s3.Populate(instances)
 	default:
 		return nil, fmt.Errorf("invalid app type %s", appType)
 	}
@@ -44,13 +43,12 @@ func Instances(ctx mongo.SessionContext, appType string, instances map[string]ap
 	}
 
 	return checkCurrentActions(ctx, insts)
-
 }
 
 func checkCurrentActions(ctx mongo.SessionContext, instances map[string]app.Instance) (map[string]app.Instance, error) {
 
 	for key, i := range instances {
-		a, err := action.GetLatestBy(ctx, i.Task.Definition.ID)
+		actn, err := action.GetCurrentBy(ctx, i.Task.Definition.ID)
 		if err != nil {
 			if err.Error() == action.ErrNotFound {
 				continue
@@ -59,19 +57,26 @@ func checkCurrentActions(ctx mongo.SessionContext, instances map[string]app.Inst
 			return instances, err
 		}
 
-		if a.Is(app.Pending) {
-			i.CurrentState.IsPending = true
-			i.CurrentState.IsRunning = false
-		}
+		switch actn.Status {
+		case action.Pending:
+			if actn.TimedOut() {
+				err := app.StatusError{
+					Value: fmt.Sprintf("%s action failed to receive a timely response from AWS", actn.Type),
+					Type:  app.ErrorTypeAction,
+				}
 
-		if a.Is(app.Error) {
-			if i.CurrentState.Error != nil {
-				i.CurrentState.Error = fmt.Errorf("%s: %s", a.Info, i.CurrentState.Error)
-			} else {
-				i.CurrentState.Error = errors.New(a.Info)
+				if err := action.Stop(ctx, actn.ID, err); err != nil {
+					return instances, err
+				}
 			}
 
-			i.CurrentState.IsRunning = false
+			i.CurrentState.SetPending()
+		case action.Error:
+			if i.CurrentState.Error != nil {
+				i.CurrentState.SetError(app.StatusError{Type: app.ErrorTypeAction, Value: fmt.Sprintf("%s: %s", actn.Info, i.CurrentState.Error)})
+			} else {
+				i.CurrentState.SetError(app.StatusError{Type: app.ErrorTypeAction, Value: actn.Info})
+			}
 		}
 
 		instances[key] = i

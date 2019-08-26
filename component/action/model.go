@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	// Complete ...
-	Complete = "complete"
+	// Stopped ...
+	Stopped = "stopped"
 
 	// Pending ...
 	Pending = "pending"
@@ -29,9 +29,16 @@ type Action struct {
 
 	Started time.Time `json:"started" bson:"started"`
 	Stopped time.Time `json:"stopped" bson:"stopped"`
+
+	Expiration time.Time `json:"expiration" bson:"expiration"`
 }
 
 // Is ...
 func (a Action) Is(status string) bool {
 	return a.Status == status
+}
+
+// TimedOut ...
+func (a Action) TimedOut() bool {
+	return time.Now().UTC().After(a.Expiration.UTC())
 }

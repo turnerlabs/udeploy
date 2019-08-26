@@ -15,7 +15,7 @@ import (
 )
 
 // Populate ...
-func Populate(instances map[string]app.Instance, details bool) (map[string]app.Instance, error) {
+func Populate(instances map[string]app.Instance) (map[string]app.Instance, error) {
 	session := session.New()
 
 	svc := ecs.New(session)
@@ -40,34 +40,49 @@ func Populate(instances map[string]app.Instance, details bool) (map[string]app.I
 	for name, instance := range instances {
 
 		go func(innerName string, innerInstance app.Instance, innerSvc *ecs.ECS) {
-			state := app.State{}
+			state := app.NewState()
 
 			td, svcs, err := getServiceInfo(innerInstance, innerSvc)
 			if err != nil {
-				state.Error = err
+				state.SetError(err)
+				state.SetPending()
 			} else {
 				innerInstance.Task.Definition = app.DefinitionFrom(td, innerInstance.Task.ImageTagEx)
 
-				state.IsPending = isPending(svcs)
-				state.IsRunning = isRunning(svcs)
 				state.Version = innerInstance.FormatVersion()
-				state.Error = nil
 
-				if state.IsPending {
-					state.Error = getError(svc, innerInstance)
+				stoppedTasks, err := getTaskDetails(svc, innerInstance, []*ecs.Task{}, "STOPPED", "")
+				if err != nil {
+					state.SetError(err)
+				}
+
+				runningTasks, err := getTaskDetails(svc, innerInstance, []*ecs.Task{}, "RUNNING", "")
+				if err != nil {
+					state.SetError(err)
+				}
+
+				tasks := append(runningTasks, stoppedTasks...)
+
+				if err := checkError(svcs, stoppedTasks, innerInstance); err != nil {
+					state.SetError(err)
+					state.SetPending()
+				} else if isPending(svcs) {
+					state.SetPending()
+				} else if isStopped(svcs) {
+					state.SetStopped()
+				} else {
+					state.SetRunning()
 				}
 
 				for _, t := range ao.ScalableTargets {
 					if *t.ResourceId == fmt.Sprintf("service/%s/%s", innerInstance.Cluster, innerInstance.Service) {
-						state.DesiredCount = *t.MinCapacity
+						innerInstance.Task.DesiredCount = *t.MinCapacity
 					}
 				}
 
-				if details {
-					innerInstance.Task.TasksInfo, err = task.GetTasksInfo(innerInstance, innerSvc)
-					if err != nil {
-						state.Error = err
-					}
+				innerInstance.Task.TasksInfo, err = task.GetTasksInfo(innerInstance, innerSvc, tasks)
+				if err != nil {
+					state.SetError(err)
 				}
 
 				region, err := getRegion(*td.TaskDefinitionArn)
@@ -126,11 +141,10 @@ func getRegion(arn string) (string, error) {
 	return "", errors.New("failed to get region")
 }
 
-func getError(svc *ecs.ECS, inst app.Instance) error {
+func checkError(svcs *ecs.Service, tasks []*ecs.Task, inst app.Instance) error {
 
-	tasks, err := getTaskDetails(svc, inst, []*ecs.Task{}, "")
-	if err != nil {
-		return err
+	if *svcs.DesiredCount == 0 {
+		return nil
 	}
 
 	if count, err := getTaskError(tasks); err != nil {
@@ -140,11 +154,11 @@ func getError(svc *ecs.ECS, inst app.Instance) error {
 	return nil
 }
 
-func getTaskDetails(svc *ecs.ECS, inst app.Instance, tasks []*ecs.Task, nextToken string) ([]*ecs.Task, error) {
+func getTaskDetails(svc *ecs.ECS, inst app.Instance, tasks []*ecs.Task, status, nextToken string) ([]*ecs.Task, error) {
 	input := &ecs.ListTasksInput{
 		Cluster:       aws.String(inst.Cluster),
 		ServiceName:   aws.String(inst.Service),
-		DesiredStatus: aws.String("STOPPED"),
+		DesiredStatus: aws.String(status),
 	}
 
 	if len(nextToken) > 0 {
@@ -172,7 +186,7 @@ func getTaskDetails(svc *ecs.ECS, inst app.Instance, tasks []*ecs.Task, nextToke
 		return tasks, nil
 	}
 
-	return getTaskDetails(svc, inst, tasks, nextToken)
+	return getTaskDetails(svc, inst, tasks, status, nextToken)
 }
 
 func getTaskError(tasks []*ecs.Task) (int, error) {
@@ -192,11 +206,13 @@ func getTaskError(tasks []*ecs.Task) (int, error) {
 }
 
 func isPending(svc *ecs.Service) bool {
-	return (len(svc.Deployments) > 1 && *svc.DesiredCount > 0) || *svc.PendingCount > 0 || (*svc.DesiredCount != *svc.RunningCount)
+
+	//return (len(svc.Deployments) > 1 && *svc.DesiredCount > 0) || *svc.PendingCount > 0 || *svc.DesiredCount > *svc.RunningCount
+	return (len(svc.Deployments) > 1 && *svc.DesiredCount > 0) || *svc.DesiredCount > 0 && *svc.RunningCount == 0
 }
 
-func isRunning(svc *ecs.Service) bool {
-	return *svc.RunningCount > 0 && *svc.RunningCount >= *svc.DesiredCount
+func isStopped(svc *ecs.Service) bool {
+	return *svc.RunningCount == 0 && *svc.PendingCount == 0
 }
 
 func getServiceInfo(instance app.Instance, svc *ecs.ECS) (*ecs.TaskDefinition, *ecs.Service, error) {

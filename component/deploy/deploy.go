@@ -28,6 +28,8 @@ const (
 	appTypeScheduledTask = "scheduled-task"
 	appTypeLambda        = "lambda"
 	appTypeS3            = "s3"
+
+	maxJobRuntime = time.Minute * 10
 )
 
 // Options ...
@@ -74,14 +76,12 @@ func Deploy(ctx mongo.SessionContext, application app.Application, target, sourc
 		return app.Instance{}, err
 	}
 
-	id, err := action.Start(ctx, targetInstance.Task.Definition.ID, "deploy")
+	id, err := action.Start(ctx, targetInstance.Task.Definition.ID, "deploy", maxJobRuntime)
 	if err != nil {
 		return app.Instance{}, err
 	}
 
 	go func() {
-		const maxJobRuntime = time.Minute * 10
-
 		bgctx := context.Background()
 
 		sess, err := db.Client().StartSession()
