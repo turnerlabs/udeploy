@@ -41,6 +41,7 @@ type InstanceView struct {
 	Error     string `json:"error"`
 	ErrorType string `json:"errorType"`
 
+	AutoScale    bool  `json:"autoScale"`
 	IsRunning    bool  `json:"isRunning"`
 	DesiredCount int64 `json:"desiredCount"`
 	Edited       bool  `json:"edited"`
@@ -87,6 +88,7 @@ type Instance struct {
 	Repository    string `json:"repository,omitempty" bson:"repository"`
 	DeployCode    string `json:"deployCode" bson:"deployCode"`
 	AutoPropagate bool   `json:"autoPropagate" bson:"autoPropagate"`
+	AutoScale     bool   `json:"autoScale"`
 	Task          Task   `json:"task" bson:"taskDefinition"`
 	Links         []Link `json:"links" bson:"links"`
 
@@ -192,6 +194,7 @@ func (v InstanceView) ToBusiness() Instance {
 		S3RegistryPrefix: v.S3RegistryPrefix,
 		DeployCode:       v.DeployCode,
 		AutoPropagate:    v.AutoPropagate,
+		AutoScale:        v.AutoScale,
 		Order:            v.Order,
 		Task: Task{
 			ImageTagEx:   v.Task.ImageTagEx,
@@ -238,6 +241,7 @@ func (i Instance) ToView(name string, appClaim user.AppClaim) InstanceView {
 		Repository:       i.Repository,
 		DeployCode:       i.DeployCode,
 		AutoPropagate:    i.AutoPropagate,
+		AutoScale:        i.AutoScale,
 		Order:            i.Order,
 		Links:            i.Links,
 		Task: TaskView{

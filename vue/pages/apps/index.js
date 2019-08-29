@@ -448,7 +448,7 @@ includeTenplates().then(() => {
 
                 return 'has-background-grey-light has-text-white'
             },
-            actions: function(type) {
+            actions: function(type, inst) {
                 switch (type) {
                     case "s3" :
                         return {}
@@ -460,7 +460,7 @@ includeTenplates().then(() => {
                     case "service":
                         return {
                             start: true,
-                            scale: true,
+                            scale: !inst.autoScale,
                             restart: true,
                             stop: true,
                         }

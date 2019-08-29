@@ -76,6 +76,7 @@ func (i Instance) Copy() Instance {
 		S3RegistryPrefix: i.S3RegistryPrefix,
 		DeployCode:       i.DeployCode,
 		AutoPropagate:    i.AutoPropagate,
+		AutoScale:        i.AutoScale,
 		Order:            i.Order,
 		Task:             i.Task.Copy(),
 		CurrentState:     i.CurrentState,

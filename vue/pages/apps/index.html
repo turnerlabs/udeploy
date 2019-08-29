@@ -84,22 +84,22 @@
                             v-bind:class="statusClass(app, inst)" class="cell is-size-6 has-text-weight-bold">
                             {{ inst.version }} <span v-if="inst.revision > 0">({{ inst.revision }})</span>
                             <div class="is-pulled-right">
-                                <button v-if="actions(app.type).restart && inst.isRunning" :disabled="!inst.claims.scale" title="restart instance" class="button" @click.stop.prevent="selected = { app: app, instance: inst }; modal.confirm = { show: true, code: inst.deployCode, message: 'Restart all running tasks for ' + inst.name + '.', action: restartInstance }">
+                                <button v-if="actions(app.type, inst).restart && inst.isRunning" :disabled="!inst.claims.scale" title="restart instance" class="button" @click.stop.prevent="selected = { app: app, instance: inst }; modal.confirm = { show: true, code: inst.deployCode, message: 'Restart all running tasks for ' + inst.name + '.', action: restartInstance }">
                                     <span class="icon is-small">
                                         <i class="fas fa-undo"></i>
                                     </span>
                                 </button>
-                                <button v-if="actions(app.type).scale && inst.isRunning" :disabled="!inst.claims.scale" title="scale instance" class="button" @click.stop.prevent="selected = { app: app, instance: inst }; modal.scale = { show: true, action: 'Scale' }">
+                                <button v-if="actions(app.type, inst).scale && inst.isRunning" :disabled="!inst.claims.scale" title="scale instance" class="button" @click.stop.prevent="selected = { app: app, instance: inst }; modal.scale = { show: true, action: 'Scale' }">
                                     <span class="icon is-small">
                                         <i class="fas fa-arrows-alt-h"></i>
                                     </span>
                                 </button> 
-                                <button v-if="actions(app.type).start && !inst.isRunning" v-bind:class="{ 'is-loading': inst.deployment.isPending }" :disabled="!inst.claims.scale" title="start" class="button" @click.stop.prevent="selected = { app: app, instance: inst }; modal.scale = { show: true, action: 'Start' }">
+                                <button v-if="actions(app.type, inst).start && !inst.isRunning" v-bind:class="{ 'is-loading': inst.deployment.isPending }" :disabled="!inst.claims.scale" title="start" class="button" @click.stop.prevent="selected = { app: app, instance: inst }; modal.scale = { show: true, action: 'Start' }">
                                     <span class="icon">
                                         <i class="fas fa-play"></i>
                                     </span>
                                 </button>
-                                <button v-else-if="actions(app.type).stop" v-bind:class="{ 'is-loading': inst.deployment.isPending }" :disabled="!inst.claims.scale" title="stop" class="button" @click.stop.prevent="selected = { app: app, instance: inst }; modal.confirm = { show: true, code: inst.deployCode, message: 'Stop all running tasks for ' + inst.name + '.', action: stopInstance }">
+                                <button v-else-if="actions(app.type, inst).stop" v-bind:class="{ 'is-loading': inst.deployment.isPending }" :disabled="!inst.claims.scale" title="stop" class="button" @click.stop.prevent="selected = { app: app, instance: inst }; modal.confirm = { show: true, code: inst.deployCode, message: 'Stop all running tasks for ' + inst.name + '.', action: stopInstance }">
                                     <span class="icon">
                                         <i class="fas fa-stop"></i>
                                     </span>
@@ -169,24 +169,23 @@
                                     </div>
                                     <div v-else>    
                                         <div v-if="inst.isRunning" class="buttons has-addons is-centered">
-                                            <button v-if="actions(app.type).stop" :disabled="!inst.claims.scale" title="stop instance" class="button is-small is-rounded" @click.stop.prevent="selected = { app: app, instance: inst }; modal.confirm = { show: true, code: inst.deployCode, message: 'Stop all running tasks for ' + inst.name + '.', action: stopInstance }">
+                                            <button v-if="actions(app.type, inst).stop" :disabled="!inst.claims.scale" title="stop instance" class="button is-small is-rounded" @click.stop.prevent="selected = { app: app, instance: inst }; modal.confirm = { show: true, code: inst.deployCode, message: 'Stop all running tasks for ' + inst.name + '.', action: stopInstance }">
                                                 <span class="icon is-small">
                                                     <i class="fas fa-stop"></i>
                                                 </span>
                                             </button>
-                                            <button v-if="actions(app.type).restart" :disabled="!inst.claims.scale" title="restart instance" class="button is-small is-rounded" @click.stop.prevent="selected = { app: app, instance: inst }; modal.confirm = { show: true, code: inst.deployCode, message: 'Restart all running tasks for ' + inst.name + '.', action: restartInstance }">
+                                            <button v-if="actions(app.type, inst).restart" :disabled="!inst.claims.scale" title="restart instance" class="button is-small is-rounded" @click.stop.prevent="selected = { app: app, instance: inst }; modal.confirm = { show: true, code: inst.deployCode, message: 'Restart all running tasks for ' + inst.name + '.', action: restartInstance }">
                                                 <span class="icon is-small">
                                                     <i class="fas fa-undo"></i>
                                                 </span>
                                             </button>
-                                            <button v-if="actions(app.type).scale" :disabled="!inst.claims.scale" title="scale instance" class="button is-small is-rounded" @click.stop.prevent="selected = { app: app, instance: inst }; modal.scale = { show: true, action: 'Scale' }">
+                                            <button v-if="actions(app.type, inst).scale" :disabled="!inst.claims.scale" title="scale instance" class="button is-small is-rounded" @click.stop.prevent="selected = { app: app, instance: inst }; modal.scale = { show: true, action: 'Scale' }">
                                                 <span class="icon is-small">
                                                     <i class="fas fa-arrows-alt-h"></i>
                                                 </span>
                                             </button>   
                                         </div>
-
-                                        <button v-else-if="actions(app.type).start" :disabled="!inst.claims.scale" title="start instance" class="button is-small is-rounded" @click.stop.prevent="selected = { app: app, instance: inst }; modal.scale = { show: true, action: 'Start' }">
+                                        <button v-else-if="actions(app.type, inst).start" :disabled="!inst.claims.scale" title="start instance" class="button is-small is-rounded" @click.stop.prevent="selected = { app: app, instance: inst }; modal.scale = { show: true, action: 'Start' }">
                                             <span class="icon is-small">
                                                 <i class="fas fa-play"></i>
                                             </span>
