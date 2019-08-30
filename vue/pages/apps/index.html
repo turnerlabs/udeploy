@@ -20,22 +20,26 @@
                     <div class="column is-5">
                         <div class="field">
                             <p class="control has-icons-left has-icons-right">
-                                <input class="input name" type="text" v-model="filter" title="Enter application name to filter." placeholder="application">
+                                <input class="input name" type="text" v-model="filter.terms" title="Enter application name to filter." placeholder="application">
                                 <span class="icon is-small is-left">
                                 <i class="fas fa-filter"></i>
                                 </span>
                             </p>
                         </div>
                     </div>
-                    <div class="column is-1">
-                        <div v-if="filter.length > 0" class="block">
-                            <span class="tag has-background-grey-light">
-                                {{ Object.keys(matches).length }} matched
-                                <button class="delete is-small" @click.stop.prevent="filter = ''"></button>
-                            </span>
+                    <div class="column is-2">
+                        <div class="select" v-bind:class="{ 'is-loading': isLoading }">
+                            <select v-model="filter.state">
+                                <option value=""></option>
+                                <option value="pending">Pending</option>
+                                <option value="running">Running</option>
+                                <option value="stopped">Stopped</option>
+                                <option value="error">Errors</option>
+                            </select>
                         </div>
                     </div>
-                    <div class="column is-5"></div>
+                    <div class="column is-4">    
+                    </div>
                     <div class="column is-1">
                         <div class="buttons has-addons is-right">
                             <button title="list" class="button" v-bind:class="{ 'is-primary': view.list }" :disabled="view.list" @click.stop.prevent="setView('list')">
@@ -54,9 +58,7 @@
             </p>   
            
             <alert-banner v-bind:alerts="alerts"></alert-banner>
-
-            <progress v-if="isLoading" class="progress is-small is-dark" max="100"></progress>
-
+            
             <div v-if="view.list && apps.length > 0" class="box">
             <table class="table app-table">
                 <tbody>
@@ -68,8 +70,9 @@
                     <th></th>
                 </tr>
                 <template v-for="app in sortApps(apps)">
-                    <tr :id="app.name" v-if="showApp(app.name)" 
+                    <tr :id="app.name" 
                         v-for="inst in sortInstances(app.instances)"
+                        v-if="showInstance(inst)"
                         class="app">
                         <td>{{ app.name.toUpperCase() }}</td>
                         <td><a :href="'/apps/'+app.name+'/instance/'+inst.name">{{ inst.name.toUpperCase() }}</a></td>
@@ -125,7 +128,7 @@
             </div>
            
             <div v-if="view.grid" v-for="app in sortApps(apps)">
-                <div v-if="showApp(app.name)" :id="app.name" class="app box">
+                <div :id="app.name" v-if="showApp(app)" class="app box">
                     <div class="columns">
                         <div class="column is-10 has-text-weight-bold is-size-4 u-margin-top">
                             {{ app.name.toUpperCase() }}

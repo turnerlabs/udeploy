@@ -64,6 +64,12 @@ Browser quick link to the AWS console.
 $ export CONSOLE_LINK=https://aws.amazon.com/
 ```
 
+#### Configure Console ####
+Starts caching applications when the container starts to improve perfomance.
+```bash
+$ export PRE_CACHE=true
+```
+
 
 #### Start #### 
 

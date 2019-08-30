@@ -40,6 +40,35 @@ func GetApp(c echo.Context) error {
 	return c.JSON(http.StatusOK, apps[0].ToView(usr))
 }
 
+// FilterApps ..
+func FilterApps(c echo.Context) error {
+	ctx := c.Get("ctx").(mongo.SessionContext)
+	usr := ctx.Value(session.ContextKey("user")).(user.User)
+
+	filter := app.Filter{}
+	if err := c.Bind(&filter); err != nil {
+		return err
+	}
+
+	views := []app.AppView{}
+
+	for name := range usr.Apps {
+
+		if err := cache.EnsureApp(ctx, name); err != nil {
+			c.Logger().Error(err)
+			continue
+		}
+
+		application, _ := cache.Apps.Get(name)
+
+		if application.Matches(filter) {
+			views = append(views, application.ToView(usr))
+		}
+	}
+
+	return c.JSON(http.StatusOK, views)
+}
+
 // GetApps ..
 func GetApps(c echo.Context) error {
 	ctx := c.Get("ctx").(mongo.SessionContext)

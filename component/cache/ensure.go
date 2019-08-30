@@ -2,6 +2,7 @@ package cache
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -57,9 +58,20 @@ func Ensure(ctx mongo.SessionContext) error {
 		return err
 	}
 
+	total := len(apps)
+	cached := 0
+
+	log.Printf("APP_CACHE: caching %d apps\n", total)
+
 	for _, a := range apps {
 		if err := EnsureApp(ctx, a.Name); err != nil {
 			return err
+		}
+
+		cached++
+
+		if cached%10 == 0 || cached == total {
+			log.Printf("APP_CACHE: %d of %d cached\n", cached, total)
 		}
 
 		// Wait to avoid hitting AWS api rate limits.

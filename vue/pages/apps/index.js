@@ -33,8 +33,10 @@ includeTenplates().then(() => {
                 targets: {},
             },
 
-            filter: "",
-            matches: {}, 
+            filter: {
+                terms: "",
+                state: "",
+            },
 
             version: "",
             updated: "",
@@ -54,8 +56,15 @@ includeTenplates().then(() => {
         },
 
         watch: {
-            filter: function (val) {
-                localStorage.setItem("filter", val);
+            'filter.terms': function (val) {
+                localStorage.setItem("filter.terms", val);
+
+                this.filterApps()
+            },
+            'filter.state': function (val) {
+                localStorage.setItem("filter.state", val);
+
+                this.filterApps()
             },
         },
 
@@ -70,10 +79,14 @@ includeTenplates().then(() => {
                 this.setView(view)
             }
 
-            let filterValue = localStorage.getItem("filter")
+            let filterTerms = localStorage.getItem("filter.terms")
+            if (filterTerms) {
+                this.filter.terms = filterTerms
+            }
 
-            if (filterValue) {
-                this.filter = filterValue
+            let filterstate = localStorage.getItem("filter.state")
+            if (filterstate) {
+                this.filter.state = filterstate
             }
 
             let that = this;
@@ -86,10 +99,11 @@ includeTenplates().then(() => {
             }).catch(function(e) {
                 that.alerts.push({ error: e });
             }); 
+
+            this.filterApps = this.debounce(this.refreshApps, 500);
         },
 
-        updated: function() {
-           
+        updated: function() { 
             let hash = window.location.hash.replace("#", "")
             
             var elmnt = document.getElementById(hash);
@@ -100,6 +114,21 @@ includeTenplates().then(() => {
         },
 
         methods: {
+            debounce(func, wait, immediate) {
+                var timeout, result;
+                return function() {
+                  var context = this, args = arguments;
+                  var later = function() {
+                    timeout = null;
+                    if (!immediate) result = func.apply(context, args);
+                  };
+                  var callNow = immediate && !timeout;
+                  clearTimeout(timeout);
+                  timeout = setTimeout(later, wait);
+                  if (callNow) result = func.apply(context, args);
+                  return result;
+                };
+            },
             formatErrorPreview(error) {
                 if (error.length > 15) {
                     return error.substring(0, 20) + "..."
@@ -120,23 +149,6 @@ includeTenplates().then(() => {
                 }
 
                 return version
-            },
-            showApp(name) {
-                if (this.filter.length == 0) {
-                    Vue.set(this.matches, name, {})
-                    return true
-                }
-
-                let index = name.indexOf(this.filter.toLowerCase())
-               
-                if (index != -1) {
-                    Vue.set(this.matches, name, {})
-                    return true
-                }
-
-                Vue.delete(this.matches, name)
-
-                return false
             },
             hasEditPermission(app) {
                 if (!this.user) {
@@ -304,6 +316,37 @@ includeTenplates().then(() => {
                     that.alerts.push({ error: new Error("browser does not support real-time updates")})
                 }
             },
+            showApp(app) {
+
+                for (let i in app.instances) {
+                    if (this.showInstance(app.instances[i])) {
+                        return true    
+                    }
+                }
+
+                return false
+            },
+            showInstance(inst) {
+                if (this.filter.state.length == 0) {
+                    return true
+                }
+
+                switch(this.filter.state) {
+                    case "error":
+                        if (inst.error.length > 0) {
+                            return true
+                        }
+                        break;
+                    case "pending":
+                        return inst.deployment.isPending
+                    case "running":
+                        return inst.isRunning
+                    case "stopped":
+                            return !inst.deployment.isPending && !inst.isRunning
+                }
+
+                return false
+            },
             getInstance(appName, instanceName) {
                 for (let a in this.apps) {
                     if (this.apps[a].name == appName) {
@@ -349,22 +392,31 @@ includeTenplates().then(() => {
             refreshApps: function() {
                 let that = this
 
-                fetch('/v1/apps')
-                .then(function(response) {
+                this.isLoading = true;
+
+                let body = {
+                    terms: this.filter.terms.length > 0 ? this.filter.terms.trim().split(" ") : [],
+                }
+
+                fetch('/v1/apps/filter', {
+                    method: "POST",
+                    body: JSON.stringify(body),
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json' 
+                    }
+                }).then(function(response) {
                     return response.json()
-                })
-                .then(function(data) {
+                }).then(function(data) {
                     if (data.message) {
                         return Promise.reject(new Error(data.message))
                     } 
                     
                     that.apps = data;
                     that.updateTime();
-                    
-                    that.isLoading = false;
                 }).catch(function(e) {
-                    that.alerts.push({ error: e });
-
+                    that.alerts.push({ error: e });                    
+                }).finally(function() {
                     that.isLoading = false;
                 }); 
             },

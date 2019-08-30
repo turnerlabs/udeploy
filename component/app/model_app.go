@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/turnerlabs/udeploy/component/user"
@@ -51,6 +52,22 @@ func (a Application) GetInstances(filter []string) map[string]Instance {
 	}
 
 	return instances
+}
+
+// Matches ...
+func (a Application) Matches(filter Filter) bool {
+	for _, t := range filter.Terms {
+		if strings.Contains(strings.ToLower(a.Name), strings.ToLower(t)) {
+			return true
+		}
+	}
+
+	return len(filter.Terms) == 0
+}
+
+// Filter ...
+type Filter struct {
+	Terms []string `json:"terms"`
 }
 
 // AppView ...

@@ -145,7 +145,7 @@ includeTenplates().then(() => {
                         max = item.id + 1
                     }
                 });
-                console.log(max)
+
                 return max
             },
             validateField(evt, regex, msg, type) {

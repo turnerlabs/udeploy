@@ -27,7 +27,7 @@ func Watch(ctx mongo.SessionContext, messages chan interface{}) error {
 			if changed, changes := inst.Changed(); changed {
 
 				for t, c := range changes {
-					log.Printf("CHANGED: %s [%s] %s\n", inst.Task.Definition.ID, t, c)
+					log.Printf("APP_CHANGED: %s [%s] %s\n", inst.Task.Definition.ID, t, c)
 				}
 
 				notifications, err := notice.Get(ctx, application.Name)
