@@ -19,7 +19,7 @@
                 <div class="columns">
                     <div class="column is-5">
                         <div class="field">
-                            <p class="control has-icons-left has-icons-right">
+                            <p class="control has-icons-left has-icons-right" v-bind:class="{ 'is-loading': isLoading }">
                                 <input class="input name" type="text" v-model="filter.terms" title="Enter application name to filter." placeholder="application">
                                 <span class="icon is-small is-left">
                                 <i class="fas fa-filter"></i>
@@ -28,7 +28,7 @@
                         </div>
                     </div>
                     <div class="column is-2">
-                        <div class="select" v-bind:class="{ 'is-loading': isLoading }">
+                        <div class="select">
                             <select v-model="filter.state">
                                 <option value=""></option>
                                 <option value="pending">Pending</option>

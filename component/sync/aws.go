@@ -36,7 +36,7 @@ func handleChange(ctx mongo.SessionContext, message sqs.MessageView) error {
 
 			if act, err := action.GetCurrentBy(ctx, inst.Task.Definition.ID); err == nil {
 
-				if act.Is(action.Pending) {
+				if act.Is(action.Pending) || act.Is(action.Error) {
 					if err := action.Stop(ctx, act.ID, nil); err != nil {
 						return err
 					}
