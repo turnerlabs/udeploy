@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/turnerlabs/udeploy/component/version"
+
 	"github.com/turnerlabs/udeploy/component/app"
 
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
@@ -62,14 +64,16 @@ func populateInst(i app.Instance, svc *s3.S3, downloader *s3manager.Downloader) 
 		return i, state, err
 	}
 
-	version, build, revision, err := extractMetadata(oo.Metadata)
+	ver, revision, err := extractMetadata(oo.Metadata)
 	if err != nil {
 		return i, state, err
 	}
 
-	i.Task.Definition.Description = fmt.Sprintf("%s.%s", version, build)
-	i.Task.Definition.Version = version
-	i.Task.Definition.Build = build
+	v, b := version.Extract(ver, i.Task.ImageTagEx)
+
+	i.Task.Definition.Description = ver
+	i.Task.Definition.Version = v
+	i.Task.Definition.Build = b
 
 	i.Task.Definition.Revision, err = strconv.ParseInt(revision, 10, 64)
 	if err != nil {
@@ -103,21 +107,16 @@ func populateInst(i app.Instance, svc *s3.S3, downloader *s3manager.Downloader) 
 	return i, state, nil
 }
 
-func extractMetadata(metadata map[string]*string) (string, string, string, error) {
+func extractMetadata(metadata map[string]*string) (string, string, error) {
 	version, found := metadata["Version"]
 	if !found {
-		return "", "", "", errors.New("version not found")
-	}
-
-	build, found := metadata["Build"]
-	if !found {
-		return "", "", "", errors.New("build number not found")
+		return "", "", errors.New("version not found")
 	}
 
 	revision, found := metadata["Revision"]
 	if !found {
-		return "", "", "", errors.New("revision not found")
+		return "", "", errors.New("revision not found")
 	}
 
-	return *version, *build, *revision, nil
+	return *version, *revision, nil
 }

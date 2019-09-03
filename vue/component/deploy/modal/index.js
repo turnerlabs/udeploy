@@ -1,9 +1,6 @@
 import {env} from "../../env/parse.js";
 import {obj} from "../../copy/object.js";
 
-const BUILD_TYPE_REVISION = "BUILD_TYPE_REVISION"
-const BUILD_TYPE_IMAGE = "BUILD_TYPE_IMAGE"
-
 Vue.component('deploy-modal', {
     template: '#deploy-modal-template',
     
@@ -35,6 +32,7 @@ Vue.component('deploy-modal', {
             loadingChanges: false,
 
             error: "",
+            warn: "",
         }
 
         if (this.instance.containers.length > 0) {
@@ -54,40 +52,39 @@ Vue.component('deploy-modal', {
             this.getCommits(build.version);
         },
         selectedSource: function (instance) {
-            let that = this 
+            let that = this;
 
-            this.versions.isLoading = true
+            this.versions.isLoading = true;
+
+            this.error = "";
+            this.warn = "";
+            this.commits = [];
+
             this.loadVersions(instance)
             .then(function(versions) {
                 if (versions.message) {
                     that.error = versions.message;
                 } 
 
-                for (let i in that.app.instances) {
-                    if (that.selectedSource == that.app.instances[i].name) {
-                        versions[that.app.instances[i].formattedVersion] = {
-                            type: BUILD_TYPE_REVISION,
-                            revision: that.app.instances[i].revision,
-                            version: that.app.instances[i].version
-                        }
-
-                        that.selectedVersion = that.app.instances[i].formattedVersion;
-                    }
-                }
-
                 that.versions.data = {}
 
                 Object.keys(versions).map(function(key, index) {
                     let build = versions[key];
 
-                    if (build.type === BUILD_TYPE_IMAGE) {
-                        build.revision = that.instance.revision;
-                    }
-
-                    build.display = that.formatVersion(key, build.revision, build.type)
+                    build.display = that.formatVersion(key, build)
                     
                     that.versions.data[key] = build;
                 });
+
+                for (let i in that.app.instances) {
+                    if (that.selectedSource == that.app.instances[i].name) {
+                        if (that.versions.data[that.app.instances[i].formattedVersion]) {
+                            that.selectedVersion = that.app.instances[i].formattedVersion;
+                        } else {
+                            that.error = that.app.instances[i].formattedVersion + " not found in " + that.selectedSource + " registry"
+                        }
+                    }
+                }
 
                 that.versions.isLoading = false
             })
@@ -107,9 +104,8 @@ Vue.component('deploy-modal', {
                 this.selectedVersion = this.app.instances[i].formattedVersion;
 
                 this.versions.data[this.selectedVersion] = {
-                    revision: this.app.instances[i].revision,
                     version: this.app.instances[i].version,
-                    display: this.formatVersion(this.selectedVersion, this.app.instances[i].revision)
+                    display: this.selectedVersion
                 }
             }
         }
@@ -143,7 +139,7 @@ Vue.component('deploy-modal', {
                 that.commits = commits;
             })
             .catch(function(e) {
-                that.error = e.message;
+                that.warn = e.message;
             })
             .finally(function() {
                 that.loadingChanges = false
@@ -166,7 +162,8 @@ Vue.component('deploy-modal', {
             }
 
             let ver = this.versions.data[this.selectedVersion]
-            if (ver.type === BUILD_TYPE_IMAGE) {
+
+            if (ver.registry) {
                 body.imageTag = this.selectedVersion;
             }
 
@@ -202,12 +199,12 @@ Vue.component('deploy-modal', {
         overrideEnv: function(evt) {
             this.override.env = evt.target.checked;
         },
-        formatVersion(version, revision, type) {
-            return type === BUILD_TYPE_IMAGE
-              ? version
-              : revision === 0 
-                ? version
-                : version + " (" + revision + ")"
+        formatVersion(version, build) {
+            if (build.registry) {
+                return version;
+            }
+
+            return version + " (" + build.revision + ")"; 
         },
         formatEnv(env) {
             let envFile = ""

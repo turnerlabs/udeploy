@@ -11,6 +11,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+const Undetermined = "undetermined"
+
 // Application ...
 type Application struct {
 	ID primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
@@ -129,13 +131,15 @@ type Definition struct {
 
 	Environment map[string]string `json:"environment"`
 	Secrets     map[string]string `json:"secrets"`
+
+	Registry bool `json:"registry"`
 }
 
 // FormatVersion ...
 func (d Definition) FormatVersion() string {
 
 	if d.Version == "" {
-		return "undetermined"
+		return Undetermined
 	}
 
 	if len(d.Build) > 0 {

@@ -51,7 +51,7 @@ func Deploy(ctx mongo.SessionContext, actionID primitive.ObjectID, source app.In
 		}
 	}()
 
-	version, build, err := getRevisionDetails(source, revision, sess)
+	version, err := getRevisionDetails(source, revision, sess)
 	if err != nil {
 		return err
 	}
@@ -69,7 +69,6 @@ func Deploy(ctx mongo.SessionContext, actionID primitive.ObjectID, source app.In
 
 	metadata := map[string]*string{
 		"version":  aws.String(version),
-		"build":    aws.String(build),
 		"revision": aws.String(strconv.FormatInt(revision, 10)),
 	}
 
@@ -115,7 +114,7 @@ func createConfigFile(unzippedPath string, target app.Instance, env map[string]s
 	return nil
 }
 
-func getRevisionDetails(source app.Instance, revision int64, sess *session.Session) (string, string, error) {
+func getRevisionDetails(source app.Instance, revision int64, sess *session.Session) (string, error) {
 	svc := s3.New(sess)
 
 	o, err := svc.GetObject(&s3.GetObjectInput{
@@ -123,15 +122,15 @@ func getRevisionDetails(source app.Instance, revision int64, sess *session.Sessi
 		Key:    aws.String(fmt.Sprintf("%s/%d.zip", source.S3RegistryPrefix, revision)),
 	})
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
-	version, build, _, err := extractMetadata(o.Metadata)
+	ver, _, err := extractMetadata(o.Metadata)
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
-	return version, build, nil
+	return ver, nil
 }
 
 func buildConfig(source, target app.Instance, sess *session.Session) (map[string]string, error) {
@@ -297,6 +296,7 @@ func upload(target app.Instance, workingDir string, metadata map[string]*string,
 	return uploader.UploadWithIterator(context.Background(), iter)
 }
 
+// download ...
 func download(source app.Instance, revision int64, workingDir string, sess *session.Session) (string, error) {
 	downloader := s3manager.NewDownloader(sess)
 

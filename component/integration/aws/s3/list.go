@@ -1,11 +1,12 @@
 package s3
 
 import (
-	"github.com/turnerlabs/udeploy/component/app"
-	"fmt"
 	"log"
 	"strconv"
 	"strings"
+
+	"github.com/turnerlabs/udeploy/component/app"
+	"github.com/turnerlabs/udeploy/component/version"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -14,8 +15,8 @@ import (
 
 const ext = ".zip"
 
-// ListTaskDefinitions ...
-func ListTaskDefinitions(instance app.Instance) (map[string]app.Definition, error) {
+// ListDefinitions ...
+func ListDefinitions(instance app.Instance) (map[string]app.Definition, error) {
 
 	results, err := List(instance.S3RegistryBucket, instance.S3RegistryPrefix)
 	if err != nil {
@@ -41,7 +42,7 @@ func ListTaskDefinitions(instance app.Instance) (map[string]app.Definition, erro
 			continue
 		}
 
-		version, build, revision, err := extractMetadata(result.Metadata)
+		ver, revision, err := extractMetadata(result.Metadata)
 		if err != nil {
 			log.Println(*o.Key)
 			log.Println(err)
@@ -55,15 +56,19 @@ func ListTaskDefinitions(instance app.Instance) (map[string]app.Definition, erro
 			continue
 		}
 
+		v, b := version.Extract(ver, instance.Task.ImageTagEx)
+
 		def := app.Definition{
-			Version:  version,
-			Build:    build,
+			Version:  v,
+			Build:    b,
 			Revision: n,
 
 			Environment: map[string]string{},
 			Secrets:     map[string]string{},
 
-			Description: fmt.Sprintf("%s.%s", version, build),
+			Description: v,
+
+			Registry: true,
 		}
 
 		versions[def.FormatVersion()] = def

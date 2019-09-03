@@ -8,7 +8,10 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
+
+	"github.com/turnerlabs/udeploy/component/version"
+
+	"github.com/aws/aws-sdk-go/service/s3"
 
 	"github.com/turnerlabs/udeploy/component/app"
 
@@ -27,83 +30,163 @@ func Deploy(source app.Instance, target app.Instance, revision int64, opts task.
 		return errors.New("lambda functions do not support secrets")
 	}
 
-	svc := lambda.New(session.New())
+	if len(source.S3RegistryBucket) > 0 {
+		return deployFromS3(source, target, revision, opts)
+	}
 
-	rev := strconv.FormatInt(revision, 10)
+	return deployFromLambda(source, target, revision, opts)
+}
+
+func deployFromLambda(source, target app.Instance, revision int64, opts task.DeployOptions) error {
+	svc := lambda.New(session.New())
 
 	sourceFuncArn := fmt.Sprintf("%s:%d", source.FunctionName, revision)
 
-	if source.FunctionName != target.FunctionName || opts.Override {
-
-		sourceFunc, err := svc.GetFunction(&lambda.GetFunctionInput{
-			FunctionName: aws.String(sourceFuncArn),
-		})
-		if err != nil {
-			return err
-		}
-
-		if err := deployCode(*sourceFunc.Code.Location, target.FunctionName, svc); err != nil {
-			return err
-		}
-
-		if err := deployConfig(target, sourceFunc.Configuration.Environment.Variables, opts, svc); err != nil {
-			return err
-		}
-
-		vo, err := svc.PublishVersion(&lambda.PublishVersionInput{
-			FunctionName: aws.String(target.FunctionName),
-			Description:  sourceFunc.Configuration.Description,
-		})
-		if err != nil {
-			return err
-		}
-
-		lo, err := svc.ListVersionsByFunction(&lambda.ListVersionsByFunctionInput{
-			FunctionName: aws.String(target.FunctionName),
-		})
-		if err != nil {
-			return err
-		}
-
-		for _, v := range lo.Versions {
-			if *v.Description == *vo.Description && *v.Version != *vo.Version {
-				_, err := svc.DeleteFunction(&lambda.DeleteFunctionInput{
-					FunctionName: v.FunctionName,
-					Qualifier:    v.Version,
-				})
-				if err != nil {
-					log.Print(err)
-				}
-			}
-		}
-
-		rev = *vo.Version
-	}
-
-	_, err := svc.UpdateAlias(&lambda.UpdateAliasInput{
-		Name:            aws.String(target.FunctionAlias),
-		FunctionName:    aws.String(target.FunctionName),
-		FunctionVersion: aws.String(rev),
+	sourceFunc, err := svc.GetFunction(&lambda.GetFunctionInput{
+		FunctionName: aws.String(sourceFuncArn),
 	})
 	if err != nil {
 		return err
 	}
 
-	return nil
+	if err := deployCodeFromLambda(*sourceFunc.Code.Location, target.FunctionName, svc); err != nil {
+		return err
+	}
+
+	if err := deployConfig(source, target, opts, svc); err != nil {
+		return err
+	}
+
+	vo, err := svc.PublishVersion(&lambda.PublishVersionInput{
+		FunctionName: aws.String(target.FunctionName),
+		Description:  sourceFunc.Configuration.Description,
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = svc.UpdateAlias(&lambda.UpdateAliasInput{
+		Name:            aws.String(target.FunctionAlias),
+		FunctionName:    aws.String(target.FunctionName),
+		FunctionVersion: vo.Version,
+	})
+
+	return err
 }
 
-func deployConfig(target app.Instance, sourceEnvironment map[string]*string, opts task.DeployOptions, svc *lambda.Lambda) error {
-	to, err := svc.GetFunction(&lambda.GetFunctionInput{
+func deployFromS3(source, target app.Instance, revision int64, opts task.DeployOptions) error {
+	sess := session.New()
+
+	key := fmt.Sprintf("%s/%d.zip", source.S3RegistryPrefix, revision)
+
+	svc := lambda.New(sess)
+	_, err := svc.UpdateFunctionCode(&lambda.UpdateFunctionCodeInput{
+		FunctionName: aws.String(target.FunctionName),
+		S3Bucket:     aws.String(source.S3RegistryBucket),
+		S3Key:        aws.String(key),
+	})
+
+	if err := deployConfig(source, target, opts, svc); err != nil {
+		return err
+	}
+
+	ver, err := getVersion(source.S3RegistryBucket, key, sess)
+	if err != nil {
+		return err
+	}
+
+	vo, err := svc.PublishVersion(&lambda.PublishVersionInput{
+		FunctionName: aws.String(target.FunctionName),
+		Description:  aws.String(ver),
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = svc.UpdateAlias(&lambda.UpdateAliasInput{
+		Name:            aws.String(target.FunctionAlias),
+		FunctionName:    aws.String(target.FunctionName),
+		FunctionVersion: vo.Version,
+	})
+
+	return err
+}
+
+func getVersion(bucket, key string, sess *session.Session) (string, error) {
+	s3svc := s3.New(sess)
+
+	input := &s3.GetObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	}
+
+	output, err := s3svc.GetObject(input)
+	if err != nil {
+		return "", err
+	}
+
+	ver, found := output.Metadata["Version"]
+	if !found {
+		return "", errors.New("failed to get version from s3 object metadata")
+	}
+
+	return *ver, nil
+}
+
+func isOldRevision(config *lambda.FunctionConfiguration, deployConfig *lambda.FunctionConfiguration, regex string) bool {
+	if *config.Version == *deployConfig.Version {
+		return false
+	}
+
+	oldVersion, oldBuild := version.Extract(*config.Description, regex)
+	newVersion, newBuild := version.Extract(*deployConfig.Description, regex)
+
+	return len(oldVersion) > 0 && newVersion == oldVersion && newBuild == oldBuild
+}
+
+func deleteOldRevisions(target app.Instance, deployVersion *lambda.FunctionConfiguration, svc *lambda.Lambda) error {
+	lo, err := svc.ListVersionsByFunction(&lambda.ListVersionsByFunctionInput{
 		FunctionName: aws.String(target.FunctionName),
 	})
 	if err != nil {
 		return err
 	}
 
-	input := mapConfiguration(*to.Configuration)
+	for _, v := range lo.Versions {
+		if isOldRevision(v, deployVersion, target.Task.ImageTagEx) {
+			_, err := svc.DeleteFunction(&lambda.DeleteFunctionInput{
+				FunctionName: v.FunctionName,
+				Qualifier:    v.Version,
+			})
+			if err != nil {
+				log.Print(err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func deployConfig(source, target app.Instance, opts task.DeployOptions, svc *lambda.Lambda) error {
+
+	sourceFunc, err := svc.GetFunction(&lambda.GetFunctionInput{
+		FunctionName: aws.String(fmt.Sprintf("%s:%s", source.FunctionName, source.FunctionAlias)),
+	})
+	if err != nil {
+		return err
+	}
+
+	currentFunc, err := svc.GetFunction(&lambda.GetFunctionInput{
+		FunctionName: aws.String(fmt.Sprintf("%s:%s", target.FunctionName, target.FunctionAlias)),
+	})
+	if err != nil {
+		return err
+	}
+
+	input := mapConfiguration(*currentFunc.Configuration)
 
 	for _, key := range target.Task.CloneEnvVars {
-		if value, found := sourceEnvironment[key]; found {
+		if value, found := sourceFunc.Configuration.Environment.Variables[key]; found {
 			input.Environment.Variables[key] = value
 		}
 	}
@@ -113,14 +196,11 @@ func deployConfig(target app.Instance, sourceEnvironment map[string]*string, opt
 	}
 
 	_, err = svc.UpdateFunctionConfiguration(&input)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
-func deployCode(sourceCodeURL, targetFuncName string, svc *lambda.Lambda) error {
+func deployCodeFromLambda(sourceCodeURL, targetFuncName string, svc *lambda.Lambda) error {
 	codeZipfileName := fmt.Sprintf("%s.zip", uuid.New())
 
 	if err := downloadFile(codeZipfileName, sourceCodeURL); err != nil {
@@ -142,9 +222,6 @@ func deployCode(sourceCodeURL, targetFuncName string, svc *lambda.Lambda) error 
 		FunctionName: aws.String(targetFuncName),
 		ZipFile:      b,
 	})
-	if err != nil {
-		return err
-	}
 
 	return nil
 }
@@ -158,7 +235,6 @@ func mapConfiguration(config lambda.FunctionConfiguration) lambda.UpdateFunction
 		Handler:          config.Handler,
 		KMSKeyArn:        config.KMSKeyArn,
 		MemorySize:       config.MemorySize,
-		RevisionId:       config.RevisionId,
 		Role:             config.Role,
 		Runtime:          config.Runtime,
 		Timeout:          config.Timeout,

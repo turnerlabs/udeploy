@@ -106,6 +106,7 @@ func keepMostRecentRevisions(tds []*ecs.TaskDefinition, regex string) map[string
 
 	for _, td := range tds {
 		release := app.DefinitionFrom(td, regex)
+
 		ver := release.FormatVersion()
 
 		if ver == "undetermined" {

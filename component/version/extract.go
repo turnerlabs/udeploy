@@ -18,10 +18,10 @@ func FormatExtract(image, regex string) string {
 }
 
 // Extract ...
-func Extract(image, regex string) (string, string) {
+func Extract(field, regex string) (string, string) {
 	tag := regexp.MustCompile(regex)
 
-	matches := tag.FindAllStringSubmatch(image, -1)
+	matches := tag.FindAllStringSubmatch(field, -1)
 
 	if missingVersion(matches) {
 		return "", ""

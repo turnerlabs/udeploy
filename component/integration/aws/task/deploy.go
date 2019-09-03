@@ -93,7 +93,7 @@ func Deploy(source app.Instance, target app.Instance, sourceRevision int64, sour
 			containerDefinitions = append(containerDefinitions, targetContainer)
 		}
 	} else {
-		return nil, fmt.Errorf("Number of container definitions not compatible")
+		return nil, fmt.Errorf("number of container definitions not compatible")
 	}
 
 	newOutput, err := svc.RegisterTaskDefinition(&ecs.RegisterTaskDefinitionInput{

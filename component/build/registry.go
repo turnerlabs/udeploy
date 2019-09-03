@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/turnerlabs/udeploy/component/version"
-
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/turnerlabs/udeploy/component/integration/aws/s3"
@@ -18,16 +16,12 @@ import (
 	"github.com/turnerlabs/udeploy/component/supplement"
 )
 
-const (
-	buildTypeImage    = "BUILD_TYPE_IMAGE"
-	buildTypeRevision = "BUILD_TYPE_REVISION"
-)
-
 type buildView struct {
-	Type       string              `json:"type"`
 	Revision   int64               `json:"revision"`
 	Version    string              `json:"version"`
 	Containers []app.ContainerView `json:"containers"`
+
+	Registry bool `json:"registry"`
 }
 
 const (
@@ -63,13 +57,46 @@ func GetBuilds(c echo.Context) error {
 		if err != nil {
 			return err
 		}
+
+		if len(sourceRegistry.Repository) > 0 {
+			ecrBuilds, err := ecr.ListDefinitions(sourceRegistry)
+			if err != nil {
+				return err
+			}
+
+			for _, b := range ecrBuilds {
+				v := b.FormatVersion()
+
+				if v == app.Undetermined {
+					continue
+				}
+
+				if _, exists := builds[v]; !exists {
+					builds[b.FormatVersion()] = b
+				}
+			}
+		}
+
+		// If the instance version no longer exists in the registry or
+		// scanned task definitions, make it available for deployments.
+		if _, exists := builds[sourceRegistry.FormatVersion()]; !exists {
+			builds[sourceRegistry.FormatVersion()] = sourceRegistry.Task.Definition
+		}
+
 	case appTypeLambda:
-		builds, err = lambda.ListDefinitions(sourceRegistry)
-		if err != nil {
-			return err
+		if len(sourceRegistry.S3RegistryBucket) > 0 {
+			builds, err = s3.ListDefinitions(sourceRegistry)
+			if err != nil {
+				return err
+			}
+		} else {
+			builds, err = lambda.ListDefinitions(sourceRegistry)
+			if err != nil {
+				return err
+			}
 		}
 	case appTypeS3:
-		builds, err = s3.ListTaskDefinitions(sourceRegistry)
+		builds, err = s3.ListDefinitions(sourceRegistry)
 		if err != nil {
 			return err
 		}
@@ -81,9 +108,9 @@ func GetBuilds(c echo.Context) error {
 
 	for ver, details := range builds {
 		revision := buildView{
-			Type:     buildTypeRevision,
 			Revision: details.Revision,
 			Version:  details.Version,
+			Registry: details.Registry,
 		}
 
 		revision.Containers = append(revision.Containers, app.ContainerView{
@@ -93,36 +120,6 @@ func GetBuilds(c echo.Context) error {
 		})
 
 		viewBuilds[ver] = revision
-	}
-
-	if len(sourceRegistry.Repository) > 0 {
-
-		images, err := ecr.List(sourceRegistry.Repo())
-		if err != nil {
-			return err
-		}
-
-		for _, i := range images {
-			if i.ImageTag == nil {
-				continue
-			}
-
-			if _, exists := viewBuilds[*i.ImageTag]; exists {
-				continue
-			}
-
-			ver, _ := version.Extract(*i.ImageTag, sourceRegistry.Task.ImageTagEx)
-
-			viewBuilds[*i.ImageTag] = buildView{
-				Type:    buildTypeImage,
-				Version: ver,
-				Containers: []app.ContainerView{
-					app.ContainerView{
-						Image: *i.ImageTag,
-					},
-				},
-			}
-		}
 	}
 
 	return c.JSON(http.StatusOK, viewBuilds)

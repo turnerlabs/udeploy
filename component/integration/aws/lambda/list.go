@@ -3,6 +3,8 @@ package lambda
 import (
 	"strconv"
 
+	"github.com/aws/aws-sdk-go/service/s3"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/lambda"
@@ -54,4 +56,24 @@ func ListDefinitions(instance app.Instance) (map[string]app.Definition, error) {
 	}
 
 	return versions, nil
+}
+
+// List ...
+func List(bucket, registry string) ([]*s3.Object, error) {
+	svc := s3.New(session.New())
+
+	input := &s3.ListObjectsInput{
+		Bucket: aws.String(bucket),
+	}
+
+	if len(registry) > 0 {
+		input.SetPrefix(registry)
+	}
+
+	result, err := svc.ListObjects(input)
+	if err != nil {
+		return []*s3.Object{}, err
+	}
+
+	return result.Contents, nil
 }

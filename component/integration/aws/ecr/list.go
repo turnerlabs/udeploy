@@ -3,10 +3,43 @@ package ecr
 import (
 	"strings"
 
+	"github.com/turnerlabs/udeploy/component/app"
+	"github.com/turnerlabs/udeploy/component/version"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecr"
 )
+
+// ListDefinitions ...
+func ListDefinitions(registry app.Instance) (map[string]app.Definition, error) {
+	images, err := List(registry.Repo())
+	if err != nil {
+		return map[string]app.Definition{}, err
+	}
+
+	builds := map[string]app.Definition{}
+
+	for _, i := range images {
+		if i.ImageTag == nil {
+			continue
+		}
+
+		ver, build := version.Extract(*i.ImageTag, registry.Task.ImageTagEx)
+
+		builds[*i.ImageTag] = app.Definition{
+			Version:  ver,
+			Build:    build,
+			Revision: registry.Task.Definition.Revision,
+
+			Description: *i.ImageTag,
+
+			Registry: true,
+		}
+	}
+
+	return builds, nil
+}
 
 // List ...
 func List(repo string) ([]*ecr.ImageIdentifier, error) {

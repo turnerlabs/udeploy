@@ -62,7 +62,7 @@
                               </select>
                             </div>
                             <span v-if="app.type == 's3'" class="help">Deploy files from one S3 bucket to the same S3 bucket under a different prefix or to another S3 bucket. Requires zipped artifacts to be uploaded to an S3 bucket registry prefix with metadata for the version, build, and revision numbers.</span>
-                            <span v-if="app.type == 'lambda'" class="help">Deploy versioned code from one Lambda function to another Lambda function and update an alias to point to the new version.</span>
+                            <span v-if="app.type == 'lambda'" class="help">Deploy zipped versioned code from an S3 bucket or Lambda function to another Lambda function and update an alias to point to the new version.</span>
                             <span v-if="app.type == 'service'" class="help">Deploy an existing task definition or ECR image to a Fargate service.</span>
                             <span v-if="app.type == 'scheduled-task'" class="help">Deploy an existing task definition or ECR image to a scheduled Fargate task by specifying the Cloudwatch rule that triggers the task.</span>
                         </div>
@@ -306,7 +306,7 @@
                               </div>
                             </div>
                         </div>
-                        <div v-if="app.type == 's3'" class="field is-horizontal">
+                        <div v-if="app.type == 's3' || app.type == 'lambda'" class="field is-horizontal">
                             <div class="field-label is-normal">
                               <label class="label">S3 Registry Bucket</label>
                             </div>
@@ -318,7 +318,7 @@
                               </div>
                             </div>
                         </div>
-                        <div v-if="app.type == 's3'" class="field is-horizontal">
+                        <div v-if="app.type == 's3' || app.type == 'lambda'" class="field is-horizontal">
                             <div class="field-label is-normal">
                               <label class="label">S3 Registry Prefix</label>
                             </div>
@@ -427,7 +427,7 @@
                         <div class="field is-horizontal">
                           <div class="field-label is-normal">
                               <label class="label">Env Variable Names</label>
-                              <p class="help">During deployments, the listed variables will be copied from the source to the target. Not applicable for image deployments from ECR.</p>
+                              <p class="help">During deployments, the listed variables will be copied from the source to the target. Not applicable for deployments from ECR or S3.</p>
                           </div>
                           <div class="field-body">
                               <div class="field">  

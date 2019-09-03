@@ -83,10 +83,13 @@
             <div v-if="instance.deployCode.length > 0" class="field is-horizontal">
                 <input class="input is-danger" type="text" v-on:keyup="validateDeployCode" placeholder="authorization code required">
             </div>
+            <div v-if="warn.length > 0" class="box has-background-warning content">
+                {{ warn }}
+            </div>
             <div v-if="error.length > 0" class="box has-background-danger has-text-white content">
                 {{ error }}
             </div>
-            <button class="button is-primary" v-bind:class="{ 'is-loading': deploying }" :disabled="deploying || !deployAuthorized ? true : false" @click="deploy(instance.name)">Deploy</button>
+            <button class="button is-primary" v-bind:class="{ 'is-loading': deploying }" :disabled="error.length > 0 || versions.isLoading || deploying || !deployAuthorized ? true : false" @click="deploy(instance.name)">Deploy</button>
         </div>
     </footer>
 </div>

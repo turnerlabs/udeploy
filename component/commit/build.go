@@ -1,11 +1,12 @@
 package commit
 
 import (
-	"github.com/turnerlabs/udeploy/component/app"
 	"errors"
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/turnerlabs/udeploy/component/app"
 
 	"github.com/turnerlabs/udeploy/component/integration/github"
 )
@@ -30,7 +31,7 @@ func BuildRelease(org, repo, targetTag, currentTag, url, accessToken string, max
 
 	tag, found := tags[targetTag]
 	if !found {
-		return []Change{}, fmt.Errorf("tag %s not found", targetTag)
+		return []Change{}, fmt.Errorf("GitHub tag %s not found", targetTag)
 	}
 
 	commit, err := github.GetCommit(org, repo, tag.Commit.SHA, url, accessToken)

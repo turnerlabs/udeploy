@@ -82,6 +82,7 @@ func populateInst(i app.Instance, svc *lambda.Lambda, cwsvc *cloudwatch.CloudWat
 	}
 
 	i.Task.Definition.Revision = n
+
 	i.Task.DesiredCount = 1
 
 	state.Version = i.FormatVersion()
