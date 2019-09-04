@@ -125,23 +125,7 @@ includeTenplates().then(() => {
                     return Promise.resolve(data);
                 })
                 .then(function(app) {
-                    that.app = app
-
-                    for (let i in app.instances) {
-                        if (app.instances[i].name == that.params.instance) {
-                            that.instance = app.instances[i]
-
-                            if (that.instance.error && that.instance.error.length > 0) {
-                                that.addError(new Error(that.instance.error));
-                            }
-                        }
-                    }
-
-                    for (let l in that.instance.links) {
-                        Object.keys(that.instance.tokens).forEach(function(key) {
-                            that.instance.links[l].url = that.instance.links[l].url.replace("{{" + key + "}}", that.instance.tokens[key]);
-                        })
-                    }
+                    that.updateInstance(app);
 
                     that.updateTime();
                     
@@ -151,6 +135,27 @@ includeTenplates().then(() => {
                     that.isPartialLoading = false;
                     that.isLoading = false
                 }); 
+            },
+            updateInstance: function (app) {
+                let that = this;
+
+                this.app = app
+                
+                for (let i in app.instances) {
+                    if (app.instances[i].name == this.params.instance) {
+                        this.instance = app.instances[i];   
+                    }
+                }
+
+                if (this.instance.error && this.instance.error.length > 0) {
+                    this.addError(new Error(this.instance.error));
+                }
+
+                for (let l in this.instance.links) {
+                    Object.keys(this.instance.tokens).forEach(function(key) {
+                        that.instance.links[l].url = that.instance.links[l].url.replace("{{" + key + "}}", that.instance.tokens[key]);
+                    })
+                }
             },
             updateTime: function () {
                 let today = new Date();
@@ -176,8 +181,9 @@ includeTenplates().then(() => {
                         let app = JSON.parse(e.data);
 
                         if (that.app.name == app.name) {
-                            that.refresh(false)
+                            that.updateInstance(app);
                         }
+                       
                     }, false);
                 } else {
                     that.error = "This browser does not support real-time updates. Refresh browser to view changes."
