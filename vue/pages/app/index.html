@@ -21,7 +21,7 @@
               <button class="button is-warning" @click="cancel">Cancel</button>
               <button class="button is-danger" v-if="!isNew()" v-bind:class="{'is-loading': isDeleting}" :disabled="!canSave" @click.stop.prevent="modal.confirm = { show: true, message: 'Enter application name to delete.', code: app.name, action: trash }">Delete</button>
             </div>
-            <h4><a href="/apps">APPS</a> > {{ params.app.toUpperCase() }}</h4> 
+            <h4><a href="/apps">APPS</a> > <span v-if="isNew()">{{ params.app.toUpperCase() }}</span><a v-else :href="'/apps#' + params.app">{{ params.app.toUpperCase() }}</a></h4> 
             <hr />
             
             <alert-banner v-bind:alerts="alerts"></alert-banner>
