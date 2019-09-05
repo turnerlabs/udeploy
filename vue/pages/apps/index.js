@@ -467,7 +467,7 @@ includeTenplates().then(() => {
             },
             handleContinue: function () {
                 this.modal.confirm.action()
-            },
+            }, 
             stopInstance: function () {
                 this.scaleInstance(this.selected.app.name, this.selected.instance.name, 0)
             },
