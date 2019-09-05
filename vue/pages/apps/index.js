@@ -93,7 +93,7 @@ includeTenplates().then(() => {
             this.getUser().then(function(user) {
                 that.user = user
 
-                that.refreshApps()
+                that.refreshApps(true)
 
                 that.watchForUpdates()
             }).catch(function(e) {
@@ -103,17 +103,16 @@ includeTenplates().then(() => {
             this.filterApps = this.debounce(this.refreshApps, 500);
         },
 
-        updated: function() { 
-            let hash = window.location.hash.replace("#", "")
-            
-            var elmnt = document.getElementById(hash);
-
-            if (elmnt) {
-                elmnt.scrollIntoView();
-            }
-        },
-
         methods: {
+            jumpTo() {
+                let hash = window.location.hash.replace("#", "")
+            
+                var elmnt = document.getElementById(hash);
+
+                if (elmnt) {
+                    elmnt.scrollIntoView();
+                }
+            },
             debounce(func, wait, immediate) {
                 var timeout, result;
                 return function() {
@@ -130,8 +129,8 @@ includeTenplates().then(() => {
                 };
             },
             formatErrorPreview(error) {
-                if (error.length > 15) {
-                    return error.substring(0, 20) + "..."
+                if (error.length > 16) {
+                    return error.substring(0, 16) + "..."
                 }
 
                 return error
@@ -389,7 +388,7 @@ includeTenplates().then(() => {
                     return a.order - b.order;
                 });
             },
-            refreshApps: function() {
+            refreshApps: function(jump) {
                 let that = this
 
                 this.isLoading = true;
@@ -418,6 +417,10 @@ includeTenplates().then(() => {
                     that.alerts.push({ error: e });                    
                 }).finally(function() {
                     that.isLoading = false;
+
+                    if (jump) {
+                        that.jumpTo();
+                    }
                 }); 
             },
             getVersion: function() {

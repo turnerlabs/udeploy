@@ -18,76 +18,68 @@ func Populate(instances map[string]app.Instance) (map[string]app.Instance, error
 	evtSvc := cloudwatchevents.New(sesssion)
 	ecsSvc := ecs.New(sesssion)
 
-	instanceChan := make(chan chanModel, len(instances))
+	populated := map[string]app.Instance{}
 
-	for name, instance := range instances {
+	for name, i := range instances {
 
-		go func(innerName string, innerInstance app.Instance, innerEcs *ecs.ECS, innerEvt *cloudwatchevents.CloudWatchEvents) {
-			state := app.NewState()
-
-			td, ruleOutput, target, err := getServiceInfo(innerInstance, innerEcs, innerEvt)
-			if err != nil {
-				state.SetError(err)
-			} else {
-				innerInstance.Task.Definition = app.DefinitionFrom(td, innerInstance.Task.ImageTagEx)
-
-				runningTasks, err := task.List(innerInstance, innerEcs, "RUNNING")
-				if err != nil {
-					state.SetError(err)
-				}
-
-				stoppedTasks, err := task.List(innerInstance, innerEcs, "STOPPED")
-				if err != nil {
-					state.SetError(err)
-				}
-
-				isPending, isRunning, err := getStatus(innerInstance, td, runningTasks, stoppedTasks)
-
-				if err != nil {
-					state.SetError(err)
-				}
-
-				if isPending {
-					state.SetPending()
-				} else if isRunning {
-					state.SetRunning()
-				} else {
-					state.SetStopped()
-				}
-
-				state.Version = innerInstance.FormatVersion()
-
-				innerInstance.Task.DesiredCount = *target.EcsParameters.TaskCount
-				innerInstance.Task.CronEnabled = isCronEnabled(*ruleOutput.State)
-				innerInstance.Task.CronExpression = fmt.Sprintf("0 %s", (*ruleOutput.ScheduleExpression)[5:len(*ruleOutput.ScheduleExpression)-1])
-
-				innerInstance.Task.TasksInfo, err = task.GetTasksInfo(innerInstance, innerEcs, append(runningTasks, stoppedTasks...))
-				if err != nil {
-					state.SetError(err)
-				}
-			}
-
-			innerInstance.SetState(state)
-
-			instanceChan <- chanModel{
-				name:     innerName,
-				instance: innerInstance,
-			}
-
-		}(name, instance, ecsSvc, evtSvc)
-	}
-
-	for respCount := 1; respCount <= len(instances); respCount++ {
-		i := <-instanceChan
-
-		instances[i.name] = i.instance
-
-		if respCount == len(instances) {
-			close(instanceChan)
+		i, state, err := populateInst(i, ecsSvc, evtSvc)
+		if err != nil {
+			state.SetError(err)
 		}
+
+		i.SetState(state)
+
+		populated[name] = i
 	}
 
-	return instances, nil
+	return populated, nil
+}
+
+func populateInst(i app.Instance, ecsSvc *ecs.ECS, evtSvc *cloudwatchevents.CloudWatchEvents) (app.Instance, app.State, error) {
+	i.Task.Definition = app.NewDefinition(i.Task.Family)
+
+	state := app.NewState()
+
+	td, ruleOutput, target, err := getServiceInfo(i, ecsSvc, evtSvc)
+	if err != nil {
+		return i, state, err
+	}
+
+	i.Task.Definition = app.DefinitionFrom(td, i.Task.ImageTagEx)
+
+	runningTasks, err := task.List(i, ecsSvc, "RUNNING")
+	if err != nil {
+		return i, state, err
+	}
+
+	stoppedTasks, err := task.List(i, ecsSvc, "STOPPED")
+	if err != nil {
+		return i, state, err
+	}
+
+	isPending, isRunning, err := getStatus(i, td, runningTasks, stoppedTasks)
+
+	if err != nil {
+		state.SetError(err)
+	}
+
+	if isPending {
+		state.SetPending()
+	} else if isRunning {
+		state.SetRunning()
+	} else {
+		state.SetStopped()
+	}
+
+	state.Version = i.FormatVersion()
+
+	i.Task.DesiredCount = *target.EcsParameters.TaskCount
+	i.Task.CronEnabled = isCronEnabled(*ruleOutput.State)
+	i.Task.CronExpression = fmt.Sprintf("0 %s", (*ruleOutput.ScheduleExpression)[5:len(*ruleOutput.ScheduleExpression)-1])
+
+	i.Task.TasksInfo, err = task.GetTasksInfo(i, ecsSvc, append(runningTasks, stoppedTasks...))
+
+	return i, state, err
 }
 
 func isCronEnabled(state string) bool {
@@ -112,7 +104,7 @@ func getStatus(instance app.Instance, td *ecs.TaskDefinition, runningTasks, stop
 	if lastTask != nil && lastTask.LastStatus != nil && *lastTask.LastStatus != "RUNNING" {
 		for _, c := range lastTask.Containers {
 			if c.ExitCode != nil && *c.ExitCode != 0 {
-				return false, false, fmt.Errorf("container exited with code %d", *c.ExitCode)
+				return false, false, app.InstanceError{Problem: fmt.Sprintf("container exited with code %d", *c.ExitCode)}
 			}
 		}
 	}

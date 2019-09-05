@@ -26,8 +26,10 @@ func Watch(ctx mongo.SessionContext, messages chan interface{}) error {
 
 			if changed, changes := inst.Changed(); changed {
 
-				for t, c := range changes {
-					log.Printf("APP_CHANGED: %s [%s] %s\n", inst.Task.Definition.ID, t, c)
+				logChanges(inst.Task.Definition.ID, changes)
+
+				if configException(changes) {
+					continue
 				}
 
 				notifications, err := notice.Get(ctx, application.Name)
@@ -64,6 +66,22 @@ func Watch(ctx mongo.SessionContext, messages chan interface{}) error {
 	}
 
 	return nil
+}
+
+func configException(changes map[string]app.Change) bool {
+	for t := range changes {
+		if t == app.ChangeTypeException {
+			return true
+		}
+	}
+
+	return false
+}
+
+func logChanges(id string, changes map[string]app.Change) {
+	for t, c := range changes {
+		log.Printf("APP_CHANGED: %s [%s] %s\n", id, t, c)
+	}
 }
 
 func displayStatus(t string, c app.Change) string {

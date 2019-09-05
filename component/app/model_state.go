@@ -11,9 +11,10 @@ const (
 
 	ErrorTypeAction = "action"
 
-	ChangeTypeStatus  = "STATUS"
-	ChangeTypeVersion = "VERSION"
-	ChangeTypeError   = "ERROR"
+	ChangeTypeStatus    = "STATUS"
+	ChangeTypeVersion   = "VERSION"
+	ChangeTypeError     = "ERROR"
+	ChangeTypeException = "EXCEPTION"
 )
 
 // NewState ...
@@ -81,6 +82,13 @@ func (c Change) String() string {
 func (s State) ChangedFrom(prev State) (bool, map[string]Change) {
 	changes := map[string]Change{}
 
+	// If the previous error was an exception, meaning the status could not be
+	// determined due to technical errors, there is no way to determine if the
+	// state actually change.
+	if isException(prev.Error) {
+		return false, changes
+	}
+
 	if s.Is != prev.Is {
 		changes[ChangeTypeStatus] = Change{
 			Before: prev.Is,
@@ -95,14 +103,37 @@ func (s State) ChangedFrom(prev State) (bool, map[string]Change) {
 		}
 	}
 
+	// Only consider an error a change in state when errors did not
+	// previously exist.
 	if s.Error != nil && prev.Error == nil {
-		changes[ChangeTypeError] = Change{
-			Before: fmt.Sprintf("%s", prev.Error),
-			After:  fmt.Sprintf("%s", s.Error),
+		switch s.Error.(type) {
+		case InstanceError, StatusError:
+			changes[ChangeTypeError] = Change{
+				Before: fmt.Sprintf("%s", prev.Error),
+				After:  fmt.Sprintf("%s", s.Error),
+			}
+		default:
+			changes[ChangeTypeException] = Change{
+				Before: fmt.Sprintf("%s", prev.Error),
+				After:  fmt.Sprintf("%s", s.Error),
+			}
 		}
 	}
 
 	return len(changes) > 0, changes
+}
+
+func isException(e error) bool {
+	if e == nil {
+		return false
+	}
+
+	switch e.(type) {
+	case InstanceError, StatusError:
+		return false
+	default:
+		return true
+	}
 }
 
 // StatusError ...
@@ -113,4 +144,13 @@ type StatusError struct {
 
 func (s StatusError) Error() string {
 	return s.Value
+}
+
+// InstanceError ...
+type InstanceError struct {
+	Problem string
+}
+
+func (e InstanceError) Error() string {
+	return e.Problem
 }

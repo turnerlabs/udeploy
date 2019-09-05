@@ -26,12 +26,9 @@ func Populate(instances map[string]app.Instance) (map[string]app.Instance, error
 	for key, instance := range instances {
 
 		i, state, err := populateInst(instance, svc, downloader)
-
 		if err != nil {
 			state.Error = err
 		}
-
-		state.Version = i.FormatVersion()
 
 		i.SetState(state)
 
@@ -78,6 +75,8 @@ func populateInst(i app.Instance, svc *s3.S3, downloader *s3manager.Downloader) 
 	if err != nil {
 		return i, state, err
 	}
+
+	state.Version = i.FormatVersion()
 
 	buff := &aws.WriteAtBuffer{}
 

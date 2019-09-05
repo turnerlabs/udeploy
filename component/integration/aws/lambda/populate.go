@@ -27,7 +27,7 @@ func Populate(instances map[string]app.Instance) (map[string]app.Instance, error
 		i, state, err := populateInst(instance, svc, cwsvc)
 
 		if err != nil {
-			state.Error = err
+			state.SetError(err)
 		}
 
 		i.SetState(state)
@@ -39,9 +39,7 @@ func Populate(instances map[string]app.Instance) (map[string]app.Instance, error
 }
 
 func populateInst(i app.Instance, svc *lambda.Lambda, cwsvc *cloudwatch.CloudWatch) (app.Instance, app.State, error) {
-	i.Task.Definition = app.Definition{
-		ID: fmt.Sprintf("%s-%s", i.FunctionName, i.FunctionAlias),
-	}
+	i.Task.Definition = app.NewDefinition(fmt.Sprintf("%s-%s", i.FunctionName, i.FunctionAlias))
 
 	state := app.NewState()
 
@@ -115,7 +113,7 @@ func populateInst(i app.Instance, svc *lambda.Lambda, cwsvc *cloudwatch.CloudWat
 	}
 
 	if *alarm.MetricAlarms[0].StateValue == "ALARM" {
-		state.Error = errors.New(*alarm.MetricAlarms[0].StateReason)
+		state.SetError(app.InstanceError{Problem: *alarm.MetricAlarms[0].StateReason})
 	}
 
 	return i, state, nil

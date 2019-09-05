@@ -35,98 +35,88 @@ func Populate(instances map[string]app.Instance) (map[string]app.Instance, error
 		return instances, err
 	}
 
-	instanceChan := make(chan chanModel, len(instances))
+	populated := map[string]app.Instance{}
 
 	for name, instance := range instances {
 
-		go func(innerName string, innerInstance app.Instance, innerSvc *ecs.ECS) {
-			state := app.NewState()
+		i, state, err := populateInst(instance, ao.ScalableTargets, svc)
+		if err != nil {
+			state.SetError(err)
+		}
 
-			td, svcs, err := getServiceInfo(innerInstance, innerSvc)
-			if err != nil {
-				state.SetError(err)
-				state.SetPending()
-			} else {
-				innerInstance.Task.Definition = app.DefinitionFrom(td, innerInstance.Task.ImageTagEx)
+		i.SetState(state)
 
-				state.Version = innerInstance.FormatVersion()
-
-				stoppedTasks, err := getTaskDetails(svc, innerInstance, []*ecs.Task{}, "STOPPED", "")
-				if err != nil {
-					state.SetError(err)
-				}
-
-				runningTasks, err := getTaskDetails(svc, innerInstance, []*ecs.Task{}, "RUNNING", "")
-				if err != nil {
-					state.SetError(err)
-				}
-
-				tasks := append(runningTasks, stoppedTasks...)
-
-				if err := checkError(svcs, stoppedTasks, innerInstance); err != nil {
-					state.SetError(err)
-					state.SetPending()
-				} else if isPending(svcs) {
-					state.SetPending()
-				} else if isStopped(svcs) {
-					state.SetStopped()
-				} else {
-					state.SetRunning()
-				}
-
-				innerInstance.Task.DesiredCount = *svcs.DesiredCount
-
-				for _, t := range ao.ScalableTargets {
-					if *t.ResourceId == fmt.Sprintf("service/%s/%s", innerInstance.Cluster, innerInstance.Service) {
-						innerInstance.Task.DesiredCount = *t.MinCapacity
-						innerInstance.AutoScale = true
-					}
-				}
-
-				innerInstance.Task.TasksInfo, err = task.GetTasksInfo(innerInstance, innerSvc, tasks)
-				if err != nil {
-					state.SetError(err)
-				}
-
-				region, err := getRegion(*td.TaskDefinitionArn)
-				if err == nil {
-					innerInstance.Links = append(innerInstance.Links, app.Link{
-						Generated:   true,
-						Description: "AWS Console Service Logs",
-						Name:        "logs",
-						URL: fmt.Sprintf("https://console.aws.amazon.com/ecs/home?region=%s#/clusters/%s/services/%s/logs",
-							region, innerInstance.Cluster, innerInstance.Service),
-					})
-				}
-
-			}
-
-			innerInstance.SetState(state)
-
-			instanceChan <- chanModel{
-				name:     innerName,
-				instance: innerInstance,
-			}
-
-		}(name, instance, svc)
+		populated[name] = i
 	}
 
-	for respCount := 1; respCount <= len(instances); respCount++ {
-		i := <-instanceChan
+	return populated, nil
+}
 
-		instances[i.name] = i.instance
+func populateInst(i app.Instance, scalableTargets []*applicationautoscaling.ScalableTarget, svc *ecs.ECS) (app.Instance, app.State, error) {
+	i.Task.Definition = app.NewDefinition(i.Task.Family)
 
-		if respCount == len(instances) {
-			close(instanceChan)
+	state := app.NewState()
+
+	td, svcs, err := getServiceInfo(i, svc)
+	if err != nil {
+		return i, state, err
+	}
+
+	i.Task.Definition = app.DefinitionFrom(td, i.Task.ImageTagEx)
+
+	state.Version = i.FormatVersion()
+
+	stoppedTasks, err := getTaskDetails(svc, i, []*ecs.Task{}, "STOPPED", "")
+	if err != nil {
+		return i, state, err
+	}
+
+	runningTasks, err := getTaskDetails(svc, i, []*ecs.Task{}, "RUNNING", "")
+	if err != nil {
+		return i, state, err
+	}
+
+	tasks := append(runningTasks, stoppedTasks...)
+
+	if err := checkError(svcs, stoppedTasks, i); err != nil {
+		state.SetError(err)
+		state.SetPending()
+	} else if isPending(svcs) {
+		state.SetPending()
+	} else if isStopped(svcs) {
+		state.SetStopped()
+	} else {
+		state.SetRunning()
+	}
+
+	i.Task.DesiredCount = *svcs.DesiredCount
+
+	for _, t := range scalableTargets {
+		if *t.ResourceId == fmt.Sprintf("service/%s/%s", i.Cluster, i.Service) {
+			i.Task.DesiredCount = *t.MinCapacity
+			i.AutoScale = true
 		}
 	}
 
-	return instances, nil
-}
+	i.Task.TasksInfo, err = task.GetTasksInfo(i, svc, tasks)
+	if err != nil {
+		return i, state, err
+	}
 
-type chanModel struct {
-	name     string
-	instance app.Instance
+	region, err := getRegion(*td.TaskDefinitionArn)
+	if err != nil {
+		return i, state, err
+	}
+
+	i.Links = append(i.Links, app.Link{
+		Generated:   true,
+		Description: "AWS Console Service Logs",
+		Name:        "logs",
+		URL: fmt.Sprintf("https://console.aws.amazon.com/ecs/home?region=%s#/clusters/%s/services/%s/logs",
+			region, i.Cluster, i.Service),
+	})
+
+	return i, state, nil
 }
 
 func getRegion(arn string) (string, error) {
@@ -151,7 +141,7 @@ func checkError(svcs *ecs.Service, tasks []*ecs.Task, inst app.Instance) error {
 	}
 
 	if count, err := getTaskError(tasks); err != nil {
-		return fmt.Errorf("%d failed task(s) (%s)", count, err)
+		return app.InstanceError{Problem: fmt.Sprintf("%d failed task(s) (%s)", count, err)}
 	}
 
 	return nil
