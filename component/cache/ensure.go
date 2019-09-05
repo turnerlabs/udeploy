@@ -45,7 +45,7 @@ func EnsureApp(ctx mongo.SessionContext, appName string) error {
 
 		dbApp.Instances = instances
 
-		Apps.Update(dbApp)
+		return Apps.Update(dbApp)
 	}
 
 	return nil
@@ -59,24 +59,27 @@ func Ensure(ctx mongo.SessionContext) error {
 	}
 
 	total := len(apps)
+	processed := 0
 	cached := 0
 
 	log.Printf("APP_CACHE: caching %d apps\n", total)
 
 	for _, a := range apps {
 		if err := EnsureApp(ctx, a.Name); err != nil {
-			return err
+			log.Printf("APP_CACHE: %s\n", err)
+		} else {
+			cached++
 		}
 
-		cached++
+		processed++
 
-		if cached%10 == 0 || cached == total {
-			log.Printf("APP_CACHE: %d of %d cached\n", cached, total)
+		if processed%10 == 0 || processed == total {
+			log.Printf("APP_CACHE: %d cached\n", cached)
 		}
 
 		// Wait to avoid hitting AWS api rate limits.
 		// There is no hurry caching apps since they are also
-		// loaded into cache when a user view the portal.
+		// loaded into cache when a user views the portal.
 		time.Sleep(1 * time.Second)
 	}
 

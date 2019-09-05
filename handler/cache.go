@@ -31,7 +31,9 @@ func GetCachedApp(c echo.Context) error {
 
 	apps[0].Instances = instances
 
-	cache.Apps.Update(apps[0])
+	if err := cache.Apps.Update(apps[0]); err != nil {
+		return err
+	}
 
 	return c.JSON(http.StatusOK, apps[0].ToView(usr))
 }

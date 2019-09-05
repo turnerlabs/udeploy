@@ -39,25 +39,11 @@ func Populate(instances map[string]app.Instance) (map[string]app.Instance, error
 }
 
 func populateInst(i app.Instance, svc *lambda.Lambda, cwsvc *cloudwatch.CloudWatch) (app.Instance, app.State, error) {
+	i.Task.Definition = app.Definition{
+		ID: fmt.Sprintf("%s-%s", i.FunctionName, i.FunctionAlias),
+	}
 
 	state := app.NewState()
-
-	alarm, err := cwsvc.DescribeAlarms(&cloudwatch.DescribeAlarmsInput{
-		AlarmNames: aws.StringSlice([]string{
-			buildAlarmName(i.FunctionName),
-		}),
-	})
-	if err != nil {
-		return i, state, err
-	}
-
-	if alarm.MetricAlarms == nil || len(alarm.MetricAlarms) == 0 {
-		return i, state, errors.New("metric alarm missing")
-	}
-
-	if *alarm.MetricAlarms[0].StateValue == "ALARM" {
-		state.Error = errors.New(*alarm.MetricAlarms[0].StateReason)
-	}
 
 	ao, err := svc.GetAlias(&lambda.GetAliasInput{
 		FunctionName: aws.String(i.FunctionName),
@@ -79,29 +65,26 @@ func populateInst(i app.Instance, svc *lambda.Lambda, cwsvc *cloudwatch.CloudWat
 		return i, state, err
 	}
 
+	i.Task.Definition.Version = version
+	i.Task.Definition.Build = build
+	i.Task.Definition.Description = fmt.Sprintf("%s.%s", version, build)
+
 	env := map[string]string{}
 	for k, v := range fo.Configuration.Environment.Variables {
 		value := *v
 		env[k] = value
 	}
 
+	i.Task.Definition.Environment = env
+	i.Task.Definition.Secrets = map[string]string{}
+
 	n, err := strconv.ParseInt(*fo.Configuration.Version, 10, 64)
 	if err != nil {
 		return i, state, err
 	}
 
+	i.Task.Definition.Revision = n
 	i.Task.DesiredCount = 1
-	i.Task.Definition = app.Definition{
-		ID:          fmt.Sprintf("%s-%s", i.FunctionName, i.FunctionAlias),
-		Description: fmt.Sprintf("%s.%s", version, build),
-
-		Version:  version,
-		Build:    build,
-		Revision: n,
-
-		Environment: env,
-		Secrets:     map[string]string{},
-	}
 
 	state.Version = i.FormatVersion()
 
@@ -117,6 +100,23 @@ func populateInst(i app.Instance, svc *lambda.Lambda, cwsvc *cloudwatch.CloudWat
 		URL: fmt.Sprintf("https://console.aws.amazon.com/cloudwatch/home?region=%s#logStream:group=/aws/lambda/%s",
 			region, *fo.Configuration.FunctionName),
 	})
+
+	alarm, err := cwsvc.DescribeAlarms(&cloudwatch.DescribeAlarmsInput{
+		AlarmNames: aws.StringSlice([]string{
+			buildAlarmName(i.FunctionName),
+		}),
+	})
+	if err != nil {
+		return i, state, err
+	}
+
+	if alarm.MetricAlarms == nil || len(alarm.MetricAlarms) == 0 {
+		return i, state, errors.New("metric alarm missing")
+	}
+
+	if *alarm.MetricAlarms[0].StateValue == "ALARM" {
+		state.Error = errors.New(*alarm.MetricAlarms[0].StateReason)
+	}
 
 	return i, state, nil
 }

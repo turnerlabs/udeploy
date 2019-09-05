@@ -1,6 +1,8 @@
 package cache
 
 import (
+	"fmt"
+
 	"github.com/turnerlabs/udeploy/component/app"
 )
 
@@ -24,11 +26,15 @@ func (c *appCache) UpdateInstances(appName string, instances map[string]app.Inst
 	c.Notifications <- c.apps[appName].Copy()
 }
 
-func (c *appCache) Update(app app.Application) {
+func (c *appCache) Update(app app.Application) error {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 
-	for _, i := range app.Instances {
+	for name, i := range app.Instances {
+		if len(i.Task.Definition.ID) == 0 {
+			return fmt.Errorf("%s %s missing task definition id", app.Name, name)
+		}
+
 		c.lookup[i.Task.Definition.ID] = app.Name
 	}
 
@@ -44,4 +50,6 @@ func (c *appCache) Update(app app.Application) {
 	c.apps[app.Name] = app.Copy()
 
 	c.Notifications <- app.Copy()
+
+	return nil
 }
