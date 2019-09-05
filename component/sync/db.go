@@ -115,7 +115,11 @@ func WatchDatabaseActions(ctx mongo.SessionContext) error {
 
 			app.Instances = instances
 
-			cache.Apps.Update(app)
+			if err := cache.Apps.Update(app); err != nil {
+				log.Println("cache update failed after database action change detected")
+				log.Println(err)
+				continue
+			}
 		}
 	}
 
