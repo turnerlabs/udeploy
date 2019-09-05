@@ -74,6 +74,8 @@ func Populate(instances map[string]app.Instance) (map[string]app.Instance, error
 					state.SetRunning()
 				}
 
+				innerInstance.Task.DesiredCount = *svcs.DesiredCount
+
 				for _, t := range ao.ScalableTargets {
 					if *t.ResourceId == fmt.Sprintf("service/%s/%s", innerInstance.Cluster, innerInstance.Service) {
 						innerInstance.Task.DesiredCount = *t.MinCapacity
