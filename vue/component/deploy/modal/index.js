@@ -45,6 +45,9 @@ Vue.component('deploy-modal', {
 
     watch: {
         selectedVersion: function(key) {
+            this.error = "";
+            this.warn = "";
+            
             let build = this.versions.data[key];
 
             this.baseVersion = build.version
@@ -81,7 +84,7 @@ Vue.component('deploy-modal', {
                         if (that.versions.data[that.app.instances[i].formattedVersion]) {
                             that.selectedVersion = that.app.instances[i].formattedVersion;
                         } else {
-                            that.error = that.app.instances[i].formattedVersion + " not found in " + that.selectedSource + " registry"
+                            that.error = that.app.instances[i].formattedVersion + " not found in scanned revisions for " + that.selectedSource + " registry"
                         }
                     }
                 }

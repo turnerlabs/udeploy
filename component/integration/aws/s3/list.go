@@ -2,6 +2,7 @@ package s3
 
 import (
 	"log"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -23,14 +24,13 @@ func ListDefinitions(instance app.Instance) (map[string]app.Definition, error) {
 		return nil, err
 	}
 
+	results = limitRevisions(results, instance.Task.Revisions)
+
+	svc := s3.New(session.New())
+
 	versions := map[string]app.Definition{}
 
 	for _, o := range results {
-		if !strings.Contains(*o.Key, ext) {
-			continue
-		}
-
-		svc := s3.New(session.New())
 
 		result, err := svc.GetObject(&s3.GetObjectInput{
 			Bucket: aws.String(instance.S3RegistryBucket),
@@ -44,15 +44,13 @@ func ListDefinitions(instance app.Instance) (map[string]app.Definition, error) {
 
 		ver, revision, err := extractMetadata(result.Metadata)
 		if err != nil {
-			log.Println(*o.Key)
-			log.Println(err)
+			log.Printf("%s %s\n", *o.Key, err)
 			continue
 		}
 
 		n, err := strconv.ParseInt(revision, 10, 64)
 		if err != nil {
-			log.Println(*o.Key)
-			log.Println(err)
+			log.Printf("%s %s\n", *o.Key, err)
 			continue
 		}
 
@@ -94,5 +92,26 @@ func List(bucket, registry string) ([]*s3.Object, error) {
 		return []*s3.Object{}, err
 	}
 
-	return result.Contents, nil
+	zips := []*s3.Object{}
+
+	for _, file := range result.Contents {
+		if strings.Contains(*file.Key, ext) {
+			zips = append(zips, file)
+		}
+	}
+
+	return zips, nil
+}
+
+func limitRevisions(objs []*s3.Object, limit int) []*s3.Object {
+
+	if limit == 0 || len(objs) <= limit {
+		return objs
+	}
+
+	sort.Slice(objs, func(i, j int) bool {
+		return objs[i].LastModified.After(*objs[j].LastModified)
+	})
+
+	return objs[0:limit]
 }

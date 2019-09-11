@@ -400,14 +400,14 @@
                               </div>
                             </div>
                         </div>
-                        <div v-if="app.type == 'service' || app.type == 'scheduled-task'" class="field is-horizontal">
+                        <div class="field is-horizontal">
                             <div class="field-label is-normal">
                               <label class="label">Revisions Scanned</label>
                             </div>
                             <div class="field-body">
                               <div class="field">
                                 <p class="control">
-                                  <input class="input counter" :disabled="!i.claims['edit'] && !user.admin" type="number" min="1" v-model.number="i.task.revisions" placeholder="50" title="The number of task definition revisions scanned for images, starting with the most recent, when displaying deployable versions">
+                                  <input class="input counter" :disabled="!i.claims['edit'] && !user.admin" type="number" min="1" v-model.number="i.task.revisions" placeholder="50" title="The number of registry revisions scanned, ordered by the most recent, when displaying deployable versions.">
                                 </p>
                               </div>
                             </div>
