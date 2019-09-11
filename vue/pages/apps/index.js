@@ -93,8 +93,6 @@ includeTenplates().then(() => {
             this.getUser().then(function(user) {
                 that.user = user
 
-                that.refreshApps(true)
-
                 that.watchForUpdates()
             }).catch(function(e) {
                 that.alerts.push({ error: e });
@@ -290,7 +288,11 @@ includeTenplates().then(() => {
                     source.onopen = function(){
                         console.log('connected');
 
-                        that.clearErrorsBy("connection")
+                        that.clearErrorsBy("connection");
+
+                        let jumpToHash = (that.apps.length === 0)
+
+                        that.refreshApps(jumpToHash);
                     };
 
                     source.onerror = function(e) {
