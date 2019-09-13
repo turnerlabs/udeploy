@@ -26,17 +26,17 @@ func BuildRelease(org, repo, targetTag, currentTag, url, accessToken string, max
 
 	tags, err := github.GetTags(org, repo, url, accessToken)
 	if err != nil {
-		return []Change{}, err
+		return []Change{}, fmt.Errorf("GitHub: %s", err)
 	}
 
 	tag, found := tags[targetTag]
 	if !found {
-		return []Change{}, fmt.Errorf("GitHub tag %s not found", targetTag)
+		return []Change{}, fmt.Errorf("GitHub: tag %s not found", targetTag)
 	}
 
 	commit, err := github.GetCommit(org, repo, tag.Commit.SHA, url, accessToken)
 	if err != nil {
-		return []Change{}, err
+		return []Change{}, fmt.Errorf("GitHub: %s", err)
 	}
 
 	changes := []Change{}
@@ -71,7 +71,7 @@ func BuildRelease(org, repo, targetTag, currentTag, url, accessToken string, max
 
 		commit, err = github.GetCommit(org, repo, commit.Parents[0].SHA, url, accessToken)
 		if err != nil {
-			return changes, err
+			return changes, fmt.Errorf("GitHub: %s", err)
 		}
 	}
 
