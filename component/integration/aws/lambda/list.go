@@ -1,9 +1,10 @@
 package lambda
 
 import (
+	"log"
+	"sort"
 	"strconv"
-
-	"github.com/aws/aws-sdk-go/service/s3"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -11,19 +12,22 @@ import (
 	"github.com/turnerlabs/udeploy/component/app"
 )
 
+// ISO8601 time format
+const ISO8601 = "2006-01-02T15:04:05-0700"
+
 // ListDefinitions ...
 func ListDefinitions(instance app.Instance) (map[string]app.Definition, error) {
 
 	svc := lambda.New(session.New())
-	o, err := svc.ListVersionsByFunction(&lambda.ListVersionsByFunctionInput{
-		FunctionName: aws.String(instance.FunctionName),
-	})
+	ver, err := listVersions(svc, instance.FunctionName, "", []*lambda.FunctionConfiguration{})
 	if err != nil {
 		return nil, err
 	}
 
+	ver = limitRevisions(ver, instance.Task.Revisions)
+
 	versions := map[string]app.Definition{}
-	for _, funcVersion := range o.Versions {
+	for _, funcVersion := range ver {
 
 		revision, err := strconv.ParseInt(*funcVersion.Version, 10, 64)
 		if err != nil {
@@ -58,22 +62,52 @@ func ListDefinitions(instance app.Instance) (map[string]app.Definition, error) {
 	return versions, nil
 }
 
-// List ...
-func List(bucket, registry string) ([]*s3.Object, error) {
-	svc := s3.New(session.New())
+func listVersions(svc *lambda.Lambda, functionName, nextToken string, versions []*lambda.FunctionConfiguration) ([]*lambda.FunctionConfiguration, error) {
 
-	input := &s3.ListObjectsInput{
-		Bucket: aws.String(bucket),
+	input := &lambda.ListVersionsByFunctionInput{
+		FunctionName: aws.String(functionName),
 	}
 
-	if len(registry) > 0 {
-		input.SetPrefix(registry)
+	if len(nextToken) > 0 {
+		input.SetMarker(nextToken)
 	}
 
-	result, err := svc.ListObjects(input)
+	output, err := svc.ListVersionsByFunction(input)
 	if err != nil {
-		return []*s3.Object{}, err
+		return nil, err
 	}
 
-	return result.Contents, nil
+	versions = append(versions, output.Versions...)
+
+	if output.NextMarker == nil || len(*output.NextMarker) == 0 {
+		return versions, nil
+	}
+
+	return listVersions(svc, functionName, *output.NextMarker, versions)
+}
+
+func limitRevisions(objs []*lambda.FunctionConfiguration, limit int) []*lambda.FunctionConfiguration {
+
+	if limit == 0 || len(objs) <= limit {
+		return objs
+	}
+
+	sort.Slice(objs, func(i, j int) bool {
+
+		iTime, err := time.Parse(ISO8601, *objs[i].LastModified)
+		if err != nil {
+			log.Println(err)
+			return false
+		}
+
+		jTime, err := time.Parse(ISO8601, *objs[j].LastModified)
+		if err != nil {
+			log.Println(err)
+			return false
+		}
+
+		return iTime.After(jTime)
+	})
+
+	return objs[0:limit]
 }
