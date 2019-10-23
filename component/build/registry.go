@@ -24,13 +24,6 @@ type buildView struct {
 	Registry bool `json:"registry"`
 }
 
-const (
-	appTypeService       = "service"
-	appTypeScheduledTask = "scheduled-task"
-	appTypeLambda        = "lambda"
-	appTypeS3            = "s3"
-)
-
 // GetBuilds ...
 func GetBuilds(c echo.Context) error {
 	ctx := c.Get("ctx").(mongo.SessionContext)
@@ -52,7 +45,7 @@ func GetBuilds(c echo.Context) error {
 	builds := map[string]app.Definition{}
 
 	switch apps[0].Type {
-	case appTypeService, appTypeScheduledTask:
+	case app.AppTypeService, app.AppTypeScheduledTask:
 		builds, err = task.ListDefinitions(sourceRegistry.Task)
 		if err != nil {
 			return err
@@ -83,7 +76,7 @@ func GetBuilds(c echo.Context) error {
 			builds[sourceRegistry.FormatVersion()] = sourceRegistry.Task.Definition
 		}
 
-	case appTypeLambda:
+	case app.AppTypeLambda:
 		if len(sourceRegistry.S3RegistryBucket) > 0 {
 			builds, err = s3.ListDefinitions(sourceRegistry)
 			if err != nil {
@@ -95,7 +88,7 @@ func GetBuilds(c echo.Context) error {
 				return err
 			}
 		}
-	case appTypeS3:
+	case app.AppTypeS3:
 		builds, err = s3.ListDefinitions(sourceRegistry)
 		if err != nil {
 			return err

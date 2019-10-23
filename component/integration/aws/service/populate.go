@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"time"
 
 	"github.com/turnerlabs/udeploy/component/app"
 
@@ -78,7 +79,7 @@ func populateInst(i app.Instance, scalableTargets []*applicationautoscaling.Scal
 
 	tasks := append(runningTasks, stoppedTasks...)
 
-	if err := checkError(svcs, stoppedTasks, i); err != nil {
+	if err := checkError(svcs, stoppedTasks, app.FailedTaskExpiration*time.Minute); err != nil {
 		state.SetError(err)
 		state.SetPending()
 	} else if isPending(svcs) {
@@ -108,15 +109,28 @@ func populateInst(i app.Instance, scalableTargets []*applicationautoscaling.Scal
 		return i, state, err
 	}
 
-	i.Links = append(i.Links, app.Link{
-		Generated:   true,
-		Description: "AWS Console Service Logs",
-		Name:        "logs",
-		URL: fmt.Sprintf("https://console.aws.amazon.com/ecs/home?region=%s#/clusters/%s/services/%s/logs",
-			region, i.Cluster, i.Service),
-	})
+	linkName := "logs"
+	if missingLink(linkName, i.Links) {
+		i.Links = append(i.Links, app.Link{
+			Generated:   true,
+			Description: "AWS Console Service Logs",
+			Name:        linkName,
+			URL: fmt.Sprintf("https://console.aws.amazon.com/ecs/home?region=%s#/clusters/%s/services/%s/logs",
+				region, i.Cluster, i.Service),
+		})
+	}
 
 	return i, state, nil
+}
+
+func missingLink(name string, links []app.Link) bool {
+	for _, l := range links {
+		if l.Generated && l.Name == name {
+			return false
+		}
+	}
+
+	return true
 }
 
 func getRegion(arn string) (string, error) {
@@ -134,14 +148,14 @@ func getRegion(arn string) (string, error) {
 	return "", errors.New("failed to get region")
 }
 
-func checkError(svcs *ecs.Service, tasks []*ecs.Task, inst app.Instance) error {
+func checkError(svcs *ecs.Service, tasks []*ecs.Task, errorExpiration time.Duration) error {
 
 	if *svcs.DesiredCount == 0 {
 		return nil
 	}
 
-	if count, err := getTaskError(tasks); err != nil {
-		return app.InstanceError{Problem: fmt.Sprintf("%d failed task(s) (%s)", count, err)}
+	if _, err := getServiceError(tasks, errorExpiration); err != nil {
+		return app.InstanceError{Problem: err.Error()}
 	}
 
 	return nil
@@ -182,15 +196,18 @@ func getTaskDetails(svc *ecs.ECS, inst app.Instance, tasks []*ecs.Task, status, 
 	return getTaskDetails(svc, inst, tasks, status, nextToken)
 }
 
-func getTaskError(tasks []*ecs.Task) (int, error) {
+func getServiceError(tasks []*ecs.Task, expiration time.Duration) (int, error) {
 	var reason error
 	count := 0
 
 	for _, t := range tasks {
 		if t.StopCode != nil && t.StoppedReason != nil {
 			if *t.StopCode != ecs.TaskStopCodeUserInitiated {
-				reason = errors.New(*t.StoppedReason)
-				count++
+
+				if time.Now().Sub(*t.ExecutionStoppedAt) < expiration {
+					reason = errors.New(*t.StoppedReason)
+					count++
+				}
 			}
 		}
 	}
@@ -199,8 +216,6 @@ func getTaskError(tasks []*ecs.Task) (int, error) {
 }
 
 func isPending(svc *ecs.Service) bool {
-
-	//return (len(svc.Deployments) > 1 && *svc.DesiredCount > 0) || *svc.PendingCount > 0 || *svc.DesiredCount > *svc.RunningCount
 	return (len(svc.Deployments) > 1 && *svc.DesiredCount > 0) || *svc.DesiredCount > 0 && *svc.RunningCount == 0
 }
 

@@ -1,6 +1,9 @@
 package sync
 
 import (
+	"log"
+	"time"
+
 	"github.com/turnerlabs/udeploy/component/action"
 	"github.com/turnerlabs/udeploy/component/app"
 	"github.com/turnerlabs/udeploy/component/cache"
@@ -8,6 +11,49 @@ import (
 	"github.com/turnerlabs/udeploy/component/supplement"
 	"go.mongodb.org/mongo-driver/mongo"
 )
+
+// AWSPollEventlessChanges monitors and updates the instance state
+// for specific changes that do not trigger AWS events. This polling
+// technique is only used when changes cannot be detected by AWS
+// events. To avoid AWS rate limits, this technique should be used
+// SPARINGLY.
+//
+// Currently AWS does not fire events when errors expire from ECS Task
+// history. Since monitored errors in ECS Task history cause an a
+// pplication to display an error state, the history must be monitored
+// to determine when a service returns to a healthly state.
+func AWSPollEventlessChanges(ctx mongo.SessionContext) error {
+
+	ticker := time.NewTicker(app.FailedTaskExpiration * time.Minute)
+
+	for {
+		select {
+		case <-ticker.C:
+			for _, a := range cache.Apps.GetAll() {
+				if a.Type != app.AppTypeService {
+					continue
+				}
+
+				targeted := a.GetErrorInstances()
+				if len(targeted) == 0 {
+					continue
+				}
+
+				log.Printf("Updating App: %s\n", a.Name)
+
+				supplemented, err := supplement.Instances(ctx, a.Type, targeted, false)
+				if err != nil {
+					log.Printf("failed to update %s state (%s)\n", a.Name, err)
+					continue
+				}
+
+				cache.Apps.UpdateInstances(a.Name, supplemented)
+
+				time.Sleep(time.Second)
+			}
+		}
+	}
+}
 
 // AWSWatchEvents ...
 func AWSWatchEvents(ctx mongo.SessionContext) error {

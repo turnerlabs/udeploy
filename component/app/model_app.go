@@ -11,7 +11,25 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-const Undetermined = "undetermined"
+const (
+	AppTypeService       = "service"
+	AppTypeScheduledTask = "scheduled-task"
+	AppTypeLambda        = "lambda"
+	AppTypeS3            = "s3"
+
+	// FailedTaskExpiration determines the minutes an AWS ECS failed tasks should be considered.
+	//
+	// Currently the AWS ECS container restart throttle may wait a maximum of 15 minutes before
+	// attempting a restart. 20 minutes has been chosen as the time to consider failed tasks.
+	// This ensures a service does not appear to be healthy due to lack of attempted restarts
+	// while reducing the time it takes to determine a service is healthy from 1 hour
+	// down to 20 minutes.
+	//
+	// https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-throttle-logic.html
+	FailedTaskExpiration = 20
+
+	Undetermined = "undetermined"
+)
 
 // Application ...
 type Application struct {
@@ -51,6 +69,19 @@ func (a Application) GetInstances(filter []string) map[string]Instance {
 
 	for _, ds := range filter {
 		instances[ds] = a.Instances[ds]
+	}
+
+	return instances
+}
+
+// GetErrorInstances ...
+func (a Application) GetErrorInstances() map[string]Instance {
+	instances := map[string]Instance{}
+
+	for k, i := range a.Instances {
+		if i.CurrentState.Error != nil {
+			instances[k] = i
+		}
 	}
 
 	return instances

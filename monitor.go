@@ -46,6 +46,15 @@ func monitorChanges(ctx context.Context, sess mongo.Session) {
 		}
 	}()
 
+	go func() {
+		if err := mongo.WithSession(ctx, sess, func(sctx mongo.SessionContext) error {
+			log.Fatal(sync.AWSPollEventlessChanges(sctx))
+			return nil
+		}); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
 	//--------------------------------------------------
 	//- Watch for cloudwatch alarms
 	//--------------------------------------------------
