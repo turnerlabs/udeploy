@@ -58,6 +58,15 @@ includeTenplates().then(() => {
 
                 this.alerts.push({ error: err });
             },
+            sortTasks: function (tasks) { 
+                return obj.copy(tasks).sort(function(a,b) {
+                    if (new Date(a.lastStatusTime) < new Date(b.lastStatusTime))
+                        return 1;
+                    if (new Date(a.lastStatusTime) > new Date(b.lastStatusTime))
+                        return -1;
+                    return 0;
+                });
+            },
             getCommits() {
                 let that = this
 

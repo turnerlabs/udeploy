@@ -66,12 +66,12 @@
 
                 <article class="message is-primary" v-if="instance.task.tasksInfo && instance.task.tasksInfo.length > 0">
                   <div class="message-header">
-                      Tasks<a title="refresh page" class="button is-pulled-right is-small" v-bind:class="{'is-loading': isPartialLoading}"  @click="refresh()"><span class="icon is-small"><i class="fas fa-sync"></i></span></a>
+                      Tasks ({{ instance.task.tasksInfo.length }}) <a title="refresh page" class="button is-pulled-right is-small" v-bind:class="{'is-loading': isPartialLoading}"  @click="refresh()"><span class="icon is-small"><i class="fas fa-sync"></i></span></a>
                   </div>
                   <div class="message-body">
                     <table>
                         <tr><th>ID Prefix</th><th>Version</th><th>Status</th><th>Reason</th></tr>
-                        <tr v-for="ti in instance.task.tasksInfo">
+                        <tr v-for="ti in sortTasks(instance.task.tasksInfo)">
                           <td :title="ti.taskID">
                             {{ ti.taskID.substring(0, 8) }} (<a class="link" v-bind:href="ti.logLink" target="_blank">logs</a>)
                           </td>

@@ -3,6 +3,7 @@ package task
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -69,10 +70,11 @@ func GetTasksInfo(instance app.Instance, svc *ecs.ECS, tasks []*ecs.Task) ([]app
 			logLink := getLogLink(*o.TaskDefinition.ContainerDefinitions[0].LogConfiguration, taskID, *container.Name)
 
 			taskInfo := app.TaskInfo{
-				TaskID:     taskID,
-				LastStatus: *task.LastStatus,
-				Version:    version.FormatExtract(*o.TaskDefinition.ContainerDefinitions[0].Image, instance.Task.ImageTagEx),
-				LogLink:    logLink,
+				TaskID:         taskID,
+				LastStatus:     *task.LastStatus,
+				LastStatusTime: time.Now(),
+				Version:        version.FormatExtract(*o.TaskDefinition.ContainerDefinitions[0].Image, instance.Task.ImageTagEx),
+				LogLink:        logLink,
 			}
 			if *task.LastStatus == "STOPPED" && task.StoppedReason != nil {
 				taskInfo.LastStatusTime = *task.StoppedAt
