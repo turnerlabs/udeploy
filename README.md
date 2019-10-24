@@ -2,16 +2,41 @@
 
 A simple web based deployment [portal](/docs/PORTAL.md) for AWS resources. 
 
-Deployments can be performed in moments, from anywhere, by any authorized user, at any time.
+Authorized users can perform drag-n-drop deployments without understanding the technical aspects of the AWS resource being deployed. Resources like Fargate Tasks, Lambda Functions, and S3 Objects are versioned, deployed, and monitored in the same way reducing complexity.
 
-- Supports: Chrome
-- Security: OAuth2
+<details>
+  <summary>Reasoning</summary>
 
-### Features ###
+### Goals ###
+
+* Expose portal to deploy and monitor AWS resources
+* Enable consitent application versioning across multiple AWS resource types
+* Secure deployments by application and/or environment
+* Allow simple drag-n-drop deployments
+* Provide high level environment resource notifications and troubleshooting
+* Make projects searchable for quick access to details, versions, and documentation
+* Improve resource monitoring for integration partners
+* Support authetication with any OAuth2 API
+* Enable deployment workflow innovation (avoid third-party timelines)
+* Centralize navigation to project resources by linking to scrum boards, config tools, and project documentation
+* Assist projects transitioning from [Harbor UI](https://github.com/turnerlabs/harbor-ui)
+
+### Non-Goals ###
+
+* Duplicate AWS console functionality
+* Implement continuous integration features
+* Display or modify infrastructure
+
+</details>
+
+
+<details>
+  <summary>Features</summary>
 
 || Fargate Service | Fargate Task | Lambda Function | S3 Contents ||
 |---|---|---|---|---|---|
-|User Permissions|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Supports user permissions for editing and deploying environment instances. |
+|Authentication|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Supports OAuth2 for authenticating users. |
+|Authorization|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Supports user permissions for editing and deploying environment instances. |
 |View Instance Version|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Provides a view into an instance's deployed version details.|
 |View Instance Status|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Provides a view into an instances status showing deployments in progress, erroring containers or lambdas, and scaling services and tasks.|
 |View Instance Tasks|:white_check_mark:|:white_check_mark:|||Provides a view into what version of a service's tasks are starting or stopping at any given moment.|
@@ -27,45 +52,34 @@ Deployments can be performed in moments, from anywhere, by any authorized user, 
 |Environment Migration|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Supports configuring specific environment variables to be automatically migrated between environments.|
 |GitHub Integration|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Provides a quick view into version changes before and after deployments.|
 
+Supported Browser: Chrome 
 
-### Get Started ###
+</details>
 
-[Run](/docs/START.md) container from scratch.
+<details>
+  <summary>Requirements</summary>
 
-### Hosting Solution ###
+|Service|Platform|Purpose|
+|-|-|-|
+|Route53|AWS|DNS (SSL)|
+|ECS Fargate|AWS|Docker Container|
+|SQS|AWS|Notifications|
+|CloudWatch|AWS|Notifications|
+|MongoDB|Atlas|Store|
+|OAuth2 Provider|[Azure](docs/OAUTH_AZURE.md)|User Authentication|
 
-uDeploy currently services resources within a single AWS account.
+</details>
 
-1. Create [Infrastructure](https://github.com/turnercode/ams-udeploy-infrastructure)
-    - DNS + SSL (Route53)
-    - Queues (SQS)
-    - Alerts (CloudWatch)
-    - MongoDB Database (Atlas)
-    - OAuth2 (Azure)
+<details>
+  <summary>Setup</summary>
 
-2. Deploy [Service](/docs/START.md)
-    - Application Configuration
-    - Fargate Service (AWS)
+1. Create Infrastructure ([Guide](https://github.com/turnerlabs/udeploy-infrastructure))
+2. Run portal locally ([Guide](/docs/START.md)) or in Fargate ([Guide](/docs/DEPLOY_PORTAL.md))
+  
+</details>
 
-### Goals ###
-
-* Provide monitoring and deployment portal for AWS resources.
-* Provide consitent versioning across different resources.
-* Provide high level, easy to understand status notifications for specific environments.
-* Provide easily searchable list of project resources, versions, and documentation.
-* Provide alternative solution to [Harbor UI](https://github.com/turnerlabs/harbor-ui).
-* Provide simple drag-n-drop deployments regardless of the user's AWS experience.
-* Provide app and environment level permissions.
-* Provide an easy way for integration partners to monitor resources.
-* Remove the AWS account permission requirement from deployments and monitoring.
-
-### Non-Goals ###
-
-* Duplicate AWS console functionality.
-* Provide continuous integration features.
-* Display or modify infrastructure details.
-
-### Tech Stack ###
+<details>
+  <summary>Tech Stack</summary>
 
 - Client
     - Bulma (css)
@@ -74,3 +88,7 @@ uDeploy currently services resources within a single AWS account.
     - Echo (go)
 - Database
     - MongoDB
+
+</details>
+
+

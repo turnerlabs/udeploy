@@ -1,9 +1,15 @@
 
-### Get Started ###
+### Run Locally ###
 
 #### Clone ####
 ```bash
 $ git clone git@github.com:turnerlabs/udeploy.git && cd udeploy
+```
+
+#### Configure Portal ####
+```bash
+$ export ENV=local
+$ export URL=http://localhost:8080
 ```
 
 #### Configure Database ####
@@ -16,47 +22,34 @@ In a `users` database collection, add an entry for the initial admin user to get
 
 The email address is case sensitive.
 
-Example:
-```json
-{
-    "admin": true,
-    "email": "user.email@somewhere.com",
-    "apps": {
-        "app-name": {
-            "claims": ["edit"]
-        }
-    }
-}
 ```
-
-If an application is not listed under the `apps` key in the user policy, the user will not have access to view the application. 
-
-If an application is listed under the `apps` key in the user policy, the user will be able to view all the applications instances, but not be able to `scale`, `deploy`, or `edit` the instances without the specific claims.
-
-Only non-admin users need `edit` claims for making modifications, but any users, including admins, who intend to perform deployments need `scale` and `deploy` claims specified.
+db.users.insert({"admin":true,"email":"user.email@somewhere.com","apps":{}})
+```
 
 #### Configure Event Notifications ####
 ```bash
-$ export ENV=local
 $ export SQS_CHANGE_QUEUE=udeploy-local-notification-queue.fifo
 $ export SQS_ALARM_QUEUE=udeploy-local-alarm-queue
 $ export SQS_S3_QUEUE=udeploy-local-s3-queue
-$ export SNS_ALARM_TOPIC_ARN=arn:aws:sns:us-east-1:{{ACCOUNT_ID}}:{{SNS_ALARM_TOPIC_NAME}
-$ export URL=http://localhost:8080
+$ export SNS_ALARM_TOPIC_ARN=arn:aws:sns:us-east-1:{{ACCOUNT_ID}}:{{SNS_ALARM_TOPIC_NAME}}
 ```
 
 #### Configure User Authentication ####
-uDeploy uses oauth2 for authenticating users before loading authorization details from the database. To configure an (OIDC) OpenID Provider, set the following environment variables and ensure uDeploy is configured with the provider.
+The portal uses oauth2 for authenticating users before loading database authorization details. To configure an (OIDC) OpenID Provider, set the following environment variables and ensure the portal is configured with the desired provider.
+
+This example uses the Azure provider. [Register](OAUTH_AZURE.md) the portal with Azure to generate the tokens below.
 
 ```bash
-$ export OAUTH_CLIENT_ID=XXXXXXX 
-$ export OAUTH_CLIENT_SECRET=XXXXXXX
-$ export OAUTH_AUTH_URL=XXXXXXX (i.e. https://login.microsoftonline.com/{{TENANT_ID}}/oauth2/v2.0/authorize)
-$ export OAUTH_TOKEN_URL=XXXXXXX (i.e. https://login.microsoftonline.com/{{TENANT_ID}}/oauth2/v2.0/token)
-$ export OAUTH_REDIRECT_URL=XXXXXXX (i.e. http://localhost:8080/oauth2/response)
-$ export OAUTH_SIGN_OUT_URL=XXXXXXX (i.e. https://login.microsoftonline.com/{{TENANT_ID}}/oauth2/logout?client_id={{CLIENT_ID}})
-$ export OAUTH_SESSION_SIGN=XXXXXXX (i.e. F1Li3rvehgcrF8DMHJ7OyxO4w9Y3D)
+$ export OAUTH_CLIENT_ID={{CLIENT_ID}} 
+$ export OAUTH_CLIENT_SECRET={{CLIENT_SECRET}}
+$ export OAUTH_AUTH_URL=https://login.microsoftonline.com/{{TENANT_ID}}/oauth2/v2.0/authorize)
+$ export OAUTH_TOKEN_URL=https://login.microsoftonline.com/{{TENANT_ID}}/oauth2/v2.0/token)
+$ export OAUTH_REDIRECT_URL=http://localhost:8080/oauth2/response)
+$ export OAUTH_SIGN_OUT_URL=https://login.microsoftonline.com/{{TENANT_ID}}/oauth2/logout?client_id={{CLIENT_ID}})
+$ export OAUTH_SESSION_SIGN=F1Li3rvehgcrF8DMHJ7OyxO4w9Y3D
 ```
+
+The `OAUTH_SESSION_SIGN` can be any secure string.
 
 #### Configure Console ####
 Browser quick link to the AWS console.
@@ -64,17 +57,17 @@ Browser quick link to the AWS console.
 $ export CONSOLE_LINK=https://aws.amazon.com/
 ```
 
-#### Configure Console ####
+#### Configure In-Memory Cache ####
 Starts caching applications when the container starts to improve perfomance.
 ```bash
 $ export PRE_CACHE=true
 ```
 
 
-#### Start #### 
+#### Run #### 
 
 ```bash
-$ go run . # Go 1.11.x or higher required
+$ go run . # Go 1.13.x or higher required
 ```
 
 PORTAL: http://localhost:8080
