@@ -80,14 +80,6 @@ $ export AWS_PROFILE={{PROFILE}}
 $ cstore push .env -s aws-parameter -t {{ENV}
 ```
 
-Generate the secrets in AWS Task Definition format.
-
-```bash
-$ cstore pull -t prod -g task-def-secrets --store-command=refs
-```
-
-Add the generated JSON to the portal's [Task Definition](https://github.com/turnerlabs/udeploy-infrastructure) and apply Terraform changes.
-
 #### Push Image to ECR #### 
 
 Run commands from repository root.

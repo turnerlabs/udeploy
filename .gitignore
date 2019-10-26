@@ -28,3 +28,10 @@ Dockerfile.*
 
 tmp
 data
+
+# terraform
+.terraform
+*.tfstate.backup
+*.zip
+*.env
+*.backup
