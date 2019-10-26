@@ -10,6 +10,7 @@ hidden.env
 .terraform
 .git
 .gitignore
+.vscode
 
 .dockerignore
 docker-compose.yml
@@ -20,3 +21,8 @@ Dockerfile
 cicd
 
 images
+infrastructure
+resources
+docs
+tmp
+data
