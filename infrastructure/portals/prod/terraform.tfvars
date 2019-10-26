@@ -1,11 +1,11 @@
 aws_profile = "{{AWS_PROFILE}}"
 
 app = "udeploy"
-environment = "{{ENV}}"
+environment = "prod"
 
 # zone_name should match the root domain
 zone_name = "udeploy.{{ROOT_DOMAIN}}.com"
-domain = "{{ENV}}.udeploy.{{ROOT_DOMAIN}}.com"
+domain = "prod.udeploy.{{ROOT_DOMAIN}}.com"
 
 vpc = "{{VPC}}"
 private_subnets = "{{SUBNET_1}},{{SUBNET_2}}"
@@ -22,7 +22,7 @@ saml_users = [
 image = "{{IMAGE}}"
 
 # SSM Parameter Store configuration root path
-config_path = "{{CONFIG_PATH}}"
+config_path = "udeploy/config/prod/.env"
 
 tags = {
   application      = "udeploy"
