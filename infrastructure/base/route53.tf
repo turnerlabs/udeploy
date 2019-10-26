@@ -9,11 +9,12 @@ resource "aws_route53_record" "route" {
   name    = var.domain
   type    = "A"
 
-  alias {
-    name                   = var.alias_name
-    zone_id                = var.alias_zone_id
-    evaluate_target_health = false
-  }
+  # Uncomment to point the A record to the prod instance.
+  # alias {
+  #   name                   = var.alias_name
+  #   zone_id                = var.alias_zone_id
+  #   evaluate_target_health = false
+  # }
 }
 
 resource "aws_acm_certificate" "cert" {

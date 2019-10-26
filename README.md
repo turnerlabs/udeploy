@@ -84,8 +84,8 @@ Supported Browser: Chrome
 <details>
   <summary>Setup</summary>
 
-1. Create Infrastructure ([Guide](https://github.com/turnerlabs/udeploy-infrastructure))
-2. Run portal locally ([Guide](/docs/START.md)) or in Fargate ([Guide](/docs/DEPLOY_PORTAL.md))
+* [Locally](/docs/START.md)
+* [Fargate](/docs/SETUP.md)
   
 </details>
 

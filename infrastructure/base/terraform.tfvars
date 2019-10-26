@@ -9,9 +9,9 @@ saml_user = "{{USER_EMAIL}}"
 # Base domain for all environments
 domain = "udeploy.{{ROOT_DOMAIN}}.com"
 
-# Alias receiving traffic from the base domain
-alias_zone_id = "{{ALIAS_ZONE_ID}}"
-alias_name = "{{ALIAS_NAME}}"
+# Uncomment to point the A record to the prod instance.
+# alias_zone_id = "{{ALIAS_ZONE_ID}}"
+# alias_name = "{{ALIAS_NAME}}"
 
 tags = {
   application      = "udeploy"

@@ -51,3 +51,15 @@ module "prod" {
     config_path = var.config_path
 }
 
+output "alias_name" {
+  value = module.dev.dns_name
+}
+
+output "alias_zone_id" {
+  value = module.dev.zone_id
+}
+
+output "kms_key_id" {
+  value = module.dev.config_key_id
+}
+
