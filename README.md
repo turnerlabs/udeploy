@@ -59,6 +59,17 @@ Supported Browser: Chrome
 <details>
   <summary>Requirements</summary>
 
+### Instalation ###
+
+|Tool|Version|
+|-|-|
+|terraform|v0.12|
+|docker-compose|v1.24|
+|aws cli|v1.16|
+|cstore|v3.6|
+
+### Operational ###
+
 |Service|Platform|Purpose|
 |-|-|-|
 |Route53|AWS|DNS (SSL)|
