@@ -10,14 +10,43 @@ $ cd udeploy && git checkout v0.28.0-rc
 
 The following commands should be executed from the repository root unless otherwise specfied.
 
-### 2. Create Base Infrastucture ####
+### 2. Create Base Infrastucture ###
 
-Replace `{{TOKENS}}` in `./infrastructure/base/terraform.tfvars`.
+These are the files included and what they accomplish:
 
-```bash
-$ terraform init -var-file=portals/prod/terraform.tfvars  infrastructure/base 
-$ terraform apply -var-file=portals/prod/terraform.tfvars  infrastructure/base
-```
+- [./infrastructure/base/ecr.tf](infrastructure/base/ecr.tf) (optional)
+    ```
+    - Creates an AWS ECR and the permissions necessary. 
+    - Keep this file if this is the location in which you intend to store the docker images.
+    ```
+- [./infrastructure/base/main.tf](infrastructure/base/main.tf) (required)
+    `- Main configuration`
+- [./infrastructure/base/route53.tf](infrastructure/base/route53.tf) (optional)
+    ```
+    - Creates an AWS Route53 Hosted Zone, a Certificate Manager, and the DNS Records necessary to validate the Certificate. 
+    - It will also validate the certificate and wait for the full validation to be completed. 
+    - For the validation to fully happen, the Hosted Zone has to propagate and be available in the internet.
+    - Form more information check this link: https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-validate-dns.html
+    ```
+- [./infrastructure/base/state.tf](infrastructure/base/state.tf) (optional - highly recommended)
+    ```
+    - Creates an s3 bucket to store the tfstate files that will be generated when the terraform apply command runs.
+    - Although not required, these approach is highly recommended to avoid having your state files being public in your repo.
+    ```
+- [./infrastructure/base/terraform.tfvars](infrastructure/base/terraform.tfvars) (required)
+    `File containing the main configuration for the group of files in the base folder`
+- [./infrastructure/base/variables.tf](infrastructure/base/variables.tf) (required)
+    `terraform declaration of variables`
+- [./infrastructure/base/versions.tf](infrastructure/base/versions.tf) (required)
+    `terraform version requirements`
+
+1. Replace `{{TOKENS}}` in [./infrastructure/base/ecr.tf](infrastructure/terraform.tfvars).
+1. Remove any files that are not necessary for your use case. Then run the following commands
+1. 
+    ```bash
+    $ terraform init -var-file=infrastructure/base/terraform.tfvars  infrastructure/base 
+    $ terraform apply -var-file=infrastructure/base/terraform.tfvars  infrastructure/base
+    ```
 
 ### 3. Initilize Configuration ###
 

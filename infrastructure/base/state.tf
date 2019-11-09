@@ -17,3 +17,7 @@ module "tf_remote_state" {
   tags        = var.tags
 }
 
+# Returns the name of the S3 bucket that will be used in later Terraform files
+output "bucket" {
+  value = module.tf_remote_state.bucket
+}
