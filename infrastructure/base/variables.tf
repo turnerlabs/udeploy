@@ -33,14 +33,4 @@ variable "tags" {
 }
 
 variable "domain" {
-
 }
-
-# The Alias Zone Id for Route53 "A" records
-variable "alias_zone_id" {
-}
-
-# The Alias Name for Route53 "A" records
-variable "alias_name" {
-}
-

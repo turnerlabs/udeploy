@@ -68,3 +68,7 @@ data "aws_iam_policy_document" "ecr" {
   }
 }
 
+# Returns the name of the ECR registry, this will be used later in various scripts
+output "docker_registry" {
+  value = aws_ecr_repository.app.repository_url
+}
