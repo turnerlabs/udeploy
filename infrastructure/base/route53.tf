@@ -4,17 +4,12 @@ resource "aws_route53_zone" "route_zone" {
   tags = var.tags
 }
 
-resource "aws_route53_record" "route" {
+resource "aws_route53_record" "validation" {
+  name    = lookup(aws_acm_certificate.cert.domain_validation_options[0], "resource_record_name")
+  type    = lookup(aws_acm_certificate.cert.domain_validation_options[0], "resource_record_type")
   zone_id = aws_route53_zone.route_zone.zone_id
-  name    = var.domain
-  type    = "A"
-
-  # Uncomment to point the A record to the prod instance.
-  # alias {
-  #   name                   = var.alias_name
-  #   zone_id                = var.alias_zone_id
-  #   evaluate_target_health = false
-  # }
+  records = [lookup(aws_acm_certificate.cert.domain_validation_options[0], "resource_record_value")]
+  ttl     = 60
 }
 
 resource "aws_acm_certificate" "cert" {
@@ -30,6 +25,11 @@ resource "aws_acm_certificate" "cert" {
   lifecycle {
     create_before_destroy = true
   }
+}
+
+resource "aws_acm_certificate_validation" "main" {
+  certificate_arn         = aws_acm_certificate.cert.arn
+  validation_record_fqdns = [aws_route53_record.validation.fqdn]
 }
 
 output "zone_id" {
