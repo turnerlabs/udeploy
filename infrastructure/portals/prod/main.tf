@@ -22,7 +22,7 @@ provider "aws" {
   profile = var.aws_profile
 }
 
-module "prod" {
+module "env" {
     source = "../../modules/portal"
 
     region = var.region
@@ -52,14 +52,14 @@ module "prod" {
 }
 
 output "alias_name" {
-  value = module.dev.dns_name
+  value = module.env.dns_name
 }
 
 output "alias_zone_id" {
-  value = module.dev.zone_id
+  value = module.env.zone_id
 }
 
 output "kms_key_id" {
-  value = module.dev.config_key_id
+  value = module.env.config_key_id
 }
 
