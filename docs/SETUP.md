@@ -28,10 +28,11 @@ These are the files included and what they accomplish:
     - For the validation to fully happen, the Hosted Zone has to propagate and be available in the internet.
     - Form more information check this link: https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-validate-dns.html
     ```
-- [./infrastructure/base/state.tf](infrastructure/base/state.tf) (optional - highly recommended)
+- [./infrastructure/base/state.tf](infrastructure/base/state.tf) (optional)
     ```
     - Creates an s3 bucket to store the tfstate files that will be generated when the terraform apply command runs.
     - Although not required, these approach is highly recommended to avoid having your state files being public in your repo.
+    - An alternative is to use another s3 bucket where state is already kept for your account/projects
     ```
 - [./infrastructure/base/terraform.tfvars](infrastructure/base/terraform.tfvars) (required)
     `File containing the main configuration for the group of files in the base folder`
@@ -40,8 +41,9 @@ These are the files included and what they accomplish:
 - [./infrastructure/base/versions.tf](infrastructure/base/versions.tf) (required)
     `terraform version requirements`
 
-1. Replace `{{TOKENS}}` in [./infrastructure/base/ecr.tf](infrastructure/terraform.tfvars).
 1. Remove any files that are not necessary for your use case. Then run the following commands
+1. The following steps are only necessary if any of the optional files above is still left. Otherwise the base folder will not create any resources.
+1. Replace `{{TOKENS}}` in [./infrastructure/base/ecr.tf](infrastructure/terraform.tfvars).
 1. 
     ```bash
     $ terraform init -var-file=infrastructure/base/terraform.tfvars  infrastructure/base 
