@@ -2,13 +2,11 @@
 ## Deploy Portal to Fargate ##
 
 
-### 1. Clone Repository ###
+### 1. Clone Infrastructure ###
 ```bash
-$ git clone git@github.com:turnerlabs/udeploy.git
-$ cd udeploy && git checkout v0.28.0-rc
+$ mkdir udeploy && cd udeploy
+$ git clone --branch v0.28.0-rc git@github.com:turnerlabs/udeploy.git infrastructure
 ```
-
-The following commands should be executed from the repository root unless otherwise specified.
 
 ### 2. Create Base Infrastucture ###
 

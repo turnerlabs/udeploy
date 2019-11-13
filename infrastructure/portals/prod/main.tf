@@ -23,7 +23,7 @@ provider "aws" {
 }
 
 module "env" {
-    source = "../../modules/portal"
+    source = "github.com/turnerlabs/udeploy//infrastructure/modules/portal?ref=v0.28.0-rc"
 
     region = var.region
     aws_profile = var.aws_profile
@@ -45,10 +45,6 @@ module "env" {
 
     saml_role = var.saml_role
     saml_users = var.saml_users
-
-    # Optional. Uncomment the variable below if customizing the docker image is desired.
-    # By default, a public image with the latest stable version of udeploy will be provided.
-    # image = "{{CUSTOMIZED_IMAGE}}"
 
     config_path = var.config_path
 }
