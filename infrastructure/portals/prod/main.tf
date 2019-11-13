@@ -4,8 +4,8 @@ terraform {
   backend "s3" {
     region  = "us-east-1"
     profile = "{{PROFILE}}"
-    bucket  = "tf-state-udeploy"
-    key     = "prod.terraform.tfstate"
+    bucket  = "{{tf-state-bucket-name}}"
+    key     = "prod.udeploy.tfstate"
   }
 }
 
@@ -46,7 +46,9 @@ module "env" {
     saml_role = var.saml_role
     saml_users = var.saml_users
 
-    image = var.image
+    # Optional. Uncomment the variable below if customizing the docker image is desired.
+    # By default, a public image with the latest stable version of udeploy will be provided.
+    # image = "{{CUSTOMIZED_IMAGE}}"
 
     config_path = var.config_path
 }
