@@ -25,6 +25,7 @@ resource "mongodbatlas_cluster" "cluster" {
 }
 
 resource "mongodbatlas_project_ip_whitelist" "ip_whitelist" {
+  count = var.ip_whitelist == "" ? 0 : 1
   project_id = data.mongodbatlas_project.main.id
 
   dynamic "whitelist" {
