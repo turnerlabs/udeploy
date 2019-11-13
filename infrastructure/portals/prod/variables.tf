@@ -68,8 +68,5 @@ variable "saml_users" {
 variable "saml_role" {
 }
 
-variable "image" {
-}
-
 variable "config_path" {
 }
