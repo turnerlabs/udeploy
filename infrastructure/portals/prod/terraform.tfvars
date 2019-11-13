@@ -19,11 +19,8 @@ saml_users = [
   "{{USER_EMAIL_2}}",
 ]
 
-# ECR Image
-image = "{{IMAGE}}"
-
 # SSM Parameter Store configuration root path
-config_path = "udeploy/config/prod/.env"
+config_path = "udeploy/infrastructure/portals/prod/.env"
 
 tags = {
   application   = "udeploy"
@@ -33,4 +30,5 @@ tags = {
   contact-email = "{{USER_EMAIL}}"
   product       = "udeploy"
   project       = "udeploy"
+  {{OTHER_DESIRED_TAGS}}
 }

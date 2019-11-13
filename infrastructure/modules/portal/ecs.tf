@@ -227,7 +227,7 @@ resource "aws_iam_policy" "config-policy" {
     {
       "Effect": "Allow",
       "Action": ["ssm:GetParameters"],
-      "Resource": "arn:aws:ssm:us-east-1:558224608801:parameter/${var.config_path}/*"
+      "Resource": "arn:aws:ssm:us-east-1:${data.aws_caller_identity.current.account_id}:parameter/${var.config_path}/*"
     }
   ]
 }

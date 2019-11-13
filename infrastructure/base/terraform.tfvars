@@ -3,7 +3,7 @@ app = "udeploy"
 aws_profile = "{{AWS_PROFILE}}"
 
 # Access to ECR
-saml_role = "{{USER_ROLE}}" //the role that will be used to access the tf remote state s3 bucket and the ecr images
+saml_role = "{{USER_ROLE}}"
 saml_user = "{{USER_EMAIL}}"
 
 # Base domain for all environments

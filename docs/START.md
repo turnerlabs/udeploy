@@ -7,13 +7,16 @@ $ git clone git@github.com:turnerlabs/udeploy.git
 $ cd udeploy && git checkout v0.28.0-rc
 ```
 
+The following commands should be executed from the repository root unless otherwise specified.
+
 ### 2. Create Base Infrastucture ####
 
-Replace `{{TOKENS}}` in `./infrastructure/base/terraform.tfvars`.
+Optionally, customize [infrastructure](BASE.md).
 
+Replace `{{TOKENS}}` in [infrastructure/base/terraform.tfvars](/infrastructure/base/terraform.tfvars).
 ```bash
-$ terraform init -var-file=portals/dev/terraform.tfvars  infrastructure/base 
-$ terraform apply -var-file=portals/dev/terraform.tfvars  infrastructure/base
+$ terraform init -var-file=infrastructure/base/terraform.tfvars  infrastructure/base 
+$ terraform apply -var-file=infrastructure/base/terraform.tfvars  infrastructure/base
 ```
 
 #### 3. Configure Portal ####
@@ -23,7 +26,7 @@ $ export URL=http://localhost:8080
 ```
 
 #### 4. Configure Database ####
-Create an empty MongoDB database preferably called `udeploy-dev` on an Atlas M2 (General) cluster or equivalent.
+Create an empty MongoDB database preferably called `udeploy-dev` on an Atlas M2 (General) cluster or equivalent. [Want to Terraform Atlas MongoDB?](ATLAS.md) If not, delete [atlas.tf](/infrastructure/portals/prod/atlas.tf).
 
 ```bash
 export DB_URI={{DB_CONNECTION_STRING}}
@@ -33,6 +36,7 @@ export DB_NAME={{DB_NAME}}
 Add an initial admin user to the `users` collection. Additional users can be added through the portal.
 
 ```
+use {{DB_NAME}}
 db.users.insert({"admin":true,"email":"User.Email@domain.com","apps":{}})
 ```
 
@@ -61,7 +65,7 @@ $ export OAUTH_SIGN_OUT_URL=https://login.microsoftonline.com/{{TENANT_ID}}/oaut
 $ export OAUTH_SESSION_SIGN=F1Li3rvehgcrF8DMHJ7OyxO4w9Y3D
 ```
 
-The `OAUTH_SESSION_SIGN` can be any secure string.
+The `OAUTH_SESSION_SIGN` should be updated to a any secure string.
 
 #### 7. Configure Console ####
 Browser quick link to the AWS console.
