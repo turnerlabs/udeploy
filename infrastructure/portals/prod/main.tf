@@ -49,15 +49,15 @@ module "env" {
     config_path = var.config_path
 }
 
-output "alias_name" {
-  value = module.env.dns_name
-}
-
-output "alias_zone_id" {
-  value = module.env.zone_id
-}
-
+# KMS Key used to encrypt the portal 
+# SSM ParameterStore configuration.
 output "kms_key_id" {
   value = module.env.config_key_id
+}
+
+# SQS queue watched for s3 deployment 
+# changes when updating the portal ui.
+output "s3_change_queue" {
+  value = module.dev.s3_change_queue
 }
 

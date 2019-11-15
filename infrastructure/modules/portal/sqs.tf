@@ -106,3 +106,9 @@ POLICY
 
 }
 
+# SQS queue that is watched for s3 deployment 
+# changes when updating the portal ui.
+output "s3_change_queue" {
+  value = aws_sqs_queue.s3_queue.name
+}
+
