@@ -1,0 +1,22 @@
+<script type="text/x-template" id="info-modal-template">
+<div class="modal is-active">
+<div class="modal-background"></div>
+<div class="modal-card">
+    <header class="modal-card-head">
+        <p class="modal-card-title">Info</p>
+        <button class="delete" @click="$emit('close')" aria-label="close"></button>
+    </header>
+    <section class="modal-card-body">
+        <div class="box has-background-info has-text-white content">{{ message }}</div>
+        <figure class="image">
+            <img :src="src">
+        </figure> 
+    </section>
+    <footer class="modal-card-foot content is-centered">
+        <div class="container has-text-centered">
+            <button class="button is-primary" @click="$emit('close')">Close</button>
+        </div>
+    </footer>
+</div>
+</div>
+</script>

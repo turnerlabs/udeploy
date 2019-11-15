@@ -26,6 +26,11 @@ includeTenplates().then(() => {
                     message: "",
                     code: "",
                     action: ()=>{},
+                },
+                image:  {
+                    show: false,
+                    message: "",
+                    img: "",
                 }
             },
 
