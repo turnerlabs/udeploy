@@ -301,7 +301,12 @@
                             <div class="field-body">
                               <div class="field">
                                 <p class="control">
-                                  <input class="input name" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.s3ConfigKey" title="S3 key to the JSON file containing environment configuration.">
+                                  <input class="input name" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.s3ConfigKey" title="S3 key to the JSON config file.">
+                                  <label class="help">Specify the deployed config file decorated with version metadata.
+                                    <span @click.stop.prevent="modal.image = { show: true, src: '/pages/app/img/s3-config-key.png', message: 'A config file in the deployment must be decorated with deployment metadata. The metadata fields version, build, and revision determine the which artifacts are currently deployed. Key/value pairs formatted as a JSON object inside the file are listed as environment variables when viewing instance details.' }" class="icon is-small">
+                                        <i class="fas fa-info-circle"></i>
+                                    </span>
+                                  </label>
                                 </p>
                               </div>
                             </div>
@@ -326,6 +331,11 @@
                               <div class="field">
                                 <p class="control">
                                   <input class="input name" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.s3RegistryPrefix" title="S3 bucket prefix for artifacts. Optional">
+                                  <label class="help">Specify the location deployable zipped files are uploaded.
+                                    <span @click.stop.prevent="modal.image = { show: true, src: '/pages/app/img/s3-registry.png', message: 'The location deployable zipped files are uploaded. Each file should be uploaded with registry metadata fields specifying the version and revision.' }" class="icon is-small">
+                                        <i class="fas fa-info-circle"></i>
+                                    </span>
+                                  </label>
                                 </p>
                               </div>
                             </div>
@@ -501,9 +511,11 @@
           </div>
         </div>
 
+        <info-modal v-if="modal.image.show" @close="modal.image.show = false" :message="modal.image.message" :src="modal.image.src"></info-modal>
         <confirm-modal v-if="modal.confirm.show" @close="modal.confirm.show = false" @continue="handleContinue" :code="modal.confirm.code" :message="modal.confirm.message"></confirm-modal>
     </div>
 
+    <div html-template="../component/info/modal/index.html"></div>
     <div html-template="../component/confirm/modal/index.html"></div>
 </body>
 </html>
@@ -512,4 +524,5 @@
 <script src="/component/alert/banner.js?auto-version=14419" type="module"></script>
 <script src="/component/header/bar.js?auto-version=14419" type="module"></script>
 <script src="/component/confirm/modal/index.js?auto-version=14419" type="module"></script>
+<script src="/component/info/modal/index.js?auto-version=14419" type="module"></script>
 <script src="/pages/app/index.js?auto-version=14419" type="module"></script>
