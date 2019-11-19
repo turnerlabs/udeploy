@@ -102,4 +102,12 @@ Supported Browser: Chrome
 
 </details>
 
+<details>
+  <summary>Architecture</summary>
+
+The portal functions as a passive monitoring and active deployment platform. The architecture diagram is divided into two areas, monitoring and user actions.
+
+![uDeploy Architecture](/image/architecture.png "uDeploy Architecture")
+
+</details>
 
