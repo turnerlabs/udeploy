@@ -48,7 +48,7 @@ Authorized users can perform drag-n-drop deployments without understanding the t
 |Error Notifications|:white_check_mark:|:white_check_mark:|:white_check_mark:||Sends SNS notifications for AWS resource errors. |
 |Audit Deployments|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Tracks user deployments via an audit trail.|
 |Quick Linking|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Provides direct links to AWS logs, GitHub commits, Jira stories, and many more without browsing through the websites.|
-|Deployment Propagation|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Provides option for automatically pushing deployments to QA, UAT, or PROD without user interation keeping environments in sync.|
+|Deployment Propagation|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Provides option for automatically pushing deployments to QA, UAT, or PROD without user interaction keeping environments in sync.|
 |Environment Migration|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Supports configuring specific environment variables to be automatically migrated between environments.|
 |GitHub Integration|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Provides a quick view into version changes before and after deployments.|
 
