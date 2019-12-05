@@ -12,33 +12,37 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/applicationautoscaling"
 	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 	"github.com/turnerlabs/udeploy/component/integration/aws/task"
 )
 
 // Populate ...
 func Populate(instances map[string]app.Instance) (map[string]app.Instance, error) {
-	session := session.New()
-
-	svc := ecs.New(session)
-
-	resourceIds := []string{}
-	for _, i := range instances {
-		resourceIds = append(resourceIds, fmt.Sprintf("service/%s/%s", i.Cluster, i.Service))
-	}
-
-	ascv := applicationautoscaling.New(session)
-
-	ao, err := ascv.DescribeScalableTargets(&applicationautoscaling.DescribeScalableTargetsInput{
-		ServiceNamespace: aws.String("ecs"),
-		ResourceIds:      aws.StringSlice(resourceIds),
-	})
-	if err != nil {
-		return instances, err
-	}
 
 	populated := map[string]app.Instance{}
 
 	for name, instance := range instances {
+
+		session := session.New()
+
+		config.Merge([]string{instance.Role}, session)
+
+		svc := ecs.New(session)
+
+		resourceIds := []string{}
+		for _, i := range instances {
+			resourceIds = append(resourceIds, fmt.Sprintf("service/%s/%s", i.Cluster, i.Service))
+		}
+
+		ascv := applicationautoscaling.New(session)
+
+		ao, err := ascv.DescribeScalableTargets(&applicationautoscaling.DescribeScalableTargetsInput{
+			ServiceNamespace: aws.String("ecs"),
+			ResourceIds:      aws.StringSlice(resourceIds),
+		})
+		if err != nil {
+			return instances, err
+		}
 
 		i, state, err := populateInst(instance, ao.ScalableTargets, svc)
 		if err != nil {

@@ -1,8 +1,10 @@
 package lambda
 
 import (
-	"github.com/turnerlabs/udeploy/component/app"
 	"context"
+
+	"github.com/turnerlabs/udeploy/component/app"
+	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -16,7 +18,11 @@ func Scale(ctx context.Context, instance app.Instance, desiredCount int64) error
 		return nil
 	}
 
-	svc := lambda.New(session.New())
+	session := session.New()
+
+	config.Merge([]string{instance.Role}, session)
+
+	svc := lambda.New(session)
 
 	ao, err := svc.GetAliasWithContext(ctx, &lambda.GetAliasInput{
 		Name:         aws.String(instance.FunctionAlias),

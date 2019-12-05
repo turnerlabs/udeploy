@@ -1,18 +1,23 @@
 package service
 
 import (
-	"github.com/turnerlabs/udeploy/component/app"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/turnerlabs/udeploy/component/app"
+	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 	"github.com/turnerlabs/udeploy/component/integration/aws/task"
 )
 
 // Deploy ...
 func Deploy(source app.Instance, target app.Instance, revision int64, opts task.DeployOptions) error {
 
-	svc := ecs.New(session.New())
- 
+	session := session.New()
+
+	config.Merge([]string{target.Role}, session)
+
+	svc := ecs.New(session)
+
 	newOutput, err := task.Deploy(source, target, revision, source.Version(), opts)
 	if err != nil {
 		return err

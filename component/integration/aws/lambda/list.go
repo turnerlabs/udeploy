@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/lambda"
 	"github.com/turnerlabs/udeploy/component/app"
+	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 )
 
 // ISO8601 time format
@@ -18,7 +19,11 @@ const ISO8601 = "2006-01-02T15:04:05-0700"
 // ListDefinitions ...
 func ListDefinitions(instance app.Instance) (map[string]app.Definition, error) {
 
-	svc := lambda.New(session.New())
+	session := session.New()
+
+	config.Merge([]string{instance.Role}, session)
+
+	svc := lambda.New(session)
 	ver, err := listVersions(svc, instance.FunctionName, "", []*lambda.FunctionConfiguration{})
 	if err != nil {
 		return nil, err

@@ -28,6 +28,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 
 	"github.com/turnerlabs/udeploy/component/app"
+	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 	"github.com/turnerlabs/udeploy/component/integration/aws/task"
 )
 
@@ -38,7 +39,9 @@ func Deploy(ctx mongo.SessionContext, actionID primitive.ObjectID, source app.In
 		return errors.New("s3 does not support secrets")
 	}
 
-	sess := session.New()
+	session := session.New()
+
+	config.Merge([]string{source.Role, source.RepositoryRole, target.Role}, session)
 
 	workingDir := fmt.Sprintf("tmp/%s", uuid.New())
 	if err := os.MkdirAll(workingDir, os.ModePerm); err != nil {
@@ -51,12 +54,12 @@ func Deploy(ctx mongo.SessionContext, actionID primitive.ObjectID, source app.In
 		}
 	}()
 
-	version, err := getRevisionDetails(source, revision, sess)
+	version, err := getRevisionDetails(source, revision, session)
 	if err != nil {
 		return err
 	}
 
-	zipPath, err := download(source, revision, workingDir, sess)
+	zipPath, err := download(source, revision, workingDir, session)
 	if err != nil {
 		return err
 	}
@@ -73,7 +76,7 @@ func Deploy(ctx mongo.SessionContext, actionID primitive.ObjectID, source app.In
 	}
 
 	if !opts.Override {
-		if opts.Environment, err = buildConfig(source, target, sess); err != nil {
+		if opts.Environment, err = buildConfig(source, target, session); err != nil {
 			return err
 		}
 	}
@@ -82,11 +85,11 @@ func Deploy(ctx mongo.SessionContext, actionID primitive.ObjectID, source app.In
 		return err
 	}
 
-	if err = purge(target, sess); err != nil {
+	if err = purge(target, session); err != nil {
 		return err
 	}
 
-	if err = upload(target, unzippedPath, metadata, sess); err != nil {
+	if err = upload(target, unzippedPath, metadata, session); err != nil {
 		return err
 	}
 

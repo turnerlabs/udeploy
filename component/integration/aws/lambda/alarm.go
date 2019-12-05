@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/turnerlabs/udeploy/component/cfg"
+	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -11,8 +12,12 @@ import (
 )
 
 // DeleteAlarm ...
-func DeleteAlarm(functionName string) error {
-	svc := cloudwatch.New(session.New())
+func DeleteAlarm(functionName, role string) error {
+	session := session.New()
+
+	config.Merge([]string{role}, session)
+
+	svc := cloudwatch.New(session)
 
 	_, err := svc.DeleteAlarms(&cloudwatch.DeleteAlarmsInput{
 		AlarmNames: aws.StringSlice([]string{buildAlarmName(functionName)}),
@@ -22,9 +27,12 @@ func DeleteAlarm(functionName string) error {
 }
 
 // UpsertAlarm ...
-func UpsertAlarm(functionName, functionAlias, snsTopicArn string) error {
+func UpsertAlarm(functionName, functionAlias, role, snsTopicArn string) error {
+	session := session.New()
 
-	svc := cloudwatch.New(session.New())
+	config.Merge([]string{role}, session)
+
+	svc := cloudwatch.New(session)
 
 	_, err := svc.PutMetricAlarm(&cloudwatch.PutMetricAlarmInput{
 		AlarmName:          aws.String(buildAlarmName(functionName)),

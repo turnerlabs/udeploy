@@ -11,6 +11,7 @@ import (
 // InstanceView ...
 type InstanceView struct {
 	// Database Fields
+	Role          string `json:"role"`
 	Name          string `json:"name"`
 	Order         int    `json:"order"`
 	Cluster       string `json:"cluster,omitempty"`
@@ -25,10 +26,11 @@ type InstanceView struct {
 	S3RegistryBucket string `json:"s3RegistryBucket,omitempty"`
 	S3RegistryPrefix string `json:"s3RegistryPrefix,omitempty"`
 
-	Repository    string   `json:"repository,omitempty"`
-	DeployCode    string   `json:"deployCode"`
-	AutoPropagate bool     `json:"autoPropagate"`
-	Task          TaskView `json:"task"`
+	Repository     string   `json:"repository,omitempty"`
+	RepositoryRole string   `json:"repositoryRole,omitempty"`
+	DeployCode     string   `json:"deployCode"`
+	AutoPropagate  bool     `json:"autoPropagate"`
+	Task           TaskView `json:"task"`
 
 	// Calculated Fields
 	FormattedVersion string `json:"formattedVersion"`
@@ -70,6 +72,8 @@ type ContainerView struct {
 // Instance ...
 type Instance struct {
 	// Database Fields
+	Role string `json:"role" bson:"role"`
+
 	Order   int    `json:"order" bson:"order"`
 	Cluster string `json:"cluster,omitempty" bson:"cluster"`
 	Service string `json:"service,omitempty" bson:"service"`
@@ -85,12 +89,13 @@ type Instance struct {
 	S3RegistryBucket string `json:"s3RegistryBucket,omitempty" bson:"s3RegistryBucket"`
 	S3RegistryPrefix string `json:"s3RegistryPrefix,omitempty" bson:"s3RegistryPrefix"`
 
-	Repository    string `json:"repository,omitempty" bson:"repository"`
-	DeployCode    string `json:"deployCode" bson:"deployCode"`
-	AutoPropagate bool   `json:"autoPropagate" bson:"autoPropagate"`
-	AutoScale     bool   `json:"autoScale"`
-	Task          Task   `json:"task" bson:"taskDefinition"`
-	Links         []Link `json:"links" bson:"links"`
+	Repository     string `json:"repository,omitempty" bson:"repository"`
+	RepositoryRole string `json:"repositoryRole,omitempty" bson:"repositoryRole"`
+	DeployCode     string `json:"deployCode" bson:"deployCode"`
+	AutoPropagate  bool   `json:"autoPropagate" bson:"autoPropagate"`
+	AutoScale      bool   `json:"autoScale"`
+	Task           Task   `json:"task" bson:"taskDefinition"`
+	Links          []Link `json:"links" bson:"links"`
 
 	// Calculated Fields
 	CurrentState  State `json:"-" bson:"-"`
@@ -181,10 +186,12 @@ type Link struct {
 func (v InstanceView) ToBusiness() Instance {
 
 	i := Instance{
+		Role:             v.Role,
 		Cluster:          v.Cluster,
 		Service:          v.Service,
 		EventRule:        v.EventRule,
 		Repository:       v.Repository,
+		RepositoryRole:   v.RepositoryRole,
 		FunctionName:     v.FunctionName,
 		FunctionAlias:    v.FunctionAlias,
 		S3Bucket:         v.S3Bucket,
@@ -228,6 +235,7 @@ func (i Instance) ToView(name string, appClaim user.AppClaim) InstanceView {
 		CronExpression:   i.Task.CronExpression,
 		CronEnabled:      i.Task.CronEnabled,
 		Claims:           map[string]bool{},
+		Role:             i.Role,
 		Cluster:          i.Cluster,
 		Service:          i.Service,
 		EventRule:        i.EventRule,
@@ -239,6 +247,7 @@ func (i Instance) ToView(name string, appClaim user.AppClaim) InstanceView {
 		S3RegistryBucket: i.S3RegistryBucket,
 		S3RegistryPrefix: i.S3RegistryPrefix,
 		Repository:       i.Repository,
+		RepositoryRole:   i.RepositoryRole,
 		DeployCode:       i.DeployCode,
 		AutoPropagate:    i.AutoPropagate,
 		AutoScale:        i.AutoScale,

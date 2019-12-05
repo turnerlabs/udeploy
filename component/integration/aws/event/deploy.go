@@ -5,24 +5,25 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudwatchevents"
-	"github.com/turnerlabs/udeploy/component/integration/aws/task"
 	"github.com/turnerlabs/udeploy/component/app"
+	"github.com/turnerlabs/udeploy/component/integration/aws/config"
+	"github.com/turnerlabs/udeploy/component/integration/aws/task"
 )
 
 func Deploy(source app.Instance, target app.Instance, revision int64, opts task.DeployOptions) error {
-	svc := cloudwatchevents.New(session.New())
 
 	newOutput, err := task.Deploy(source, target, revision, source.Version(), opts)
 	if err != nil {
 		return err
 	}
 
-	err = updateTargetRevision(target, svc, newOutput.TaskDefinitionArn)
-	if err != nil {
-		return err
-	}
+	session := session.New()
 
-	return nil
+	config.Merge([]string{source.Role, target.Role}, session)
+
+	svc := cloudwatchevents.New(session)
+
+	return updateTargetRevision(target, svc, newOutput.TaskDefinitionArn)
 }
 
 func updateTargetRevision(instance app.Instance, svc *cloudwatchevents.CloudWatchEvents, taskArn *string) error {

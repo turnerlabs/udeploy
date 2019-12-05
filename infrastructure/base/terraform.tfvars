@@ -22,3 +22,7 @@ tags = {
   product          = "udeploy"
   project          = "udeploy"
 }
+
+# Allow other AWS accounts to publish events
+# to this account for app status updates
+linked_account_ids = []

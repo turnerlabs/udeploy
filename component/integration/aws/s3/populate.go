@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 	"github.com/turnerlabs/udeploy/component/version"
 
 	"github.com/turnerlabs/udeploy/component/app"
@@ -20,12 +21,13 @@ import (
 // Populate ...
 func Populate(instances map[string]app.Instance) (map[string]app.Instance, error) {
 
-	sess := session.New()
-
-	svc := s3.New(sess)
-	downloader := s3manager.NewDownloader(sess)
-
 	for key, instance := range instances {
+		sess := session.New()
+
+		config.Merge([]string{instance.Role}, sess)
+
+		svc := s3.New(sess)
+		downloader := s3manager.NewDownloader(sess)
 
 		i, state, err := populateInst(instance, svc, downloader)
 		if err != nil {

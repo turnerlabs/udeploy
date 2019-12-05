@@ -11,14 +11,21 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudwatchevents"
 	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 	"github.com/turnerlabs/udeploy/component/integration/aws/task"
 	sess "github.com/turnerlabs/udeploy/component/session"
 )
 
 func Scale(ctx context.Context, instance app.Instance, desiredCount int64, restart bool) error {
 	usr := ctx.Value(sess.ContextKey("user")).(user.User)
-	evtSvc := cloudwatchevents.New(session.New())
-	ecsSvc := ecs.New(session.New())
+
+	session := session.New()
+
+	config.Merge([]string{instance.Role}, session)
+
+	evtSvc := cloudwatchevents.New(session)
+	ecsSvc := ecs.New(session)
+
 	input := &cloudwatchevents.ListTargetsByRuleInput{
 		Rule: &instance.EventRule,
 	}

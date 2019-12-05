@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/turnerlabs/udeploy/component/app"
+	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 	"github.com/turnerlabs/udeploy/component/version"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -19,14 +20,18 @@ const ext = ".zip"
 // ListDefinitions ...
 func ListDefinitions(instance app.Instance) (map[string]app.Definition, error) {
 
-	results, err := List(instance.S3RegistryBucket, instance.S3RegistryPrefix)
+	results, err := List(instance.S3RegistryBucket, instance.S3RegistryPrefix, instance.RepositoryRole)
 	if err != nil {
 		return nil, err
 	}
 
 	results = limitRevisions(results, instance.Task.Revisions)
 
-	svc := s3.New(session.New())
+	session := session.New()
+
+	config.Merge([]string{instance.Role, instance.RepositoryRole}, session)
+
+	svc := s3.New(session)
 
 	versions := map[string]app.Definition{}
 
@@ -76,8 +81,12 @@ func ListDefinitions(instance app.Instance) (map[string]app.Definition, error) {
 }
 
 // List ...
-func List(bucket, registry string) ([]*s3.Object, error) {
-	svc := s3.New(session.New())
+func List(bucket, registry, role string) ([]*s3.Object, error) {
+	session := session.New()
+
+	config.Merge([]string{role}, session)
+
+	svc := s3.New(session)
 
 	input := &s3.ListObjectsInput{
 		Bucket: aws.String(bucket),

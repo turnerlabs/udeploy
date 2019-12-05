@@ -196,7 +196,7 @@ func DefinitionFrom(td *ecs.TaskDefinition, imageTagRegEx string) Definition {
 	version, build := version.Extract(*td.ContainerDefinitions[0].Image, imageTagRegEx)
 
 	def := Definition{
-		ID: *td.Family,
+		ID: *td.TaskDefinitionArn,
 
 		Version:  version,
 		Build:    build,

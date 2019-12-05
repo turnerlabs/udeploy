@@ -8,19 +8,22 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudwatchevents"
 	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 	"github.com/turnerlabs/udeploy/component/integration/aws/task"
 )
 
 // Populate ...
 func Populate(instances map[string]app.Instance) (map[string]app.Instance, error) {
-	sesssion := session.New()
-
-	evtSvc := cloudwatchevents.New(sesssion)
-	ecsSvc := ecs.New(sesssion)
 
 	populated := map[string]app.Instance{}
 
 	for name, i := range instances {
+		session := session.New()
+
+		config.Merge([]string{i.Role}, session)
+
+		evtSvc := cloudwatchevents.New(session)
+		ecsSvc := ecs.New(session)
 
 		i, state, err := populateInst(i, ecsSvc, evtSvc)
 		if err != nil {

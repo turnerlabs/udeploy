@@ -9,6 +9,7 @@ import (
 
 	"github.com/turnerlabs/udeploy/component/session"
 
+	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/labstack/echo/v4"
 	"github.com/turnerlabs/udeploy/component/app"
 	"github.com/turnerlabs/udeploy/component/cache"
@@ -120,16 +121,29 @@ func SaveApp(c echo.Context) error {
 
 	switch v.Type {
 	case appTypeLambda:
-		if arn, found := cfg.Get["SNS_ALARM_TOPIC_ARN"]; found {
+		if alarmARN, found := cfg.Get["SNS_ALARM_TOPIC_ARN"]; found {
+
 			for _, i := range newApp.Instances {
-				if err := lambda.UpsertAlarm(i.FunctionName, i.FunctionAlias, arn); err != nil {
+				name := i.FunctionName
+
+				if a, err := arn.Parse(i.FunctionName); err == nil {
+					name = a.Resource
+				}
+
+				if err := lambda.UpsertAlarm(name, i.FunctionAlias, i.Role, alarmARN); err != nil {
 					return err
 				}
 			}
 
 			for name, i := range originalApp.Instances {
 				if _, found := newApp.Instances[name]; !found {
-					if err := lambda.DeleteAlarm(i.FunctionName); err != nil {
+					name := i.FunctionName
+
+					if a, err := arn.Parse(i.FunctionName); err == nil {
+						name = a.Resource
+					}
+
+					if err := lambda.DeleteAlarm(name, i.Role); err != nil {
 						log.Println(err)
 					}
 				}
@@ -179,7 +193,7 @@ func DeleteApp(c echo.Context) error {
 	switch targetApp.Type {
 	case appTypeLambda:
 		for _, i := range targetApp.Instances {
-			if err := lambda.DeleteAlarm(i.FunctionName); err != nil {
+			if err := lambda.DeleteAlarm(i.FunctionName, i.Role); err != nil {
 				return err
 			}
 		}

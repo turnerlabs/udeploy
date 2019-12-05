@@ -7,8 +7,10 @@ import (
 	"strconv"
 
 	"github.com/turnerlabs/udeploy/component/app"
+	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudwatch"
 	"github.com/aws/aws-sdk-go/service/lambda"
@@ -17,12 +19,13 @@ import (
 // Populate ...
 func Populate(instances map[string]app.Instance) (map[string]app.Instance, error) {
 
-	sess := session.New()
-
-	svc := lambda.New(sess)
-	cwsvc := cloudwatch.New(sess)
-
 	for key, instance := range instances {
+		session := session.New()
+
+		config.Merge([]string{instance.Role}, session)
+
+		svc := lambda.New(session)
+		cwsvc := cloudwatch.New(session)
 
 		i, state, err := populateInst(instance, svc, cwsvc)
 
@@ -100,9 +103,15 @@ func populateInst(i app.Instance, svc *lambda.Lambda, cwsvc *cloudwatch.CloudWat
 			region, *fo.Configuration.FunctionName),
 	})
 
+	rootAlarmName := i.FunctionName
+
+	if a, err := arn.Parse(i.FunctionName); err == nil {
+		rootAlarmName = a.Resource
+	}
+
 	alarm, err := cwsvc.DescribeAlarms(&cloudwatch.DescribeAlarmsInput{
 		AlarmNames: aws.StringSlice([]string{
-			buildAlarmName(i.FunctionName),
+			buildAlarmName(rootAlarmName),
 		}),
 	})
 	if err != nil {

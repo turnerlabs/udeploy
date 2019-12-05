@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/turnerlabs/udeploy/component/app"
+	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 	"github.com/turnerlabs/udeploy/component/version"
 )
 
@@ -34,21 +35,25 @@ func List(instance app.Instance, svc *ecs.ECS, status string) (tasks []*ecs.Task
 	return tasksOutput.Tasks, nil
 }
 
-func ListDefinitions(taskDefinition app.Task) (map[string]app.Definition, error) {
+func ListDefinitions(instance app.Instance) (map[string]app.Definition, error) {
 
 	arns := []*string{}
 
-	svc := ecs.New(session.New())
-	arns, err := listTaskDefinitionArns(svc, taskDefinition.Family, "", arns)
+	session := session.New()
+
+	config.Merge([]string{instance.Role}, session)
+
+	svc := ecs.New(session)
+	arns, err := listTaskDefinitionArns(svc, instance.Task.Family, "", arns)
 	if err != nil {
 		return nil, err
 	}
 
-	tds, err := getTaskDefinitions(svc, arns, taskDefinition.Revisions)
+	tds, err := getTaskDefinitions(svc, arns, instance.Task.Revisions)
 	if err != nil {
 		return nil, err
 	}
-	return keepMostRecentRevisions(tds, taskDefinition.ImageTagEx), nil
+	return keepMostRecentRevisions(tds, instance.Task.ImageTagEx), nil
 }
 
 func GetTasksInfo(instance app.Instance, svc *ecs.ECS, tasks []*ecs.Task) ([]app.TaskInfo, error) {

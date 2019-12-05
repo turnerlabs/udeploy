@@ -65,6 +65,8 @@ func (i Instance) Copy() Instance {
 	n := Instance{
 		Cluster:          i.Cluster,
 		Service:          i.Service,
+		Role:             i.Role,
+		RepositoryRole:   i.RepositoryRole,
 		EventRule:        i.EventRule,
 		Repository:       i.Repository,
 		FunctionName:     i.FunctionName,

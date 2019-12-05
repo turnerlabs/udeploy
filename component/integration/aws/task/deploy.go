@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/turnerlabs/udeploy/component/app"
+	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 	"github.com/turnerlabs/udeploy/component/version"
 )
 
@@ -27,7 +28,11 @@ func (do DeployOptions) DeployImage() bool {
 
 // Deploy ...
 func Deploy(source app.Instance, target app.Instance, sourceRevision int64, sourceVersion string, opts DeployOptions) (td *ecs.TaskDefinition, err error) {
-	svc := ecs.New(session.New())
+	session := session.New()
+
+	config.Merge([]string{source.Role, target.Role}, session)
+
+	svc := ecs.New(session)
 
 	sourceTaskArn := fmt.Sprintf("%s:%d", source.Task.Family, sourceRevision)
 	sourceOutput, err := svc.DescribeTaskDefinition(&ecs.DescribeTaskDefinitionInput{

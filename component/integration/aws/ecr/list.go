@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/turnerlabs/udeploy/component/app"
+	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 	"github.com/turnerlabs/udeploy/component/version"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -13,7 +14,7 @@ import (
 
 // ListDefinitions ...
 func ListDefinitions(registry app.Instance) (map[string]app.Definition, error) {
-	images, err := List(registry.Repo())
+	images, err := List(registry)
 	if err != nil {
 		return map[string]app.Definition{}, err
 	}
@@ -42,8 +43,15 @@ func ListDefinitions(registry app.Instance) (map[string]app.Definition, error) {
 }
 
 // List ...
-func List(repo string) ([]*ecr.ImageIdentifier, error) {
-	svc := ecr.New(session.New())
+func List(i app.Instance) ([]*ecr.ImageIdentifier, error) {
+
+	repo := i.Repo()
+
+	session := session.New()
+
+	config.Merge([]string{i.RepositoryRole}, session)
+
+	svc := ecr.New(session)
 
 	input := &ecr.ListImagesInput{
 		RepositoryName: aws.String(repo[strings.Index(repo, "/")+1 : len(repo)]),

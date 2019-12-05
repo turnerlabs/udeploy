@@ -20,6 +20,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/aws/aws-sdk-go/service/lambda"
 	"github.com/google/uuid"
+	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 	"github.com/turnerlabs/udeploy/component/integration/aws/task"
 )
 
@@ -38,7 +39,12 @@ func Deploy(source app.Instance, target app.Instance, revision int64, opts task.
 }
 
 func deployFromLambda(source, target app.Instance, revision int64, opts task.DeployOptions) error {
-	svc := lambda.New(session.New())
+
+	session := session.New()
+
+	config.Merge([]string{source.Role, target.Role}, session)
+
+	svc := lambda.New(session)
 
 	sourceFuncArn := fmt.Sprintf("%s:%d", source.FunctionName, revision)
 
@@ -75,11 +81,13 @@ func deployFromLambda(source, target app.Instance, revision int64, opts task.Dep
 }
 
 func deployFromS3(source, target app.Instance, revision int64, opts task.DeployOptions) error {
-	sess := session.New()
+	session := session.New()
+
+	config.Merge([]string{source.Role, source.RepositoryRole, target.Role}, session)
 
 	key := fmt.Sprintf("%s/%d.zip", source.S3RegistryPrefix, revision)
 
-	svc := lambda.New(sess)
+	svc := lambda.New(session)
 	_, err := svc.UpdateFunctionCode(&lambda.UpdateFunctionCodeInput{
 		FunctionName: aws.String(target.FunctionName),
 		S3Bucket:     aws.String(source.S3RegistryBucket),
@@ -90,7 +98,9 @@ func deployFromS3(source, target app.Instance, revision int64, opts task.DeployO
 		return err
 	}
 
-	ver, err := getVersion(source.S3RegistryBucket, key, sess)
+	s3svc := s3.New(session)
+
+	ver, err := getVersion(source.S3RegistryBucket, key, s3svc)
 	if err != nil {
 		return err
 	}
@@ -112,8 +122,7 @@ func deployFromS3(source, target app.Instance, revision int64, opts task.DeployO
 	return err
 }
 
-func getVersion(bucket, key string, sess *session.Session) (string, error) {
-	s3svc := s3.New(sess)
+func getVersion(bucket, key string, s3svc *s3.S3) (string, error) {
 
 	input := &s3.GetObjectInput{
 		Bucket: aws.String(bucket),

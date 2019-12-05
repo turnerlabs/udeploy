@@ -104,4 +104,23 @@ $ cstore push infrastructure/portals/prod/.env -s aws-parameter -t prod
 
 When prompted, set context to `udeploy` and the KMS Key ID to the `kms_key_id` from the Terraform output.
 
- 
+ ### 9. Link Other AWS Accounts (optional) ### 
+
+ To deploy resources accross multiple AWS accounts, provide permissions to each additional AWS account the portal should control. 
+
+ Duplicate the folder `infrastructure/accounts/dev` for each account `infrastructure/accounts/{{ACCOUNT_IDENTIFIER}}` and following the intructions.
+
+ Replace `{{TOKENS}}` in `infrastructure/accounts/{{ACCOUNT_IDENTIFIER}}/terraform.tfvars`.
+```bash
+$ terraform init -var-file=infrastructure/accounts/{{ACCOUNT_IDENTIFIER}}/terraform.tfvars  infrastructure/accounts/{{ACCOUNT_IDENTIFIER}} 
+$ terraform apply -var-file=infrastructure/accounts/{{ACCOUNT_IDENTIFIER}}/terraform.tfvars  infrastructure/accounts/{{ACCOUNT_IDENTIFIER}}
+```
+
+Update `linked_account_ids` in [infrastructure/base/terraform.tfvars](/infrastructure/base/terraform.tfvars) with account ids of all linked accounts.
+
+```
+$ terraform apply -var-file=infrastructure/base/terraform.tfvars  infrastructure/base
+```
+
+
+

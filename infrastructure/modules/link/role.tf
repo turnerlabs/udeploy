@@ -1,7 +1,3 @@
-# The SAML role to use for adding users to the ECR policy
-variable "saml_role" {
-}
-
 # creates an application role that the container/task runs as
 resource "aws_iam_role" "app_role" {
   name               = "${var.app}-${var.environment}"
@@ -17,26 +13,16 @@ resource "aws_iam_role_policy" "app_policy" {
 
 # TODO: fill out custom policy
 data "aws_iam_policy_document" "app_policy" {
-  statement {
+   statement {
     actions = [
-      "ecs:DescribeClusters",
+      "events:PutEvents"
     ]
 
     resources = [
-      aws_ecs_cluster.app.arn,
+      "arn:aws:events:${var.region}:${var.portal_account_id}:event-bus/default",
     ]
   }
-  statement {
-    actions = [
-      "sqs:*",
-    ]
 
-    resources = [
-      aws_sqs_queue.notification_queue.arn,
-      aws_sqs_queue.alarm_queue.arn,
-      aws_sqs_queue.s3_queue.arn,
-    ]
-  }
   statement {
     actions = [
       "ecs:DescribeServices",
@@ -72,7 +58,6 @@ data "aws_iam_policy_document" "app_policy" {
       "s3:GetObject",
       "s3:DeleteObject",
       "s3:ListBucket",
-      "sts:AssumeRole",
     ]
 
     resources = [
@@ -90,17 +75,31 @@ data "aws_iam_policy_document" "app_role_assume_role_policy" {
     actions = ["sts:AssumeRole"]
 
     principals {
-      type        = "Service"
-      identifiers = ["ecs-tasks.amazonaws.com"]
-    }
-
-    principals {
       type = "AWS"
-
+ 
       identifiers = [
-        "arn:aws:sts::${data.aws_caller_identity.current.account_id}:assumed-role/${var.saml_role}/${var.saml_users[0]}",
+        "arn:aws:iam::${var.portal_account_id}:role/${var.app}-${var.environment}",
       ]
     }
   }
+
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type = "Service"
+ 
+      identifiers = [
+        "events.amazonaws.com",
+      ]
+    } 
+  }
 }
 
+output "account_id" {
+  value = "${data.aws_caller_identity.current.account_id}"
+}
+
+output "role_arn" {
+  value = "${aws_iam_role.app_role.arn}"
+}

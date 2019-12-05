@@ -210,14 +210,26 @@
                               </div>
                             </div>
                         </div>
-                        <div v-if="app.type == 'service' || app.type == 'scheduled-task'" class="field is-horizontal">
+                        <div class="field is-horizontal">
                             <div class="field-label is-normal">
-                              <label class="label">Cluster</label>
+                              <label class="label">Role (ARN)</label>
                             </div>
                             <div class="field-body">
                               <div class="field">
                                 <p class="control">
-                                  <input class="input name" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.cluster" title="The cluster name containing the service.">
+                                  <input class="input repo" :disabled="!i.claims['edit'] && !user.admin" type="text"  v-model="i.role" title="The AWS role arn that has permission to manage this instance.">
+                                </p>
+                              </div>
+                            </div>
+                        </div>
+                        <div v-if="app.type == 'service' || app.type == 'scheduled-task'" class="field is-horizontal">
+                            <div class="field-label is-normal">
+                              <label class="label">Cluster (ARN)</label>
+                            </div>
+                            <div class="field-body">
+                              <div class="field">
+                                <p class="control">
+                                  <input class="input repo" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.cluster" title="The cluster ARN for the service.">
                                 </p>
                               </div>
                             </div>
@@ -229,8 +241,20 @@
                             <div class="field-body">
                               <div class="field">
                                 <p class="control">
-                                  <input class="input name" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.service" title="The service name containing any running tasks.">
+                                  <input class="input name" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.service" title="The service name for the tasks.">
                                 </p>
+                              </div>
+                            </div>
+                        </div>
+                        <div v-if="app.type == 'service' || app.type == 'scheduled-task'" class="field is-horizontal">
+                            <div class="field-label is-normal">
+                              <label class="label">Task Definition Family</label>
+                            </div>
+                            <div class="field-body">
+                              <div class="field">
+                                <div class="control">
+                                  <input class="input name" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.task.family">
+                                </div>
                               </div>
                             </div>
                         </div>
@@ -248,7 +272,7 @@
                         </div>
                         <div v-if="app.type == 'lambda'" class="field is-horizontal">
                             <div class="field-label is-normal">
-                              <label class="label">Lambda Function</label>
+                              <label class="label">Lambda Function (ARN)</label>
                             </div>
                             <div class="field-body">
                               <div class="field">
@@ -313,7 +337,7 @@
                         </div>
                         <div v-if="app.type == 's3' || app.type == 'lambda'" class="field is-horizontal">
                             <div class="field-label is-normal">
-                              <label class="label">S3 Registry Bucket</label>
+                              <label class="label">S3 Registry (Bucket)</label>
                             </div>
                             <div class="field-body">
                               <div class="field">
@@ -325,7 +349,7 @@
                         </div>
                         <div v-if="app.type == 's3' || app.type == 'lambda'" class="field is-horizontal">
                             <div class="field-label is-normal">
-                              <label class="label">S3 Registry Prefix</label>
+                              <label class="label">S3 Registry (Prefix)</label>
                             </div>
                             <div class="field-body">
                               <div class="field">
@@ -342,16 +366,28 @@
                         </div>
                         <div v-if="app.type == 'service' || app.type == 'scheduled-task'" class="field is-horizontal">
                             <div class="field-label is-normal">
-                              <label class="label">Task Definition Family</label>
+                              <label class="label">ECR Registry (URI)</label>
                             </div>
                             <div class="field-body">
                               <div class="field">
-                                <div class="control">
-                                  <input class="input name" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.task.family">
-                                </div>
+                                <p class="control">
+                                  <input class="input repo" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.repository" placeholder="{ACCOUNT}.dkr.ecr.{REGION}}.amazonaws.com/{REPOSITORY}:VERSION.BUILD" title="The ECR repository that is considered when displaying deployable versions.">
+                                </p>
                               </div>
                             </div>
-                        </div>
+                          </div>
+                          <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                              <label class="label">Registry Role (ARN)</label>
+                            </div>
+                            <div class="field-body">
+                              <div class="field">
+                                <p class="control">
+                                  <input class="input repo" :disabled="!i.claims['edit'] && !user.admin" type="text"  v-model="i.repositoryRole" title="The AWS role arn that has permission to the registry.">
+                                </p>
+                              </div>
+                            </div>
+                          </div>
                         <div v-if="app.type != 's3'" class="field is-horizontal">
                             <div class="field-label is-normal">
                               <label class="label">
@@ -385,21 +421,9 @@
                               </div>
                             </div>
                         </div>
-                        <div v-if="app.type == 'service' || app.type == 'scheduled-task'" class="field is-horizontal">
-                            <div class="field-label is-normal">
-                              <label class="label">ECR Repository</label>
-                            </div>
-                            <div class="field-body">
-                              <div class="field">
-                                <p class="control">
-                                  <input class="input repo" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.repository" placeholder="{ACCOUNT}.dkr.ecr.{REGION}}.amazonaws.com/{REPOSITORY}:VERSION.BUILD" title="The ECR repository that is considered when displaying deployable versions.">
-                                </p>
-                              </div>
-                            </div>
-                        </div>
                         <div class="field is-horizontal">
                             <div class="field-label is-normal">
-                              <label class="label">Deploy From (default)</label>
+                              <label class="label">Deploy From</label>
                             </div>
                             <div class="field-body">
                               <div class="field">

@@ -46,7 +46,7 @@ func GetBuilds(c echo.Context) error {
 
 	switch apps[0].Type {
 	case app.AppTypeService, app.AppTypeScheduledTask:
-		builds, err = task.ListDefinitions(sourceRegistry.Task)
+		builds, err = task.ListDefinitions(sourceRegistry)
 		if err != nil {
 			return err
 		}
