@@ -27,6 +27,7 @@ deploy.sh
 Dockerfile.*
 
 tmp
+temp
 data
 
 # terraform

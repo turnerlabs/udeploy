@@ -8,6 +8,7 @@ type User struct {
 	Email string              `json:"email"`
 	Admin bool                `json:"admin"`
 	Apps  map[string]AppClaim `json:"apps"`
+	Roles []string            `json:"roles"`
 }
 
 // ListApps ...

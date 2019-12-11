@@ -29,69 +29,24 @@
            
             <div v-if="!isLoading">
               <table>
-                  <tr><th>Email</th><th></th><th class="has-text-centered">Admin</th><th></th></tr>
-                  <tr v-for="(usr, index) in users">
+                  <tr><th>Email</th><th></th><th>Role</th><th>Apps</th><th class="has-text-centered">Admin</th><th></th></tr>
+                  <template v-for="(usr, index) in users">
+                    <tr>
                       <td class="name">
                           <div class="field"> 
-                            <input class="input" type="text" v-on:change="didEdit(usr.id)" v-model="usr.email" v-on:keyup="validateField($event, '[A-Za-z0-9._%+-]+@[A-Za-z0-9_%+-]+[\.]{1}[A-Za-z]+', 'REQUIRED: User Email', index)" title="User's email address. The OAuth provider may be case sensitive when attempting the authentication." placeholder="user@domain.com">
-                          </div>
-                          <div v-if="usr.showPolicy" class="field"> 
-                            <textarea class="textarea" v-on:change="didEdit(usr.id)" v-model="usr.policy" v-on:keyup="validatePolicy($event, index)" placeholder="" rows="30" title="The policy defines which apps this user can view and which instances they can deploy, start/stop, or edit. Admins can edit any instance, without an edit claim, for apps listed in the policy."></textarea>
+                            <input class="input" type="text" v-on:change="didEdit(usr.id)" v-model="usr.email" :disabled="isInherited(usr.email)" v-on:keyup="validateField($event, '[A-Za-z0-9._%+-]+@[A-Za-z0-9_%+-]+[\.]{1}[A-Za-z]+', 'REQUIRED: Email', index)" title="User or role email address. The OAuth provider may be case sensitive when attempting the authentication." placeholder="user@domain.com">
                           </div>
                       </td>
                       <td>
                           <div class="field"> 
                             <button class="button is-info" @click="usr.showPolicy ? usr.showPolicy = false : usr.showPolicy = true">Policy</button>
                           </div>
-                          <div v-if="usr.showPolicy">
-                            <article class="message is-primary">
-                                <div class="message-header">
-                                    Example Policy
-                                </div>
-                                <div class="message-body">
-                                  <p>Allows the user to view "udeploy-app" and grants "edit", "deploy", and "start/stop" permissions for the "dev" instance only.</p>
-                                  <p>
-                                  {
-                                    "udeploy-app": {
-                                          "claims": {
-                                              "dev": [
-                                                    "scale",
-                                                    "deploy",
-                                                    "edit"
-                                              ]
-                                          }
-                                    }
-                                  }
-                                  </p>
-                                </div>
-                            </article>
-                            <article class="message is-primary">
-                                <div class="message-header">
-                                    Choose from Available Permissions
-                                </div>
-                                <div class="message-body">
-                                    <table>
-                                    <tr><th>Claim</th><th>Description</th><th>Admin</th></tr>
-                                    <tr><td>edit</td><td>Grants user edit permission for instance.</td><td>automatic</td></tr>
-                                    <tr><td>scale</td><td>Grants user start/stop permissions for instance.</td><td>specify</td></tr>
-                                    <tr><td>deploy</td><td>Grants user deploy permission for instance.</td><td>specify</td></tr>
-                                    </table>
-                                </div>
-                            </article>
-                            <article class="message is-primary">
-                                <div class="message-header">
-                                    Choose from Available Applications
-                                </div>
-                                <div class="message-body">
-                                    <div class="scroll">
-                                        <li v-for="a in apps.map(a => a.name).sort()">
-                                            {{ a }}
-                                        </li>
-                                    </div>
-                                </div>
-                            </article>
-                           
-                          </div>
+                      </td>
+                      <td>
+                        {{ formatRole(usr) }}
+                      </td>
+                      <td>
+                        {{ countUserApps(usr) }}
                       </td>
                       <td class="has-text-centered">
                           <label class="checkbox">
@@ -99,14 +54,92 @@
                           </label>
                       </td>
                       <td>
-                          <button title="Delete instance." class="button is-pulled-right" :disabled="!user.admin" @click="deleteUser(index)">
+                          <button class="button is-pulled-right" :disabled="!user.admin || isInherited(usr.email)" @click="deleteUser(index)" title="To delete, users cannot be inheriting this user's permissions.">
                             <span class="icon is-small">
                                 <i class="fas fa-trash-alt"></i>
                             </span>
                           </button>
                       </td>
-                  </tr>
-                  <tr><td></td><td></td><td></td>
+                    </tr>
+                    <tr>
+                      <td colspan="6" v-if="usr.showPolicy">
+                        <article class="message is-primary">
+                            <div class="message-header">
+                              Policy
+                            </div>
+                            <div class="message-body">
+                                <div class="field">
+                                  <label class="label">Other Policies</label>
+                                  <div class="control">
+                                      <div class="select">
+                                        <select v-model="usr.selectedRole">
+                                          <option value="">None</option>
+                                          <option v-for="u in sortUsers(users)" :value="u.email">{{ u.email }}</option>
+                                        </select>
+                                      </div>
+                                      <button title="Inherit policy allowing user's policy to override any permissions." class="button" :disabled="!user.admin" @click="inheritPolicy(usr)">Inherit</button>
+                                      <button title="This will replicate the selected user's policy overwriting the current policy." class="button is-danger" :disabled="!user.admin || usr.selectedRole == ''" @click="replicatePolicy(usr)">Replicate</button>
+                                      <p>
+                                        <div v-if="usr.errorMessage && usr.errorMessage.length" class="box has-background-danger has-text-white">{{ usr.errorMessage }}</div>
+                                      </p>
+                                  </div>
+                                </div>
+                                Configure user's policy.
+                                <table>
+                                  <tr><th class="has-text-centered"></th><th colspan="2"></th><th></th><th></th><th></th></tr>
+                                  <template v-for="a in sortApps(usr.policy)">
+                                    <tr :class="{ 'has-background-light': a.view }">
+                                      <td class="has-text-centered">
+                                        <label class="checkbox">
+                                            <input type="checkbox" v-model="a.view" v-on:change="didEdit(usr.id)">
+                                        </label>
+                                      </td>
+                                      <td>
+                                        {{ a.name }}
+                                      </td>
+                                      <td>
+                                      
+                                      </td>
+                                      <td class="has-text-centered">
+                                        <b v-if="a.view && a.instances.length">Edit</b>
+                                      </td>
+                                      <td class="has-text-centered">
+                                        <b v-if="a.view && a.instances.length">Scale</b>
+                                      </td>
+                                      <td class="has-text-centered">
+                                        <b v-if="a.view && a.instances.length">Deploy</b>
+                                      </td>
+                                    </tr>
+                                    <tr v-if="a.view" v-for="i in sortInstances(a.instances)" :class="{ 'has-background-light': a.view && (i.edit | i.scale | i.deploy) }">
+                                      <td colspan="2">
+                                      </td>
+                                      <td>
+                                        {{ i.name }} 
+                                      </td>
+                                      <td class="has-text-centered">
+                                        <label class="checkbox">
+                                            <input type="checkbox" v-model="i.edit" v-on:change="didEdit(usr.id)">
+                                        </label>
+                                      </td>
+                                      <td class="has-text-centered">
+                                        <label class="checkbox">
+                                            <input type="checkbox" v-model="i.scale" v-on:change="didEdit(usr.id)">
+                                        </label>
+                                      </td>
+                                      <td class="has-text-centered">
+                                        <label class="checkbox">
+                                            <input type="checkbox" v-model="i.deploy" v-on:change="didEdit(usr.id)">
+                                        </label>
+                                      </td>
+                                    </tr>
+                                  </template>
+                                </table>
+                            </div>
+                        </article>
+                      </td>
+                    </tr>
+                  </template>
+                  <tr><td></td><td></td><td></td><td></td><td></td>
                     <td>
                       <button title="Add user." class="button is-pulled-right" :disabled="!user.admin" @click="addUser()">
                         <span class="icon is-small">

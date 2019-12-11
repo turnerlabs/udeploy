@@ -31,12 +31,14 @@ func Context(next echo.HandlerFunc) echo.HandlerFunc {
 
 		if err = mongo.WithSession(ctxParent, session, func(sctx mongo.SessionContext) error {
 
-			user, err := user.Get(sctx, c.Get(auth.UserIDParam).(string))
+			usr, err := user.Get(sctx, c.Get(auth.UserIDParam).(string))
 			if err != nil {
 				return err
 			}
 
-			ctx = context.WithValue(ctxParent, sess.ContextKey("user"), user)
+			usr, err = user.Inherit(sctx, usr)
+
+			ctx = context.WithValue(ctxParent, sess.ContextKey("user"), usr)
 
 			return nil
 		}); err != nil {

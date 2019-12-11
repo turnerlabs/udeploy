@@ -2,7 +2,7 @@ import {obj} from "../../component/copy/object.js";
 import {includeTenplates} from "../../component/html/include.js";
 
 includeTenplates().then(() => {
-  var users = new Vue({
+  var vm = new Vue({
     el: '#users',
 
     data: {
@@ -21,17 +21,7 @@ includeTenplates().then(() => {
 
         defaultUser: {
             "email": "user@domain.com",
-            "apps": {
-                "application-name": {
-                    "claims": {
-                        "dev": [
-                            "scale",
-                            "deploy",
-                            "edit"
-                        ]
-                    }
-                }
-            }
+            "apps": [],
         },
 
         page: {
@@ -46,41 +36,6 @@ includeTenplates().then(() => {
 
         this.getConfig();
 
-        this.getUser().then(function(user) {
-            that.user = user
-            
-            fetch('/v1/users').then(function(response) {
-                return response.json()
-            })
-            .then(function(data) {
-                if (data.message) {
-                    return Promise.reject(new Error(data.message))
-                }
-
-                return Promise.resolve(data);
-            })
-            .then(function(users) {
-                for (let x=0; x < users.length; x++) {
-                    users[x].policy = JSON.stringify(users[x].apps, null, 5);
-                    users[x].showPolicy = false;
-                }
-
-                that.users = users;
-                that.updateSaveState();
-               
-                that.isLoading = false;
-            })
-            .catch(function(e) {
-                that.addError(e.message, "general")
-    
-                that.isLoading = false;
-           });
-       }).catch(function(e) {
-            that.addError(e.message, "general")
-
-            that.isLoading = false;
-       });
-       
         fetch('/v1/apps?all=true').then(function(response) {
             return response.json()
         })
@@ -93,13 +48,171 @@ includeTenplates().then(() => {
         })
         .then(function(apps) {
             that.apps = apps;
+
+            that.getUser().then(function(user) {
+                that.user = user
+                
+                fetch('/v1/users').then(function(response) {
+                    return response.json()
+                })
+                .then(function(data) {
+                    if (data.message) {
+                        return Promise.reject(new Error(data.message))
+                    }
+    
+                    return Promise.resolve(data);
+                })
+                .then(function(users) {
+                    users = that.sortUsers(users)
+
+                    for (let x=0; x < users.length; x++) {   
+                        users[x] = that.addPolicy(users[x])
+                        users[x].showPolicy = false;
+                    }
+
+                    that.users = users;
+                    that.updateSaveState();
+                   
+                    that.isLoading = false;
+                })
+                .catch(function(e) {
+                    that.addError(e.message, "general")
+        
+                    that.isLoading = false;
+               });
+           }).catch(function(e) {
+                that.addError(e.message, "general")
+    
+                that.isLoading = false;
+           });
         })
         .catch(function(e) {
             that.addError(e.message, "general")
        });
+       
     },
 
     methods: {
+        addPolicy: function (user) {
+            user.policy = []
+            user.selectedRole = "";
+            user.errorMessage = "";
+           
+            for (let a=0; a < this.apps.length; a++) {
+                let appName = this.apps[a].name;
+
+                let app = {
+                    name: appName,
+                    instances: [],
+                }
+
+                let usrApp = user.apps[appName]
+            
+                app.view = usrApp ? true : false
+                
+                for (var c in this.apps[a].instances) {
+                    let instName = this.apps[a].instances[c].name
+
+                    let inst = {
+                        order: this.apps[a].instances[c].order,
+                        name: instName,
+                    }
+
+                    if (usrApp && usrApp["claims"]) {
+                        if (usrApp.claims.hasOwnProperty(instName)) {
+                            for (let i=0; i < usrApp.claims[instName].length; i++) {
+                                inst[usrApp.claims[instName][i]] = true;
+                            }  
+                        }
+                    }
+
+                    app.instances.push(inst)
+                }
+               
+                user.policy.push(app)
+            }
+
+            return user
+        },
+        sortUsers: function (users) { 
+            return users.slice().sort(function(a,b) {
+                if (a.email < b.email)
+                    return -1;
+                if ( a.email > b.email)
+                    return 1;
+                return 0;
+            });
+        },
+        sortApps: function (apps) { 
+            return apps.slice().sort(function(a,b) {
+                if (a.name < b.name)
+                    return -1;
+                if ( a.name > b.name)
+                    return 1;
+                return 0;
+            });
+        },
+        sortInstances: function (instances) { 
+            return instances.slice().sort(function(a,b) {
+                if (a.order < b.order)
+                    return -1;
+                if (a.order > b.order)
+                    return 1;
+                return 0;
+            });
+        },
+        formatRole(usr) {
+            return (usr.roles && usr.roles.length > 0)
+                ? usr.roles[0]
+                : ""
+        },
+        getRole(usr) {
+            return (usr.roles && usr.roles.length == 1) 
+            ? usr.roles[0]
+            : ""
+        },
+        inheritPolicy(usr) {
+            usr.errorMessage = "";
+
+            if (usr.selectedRole == "") {
+                usr.roles = [];
+                this.didEdit(usr.id);
+                return
+            }
+
+            let previousRole = this.getRole(usr);
+
+            if (this.isRoleValid(usr, {}, usr.selectedRole) && previousRole != usr.selectedRole) {
+                usr.roles = [usr.selectedRole];
+
+                this.didEdit(usr.id);
+            } else {
+                usr.errorMessage = "Inheriting the " + usr.selectedRole + " user policy would create an invalid circlular reference.";
+            }
+        },
+        replicatePolicy(usr) {
+            let u = this.findUser(usr.selectedRole, this.users);
+
+            usr.policy = u.policy;
+
+            this.didEdit(usr.id);
+        },
+        isRoleValid(usr, roles, testRole) {
+            
+            if (roles.hasOwnProperty(usr.email)) {
+                return false
+            }
+
+            roles[usr.email] = true;
+
+            if (testRole) {
+                return this.isRoleValid(this.findUser(testRole, this.users), roles)
+            } else if (usr.roles && usr.roles.length > 0) {  
+                return this.isRoleValid(this.findUser(usr.roles[0], this.users), roles)
+            }
+
+            return true
+        },
         validateField(evt, regex, msg, type) {
             var re = new RegExp(regex);
             
@@ -108,20 +221,6 @@ includeTenplates().then(() => {
                 this.removeError(msg, type)
 
             } else {
-                evt.target.classList.add("is-danger")
-                this.addError(msg, type)
-            }
-
-            this.updateSaveState();
-        },
-        validatePolicy(evt, type) {
-            let msg = "REQUIRED: User Policy - Must be a properly formatted json object.";
-
-            try {
-                JSON.parse(evt.target.value)
-                evt.target.classList.remove("is-danger")
-                this.removeError(msg, type)
-            } catch (e) {
                 evt.target.classList.add("is-danger")
                 this.addError(msg, type)
             }
@@ -220,8 +319,8 @@ includeTenplates().then(() => {
                 if (!this.users[x].edited) {
                     continue
                 }
-                
-                this.users[x].apps = JSON.parse(this.users[x].policy)
+
+                this.users[x].apps = that.convertPolicy(this.users[x].policy)
 
                 actions.push(fetch('/v1/users/' + this.users[x].id, {
                     method: "POST",
@@ -252,6 +351,60 @@ includeTenplates().then(() => {
                 that.AddError(err.message, "general");
             });
         },
+        isInherited: function(email) {
+            for (let x = 0; x < this.users.length; x++) {
+                if (this.getRole(this.users[x]) == email) {
+                    return true
+                }
+            }
+
+            return false
+        }, 
+        convertPolicy: function(policy) {
+            let apps = {};
+            
+            for (let x=0; x< policy.length; x++) {
+                let a = policy[x]
+
+                if (!a.view) {
+                    continue;
+                }
+
+                let app = { claims: {}};
+
+                for (let i=0; i< a.instances.length; i++) {
+                    app.claims[a.instances[i].name] = []
+
+                    for (var c in a.instances[i]) {
+                        if (c != "name" && c != "order") {
+                            app.claims[a.instances[i].name].push(c)
+                        }
+                    }
+                }
+
+                apps[policy[x].name] = app
+            }
+
+            return apps;
+        },
+        countUserApps: function (usr) {
+
+            let count = (usr.roles && usr.roles.length > 0)
+                ? this.countUserApps(this.findUser(usr.roles[0], this.users))
+                : 0
+
+            return (usr.policy) 
+                ? usr.policy.filter((a) => a.view).length + count
+                : count
+        },
+        findUser: function(email, users) {
+            for (let x = 0; x < users.length; x++) {
+
+                if (users[x].email == email) {
+                    return users[x]
+                }
+            }
+        },
         cancel: function() {
             window.location.href = "/apps";
         },
@@ -263,12 +416,11 @@ includeTenplates().then(() => {
             Vue.delete(this.users, index)
         },
         addUser: function() {
-            let newUser = obj.copy(this.defaultUser)
+            let newUser = this.addPolicy(obj.copy(this.defaultUser))
 
             newUser.edited = true;
             newUser.showPolicy = true;
-            newUser.policy = JSON.stringify(this.defaultUser.apps, null, 5);
-
+            
             Vue.set(this.users, this.users.length, newUser)
         },
         getUser: function() {
