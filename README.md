@@ -9,13 +9,13 @@ Authorized users can perform drag-n-drop deployments without understanding the t
 
 ### Goals ###
 
-* Expose portal to deploy and monitor AWS resources
+* Create portal to deploy and monitor AWS resources
 * Enable consitent application versioning across multiple AWS resource types
 * Secure deployments by application and/or environment
 * Allow simple drag-n-drop deployments
 * Provide high level environment resource notifications and troubleshooting
 * Make projects searchable for quick access to details, versions, and documentation
-* Improve resource monitoring for integration partners
+* Improve resource monitoring and interaction for integration partners
 * Support authetication with any OAuth2 API
 * Enable deployment workflow innovation (avoid third-party timelines)
 * Centralize navigation to project resources by linking to scrum boards, config tools, and project documentation
@@ -26,6 +26,7 @@ Authorized users can perform drag-n-drop deployments without understanding the t
 * Duplicate AWS console functionality
 * Implement continuous integration features
 * Display or modify infrastructure
+* Replace existing CI/CD piplines
 
 </details>
 
@@ -35,8 +36,9 @@ Authorized users can perform drag-n-drop deployments without understanding the t
 
 || Fargate Service | Fargate Task | Lambda Function | S3 Contents ||
 |---|---|---|---|---|---|
+|Multiple Accounts|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Manages AWS resources accross multiple accounts with a single portal. |
 |Authentication|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Supports OAuth2 for authenticating users. |
-|Authorization|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Supports user permissions for editing and deploying environment instances. |
+|Authorization|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Supports role based user permissions for editing and deploying environment instances. |
 |View Instance Version|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Provides a view into an instance's deployed version details.|
 |View Instance Status|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Provides a view into an instances status showing deployments in progress, erroring containers or lambdas, and scaling services and tasks.|
 |View Instance Tasks|:white_check_mark:|:white_check_mark:|||Provides a view into what version of a service's tasks are starting or stopping at any given moment.|
@@ -105,7 +107,7 @@ Supported Browser: Chrome
 <details>
   <summary>Architecture</summary>
 
-The portal functions as a passive monitoring and active deployment platform. The architecture diagram is divided into two areas, monitoring and user actions.
+The portal functions as a passive monitoring and active deployment platform. The architecture diagram is divided into two sections, monitoring and user actions.
 
 ![uDeploy Architecture](/image/architecture.png "uDeploy Architecture")
 
