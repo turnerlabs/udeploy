@@ -297,7 +297,7 @@ includeTenplates().then(() => {
             }
 
             if (isDup) {
-                this.AddError("User email addresses must be unique.", "general")
+                this.addError("User email addresses must be unique.", "general")
             }
         },
         save: function() {
@@ -353,7 +353,9 @@ includeTenplates().then(() => {
         },
         isInherited: function(email) {
             for (let x = 0; x < this.users.length; x++) {
-                if (this.getRole(this.users[x]) == email) {
+                let role = this.getRole(this.users[x])
+
+                if (role.length > 0 && role == email) {
                     return true
                 }
             }
@@ -387,15 +389,20 @@ includeTenplates().then(() => {
 
             return apps;
         },
-        countUserApps: function (usr) {
+        listUserApps: function (usr) {
 
-            let count = (usr.roles && usr.roles.length > 0)
-                ? this.countUserApps(this.findUser(usr.roles[0], this.users))
-                : 0
+            let apps = (usr.roles && usr.roles.length > 0)
+                ? this.listUserApps(this.findUser(usr.roles[0], this.users))
+                : []
 
             return (usr.policy) 
-                ? usr.policy.filter((a) => a.view).length + count
-                : count
+                ? { ...(usr.policy
+                    .filter((a) => a.view)
+                    .reduce(function(map, obj) {
+                        map[obj.name] = true;
+                        return map;
+                    }, {})), ...apps }
+                : apps
         },
         findUser: function(email, users) {
             for (let x = 0; x < users.length; x++) {

@@ -46,7 +46,7 @@
                         {{ formatRole(usr) }}
                       </td>
                       <td>
-                        {{ countUserApps(usr) }}
+                        {{ Object.keys(listUserApps(usr)).length }}
                       </td>
                       <td class="has-text-centered">
                           <label class="checkbox">
