@@ -391,10 +391,16 @@ includeTenplates().then(() => {
         },
         listUserApps: function (usr) {
 
-            let apps = (usr.roles && usr.roles.length > 0)
-                ? this.listUserApps(this.findUser(usr.roles[0], this.users))
-                : []
+            let apps = []
 
+            if (usr.roles && usr.roles.length > 0) {
+                let u = this.findUser(usr.roles[0], this.users);
+
+                if (u != null) {
+                    apps = this.listUserApps(u)
+                }
+            }
+           
             return (usr.policy) 
                 ? { ...(usr.policy
                     .filter((a) => a.view)
@@ -406,11 +412,25 @@ includeTenplates().then(() => {
         },
         findUser: function(email, users) {
             for (let x = 0; x < users.length; x++) {
-
                 if (users[x].email == email) {
                     return users[x]
                 }
             }
+
+            return null
+        },
+        isUserMissing: function(email) {
+            if (email == "") {
+                return false
+            }
+
+            for (let x = 0; x < this.users.length; x++) {
+                if (this.users[x].email == email) {
+                    return false
+                }
+            }
+
+            return true
         },
         cancel: function() {
             window.location.href = "/apps";
