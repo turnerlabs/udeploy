@@ -34,7 +34,7 @@
                     <tr>
                       <td class="name">
                           <div class="field"> 
-                            <input class="input" type="text" v-on:change="didEdit(usr.id)" v-model="usr.email" :disabled="isInherited(usr.email)" v-on:keyup="validateField($event, '[A-Za-z0-9._%+-]+@[A-Za-z0-9_%+-]+[\.]{1}[A-Za-z]+', 'REQUIRED: Email', index)" title="User or role email address. The OAuth provider may be case sensitive when attempting the authentication." placeholder="user@domain.com">
+                            <input class="input" type="text" v-on:change="didEdit(usr.id);" v-model="usr.email" v-on:keyup="validateField($event, '[A-Za-z0-9._%+-]+@[A-Za-z0-9_%+-]+[\.]{1}[A-Za-z]+', 'REQUIRED: Email', index)" title="User or role email address. The OAuth provider may be case sensitive when attempting the authentication." placeholder="user@domain.com">
                           </div>
                       </td>
                       <td>
@@ -43,7 +43,13 @@
                           </div>
                       </td>
                       <td>
-                        {{ formatRole(usr) }}
+                        <div v-if="isUserMissing(getRole(usr))" class="has-text-danger">   
+                          {{ formatRole(usr) }}  
+                          <span class="icon is-small" title="Role does not exist.">
+                            <i class="fas fa-exclamation-triangle"></i>
+                          </span>
+                        </div>
+                        <div v-else>{{ formatRole(usr) }}</div>
                       </td>
                       <td>
                         {{ Object.keys(listUserApps(usr)).length }}
