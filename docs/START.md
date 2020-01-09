@@ -4,7 +4,7 @@
 #### 1. Clone ####
 ```bash
 $ mkdir udeploy && cd udeploy
-$ git clone --branch v0.28.0-rc git@github.com:turnerlabs/udeploy.git infrastructure
+$ git clone --branch v0.29.2-rc git@github.com:turnerlabs/udeploy.git infrastructure
 ```
 
 The following commands should be executed from the repository root unless otherwise specified.
