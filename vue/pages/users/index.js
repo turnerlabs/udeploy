@@ -378,7 +378,7 @@ includeTenplates().then(() => {
                     app.claims[a.instances[i].name] = []
 
                     for (var c in a.instances[i]) {
-                        if (c != "name" && c != "order") {
+                        if (c != "name" && c != "order" && a.instances[i][c]) {
                             app.claims[a.instances[i].name].push(c)
                         }
                     }
