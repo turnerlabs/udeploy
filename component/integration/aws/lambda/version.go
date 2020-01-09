@@ -12,7 +12,7 @@ func extractVersion(instance app.Instance, config *lambda.FunctionConfiguration)
 	tag := regexp.MustCompile(instance.Task.ImageTagEx)
 
 	matches := tag.FindStringSubmatch(*config.Description)
-	if matches == nil {
+	if matches == nil || len(matches) < 2 {
 		return "", "", errors.New("failed to extract version")
 	}
 
