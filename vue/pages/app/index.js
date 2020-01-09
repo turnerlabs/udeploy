@@ -58,7 +58,7 @@ includeTenplates().then(() => {
                 }],
             },  
 
-            lambdaRegex: "(v[0-9]+.[0-9]+.[0-9]+-[\w]+)[.]?([a-zA-Z0-9]+)?",
+            lambdaRegex: "(v[0-9]+.[0-9]+.[0-9]+-[\\w]+)[.]?([a-zA-Z0-9]+)?",
             serviceRegex: "(v[0-9]+.[0-9]+.[0-9]+-[a-zA-Z0-9]*).([0-9]+)",
 
             page: {}
