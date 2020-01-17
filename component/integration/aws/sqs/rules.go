@@ -192,5 +192,5 @@ type eventMessageDetail struct {
 }
 
 func (d eventMessageDetail) taskDefinition() string {
-	return d.TaskDefinitionArn
+	return d.TaskDefinitionArn[0:strings.LastIndex(d.TaskDefinitionArn, ":")]
 }
