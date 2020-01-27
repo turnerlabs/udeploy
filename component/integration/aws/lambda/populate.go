@@ -71,9 +71,12 @@ func populateInst(i app.Instance, svc *lambda.Lambda, cwsvc *cloudwatch.CloudWat
 	i.Task.Definition.Description = fmt.Sprintf("%s.%s", version, build)
 
 	env := map[string]string{}
-	for k, v := range fo.Configuration.Environment.Variables {
-		value := *v
-		env[k] = value
+
+	if fo.Configuration.Environment != nil {
+		for k, v := range fo.Configuration.Environment.Variables {
+			value := *v
+			env[k] = value
+		}
 	}
 
 	i.Task.Definition.Environment = env

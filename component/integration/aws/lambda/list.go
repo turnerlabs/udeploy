@@ -45,9 +45,11 @@ func ListDefinitions(instance app.Instance) (map[string]app.Definition, error) {
 		}
 
 		env := map[string]string{}
-		for k, v := range funcVersion.Environment.Variables {
-			value := *v
-			env[k] = value
+		if funcVersion.Environment != nil {
+			for k, v := range funcVersion.Environment.Variables {
+				value := *v
+				env[k] = value
+			}
 		}
 
 		def := app.Definition{

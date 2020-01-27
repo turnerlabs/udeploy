@@ -195,12 +195,15 @@ func deployConfig(source, target app.Instance, opts task.DeployOptions, svc *lam
 	input := mapConfiguration(*currentFunc.Configuration)
 
 	for _, key := range target.Task.CloneEnvVars {
-		if value, found := sourceFunc.Configuration.Environment.Variables[key]; found {
-			input.Environment.Variables[key] = value
+		if sourceFunc.Configuration.Environment != nil {
+			if value, found := sourceFunc.Configuration.Environment.Variables[key]; found {
+				input.Environment.Variables[key] = value
+			}
 		}
 	}
 
 	if opts.Override {
+		input.Environment = &lambda.Environment{}
 		input.Environment.SetVariables(aws.StringMap(opts.Environment))
 	}
 
