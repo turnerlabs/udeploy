@@ -23,7 +23,7 @@ provider "aws" {
 }
 
 module "env" {
-    source = "github.com/turnerlabs/udeploy//infrastructure/modules/portal?ref=v0.29.2-rc"
+    source = "github.com/turnerlabs/udeploy//infrastructure/modules/portal?ref=v0.30.1-rc"
 
     region = var.region
     aws_profile = var.aws_profile

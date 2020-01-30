@@ -68,6 +68,6 @@ variable "record_name" {
 }
 
 variable "image" {
-  default = "quay.io/turner/udeploy:v0.29.2-rc.1"
+  default = "quay.io/turner/udeploy:v0.30.0-rc.1"
 }
 
