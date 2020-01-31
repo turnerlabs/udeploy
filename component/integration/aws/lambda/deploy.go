@@ -85,7 +85,10 @@ func deployFromS3(source, target app.Instance, revision int64, opts task.DeployO
 
 	config.Merge([]string{source.Role, source.RepositoryRole, target.Role}, session)
 
-	key := fmt.Sprintf("%s/%d.zip", source.S3RegistryPrefix, revision)
+	key := fmt.Sprintf("%d.zip", revision)
+	if len(source.S3RegistryPrefix) > 0 {
+		key = fmt.Sprintf("%s/%d.zip", source.S3RegistryPrefix, revision)
+	}
 
 	svc := lambda.New(session)
 	_, err := svc.UpdateFunctionCode(&lambda.UpdateFunctionCodeInput{
@@ -93,6 +96,9 @@ func deployFromS3(source, target app.Instance, revision int64, opts task.DeployO
 		S3Bucket:     aws.String(source.S3RegistryBucket),
 		S3Key:        aws.String(key),
 	})
+	if err != nil {
+		return err
+	}
 
 	if err := deployConfig(source, target, opts, svc); err != nil {
 		return err
