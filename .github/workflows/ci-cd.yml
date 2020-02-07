@@ -1,0 +1,54 @@
+name: BuildNPublish
+on:
+  push:
+    tags:
+    - 'v[0-9]+.[0-9]+.[0-9]+-rc'
+jobs:
+ 
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: olegtarasov/get-tag@v1
+      id: tagName
+
+    - name: Log Build Number
+      run : echo 'Build ${{ github.run_number }}'
+
+    - name: Set up Go
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.13
+
+    - name: Check out Code 
+      uses: actions/checkout@v2
+     
+    - name: Run Tests
+      env:
+        MISSING_ENV_OK: true
+      run: go test ./... 
+
+    - name: Set docker image
+      env:
+        REPO: quay.io/turner/udeploy:${{ steps.tagName.outputs.tag }}.${{ github.run_number }}
+      run: |
+        echo "export IMAGE=$REPO" >> ./env
+        cat ./env
+
+    - name: Build image
+      uses: turnerlabs/fargate-cicd-action@master
+      with:
+        args: . ./env; docker build -t $IMAGE .
+    
+    - name: Log in to Quay
+      uses: turnerlabs/fargate-cicd-action@master
+      env:
+        QUAY_USER: ${{ secrets.QUAY_USER }}
+        QUAY_PASS: ${{ secrets.QUAY_PASS }}
+      with:
+        args: docker login -u="$QUAY_USER" -p="$QUAY_PASS" quay.io
+    
+    - name: Push image to Quay
+      uses: turnerlabs/fargate-cicd-action@master
+      with:
+        args: . ./env; docker push $IMAGE

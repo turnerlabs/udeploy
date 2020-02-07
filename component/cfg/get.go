@@ -6,6 +6,8 @@ import (
 )
 
 const (
+	missingEnvOk = "MISSING_ENV_OK"
+
 	url = "URL"
 	env = "ENV"
 
@@ -37,98 +39,100 @@ var Get map[string]string
 func init() {
 	Get = map[string]string{}
 
+	_, missingEnvAllowed := os.LookupEnv(missingEnvOk)
+
 	v, exists := os.LookupEnv(url)
-	if !exists {
+	if !missingEnvAllowed && !exists {
 		log.Fatalf("environment variable %s required", url)
 	}
 	Get[url] = v
 
 	v, exists = os.LookupEnv(env)
-	if !exists {
+	if !missingEnvAllowed && !exists {
 		log.Fatalf("environment variable %s required", env)
 	}
 	Get[env] = v
 
 	v, exists = os.LookupEnv(dbURI)
-	if !exists {
+	if !missingEnvAllowed && !exists {
 		log.Fatalf("environment variable %s required", dbURI)
 	}
 	Get[dbURI] = v
 
 	v, exists = os.LookupEnv(dbName)
-	if !exists {
+	if !missingEnvAllowed && !exists {
 		log.Fatalf("environment variable %s required", dbName)
 	}
 	Get[dbName] = v
 
 	v, exists = os.LookupEnv(oauthClientID)
-	if !exists {
+	if !missingEnvAllowed && !exists {
 		log.Fatalf("environment variable %s required", oauthClientID)
 	}
 	Get[oauthClientID] = v
 
 	v, exists = os.LookupEnv(oauthClientSecret)
-	if !exists {
+	if !missingEnvAllowed && !exists {
 		log.Fatalf("environment variable %s required", oauthClientSecret)
 	}
 	Get[oauthClientSecret] = v
 
 	v, exists = os.LookupEnv(oauthRedirectURL)
-	if !exists {
+	if !missingEnvAllowed && !exists {
 		log.Fatalf("environment variable %s required", oauthRedirectURL)
 	}
 	Get[oauthRedirectURL] = v
 
 	v, exists = os.LookupEnv(oauthSignOutURL)
-	if !exists {
+	if !missingEnvAllowed && !exists {
 		log.Fatalf("environment variable %s required", oauthSignOutURL)
 	}
 	Get[oauthSignOutURL] = v
 
 	v, exists = os.LookupEnv(oauthAuthURL)
-	if !exists {
+	if !missingEnvAllowed && !exists {
 		log.Fatalf("environment variable %s required", oauthAuthURL)
 	}
 	Get[oauthAuthURL] = v
 
 	v, exists = os.LookupEnv(oauthTokenURL)
-	if !exists {
+	if !missingEnvAllowed && !exists {
 		log.Fatalf("environment variable %s required", oauthTokenURL)
 	}
 	Get[oauthTokenURL] = v
 
 	v, exists = os.LookupEnv(oauthSessSign)
-	if !exists {
+	if !missingEnvAllowed && !exists {
 		log.Fatalf("environment variable %s required", oauthSessSign)
 	}
 	Get[oauthSessSign] = v
 
 	v, exists = os.LookupEnv(sqsChangeQueue)
-	if !exists {
+	if !missingEnvAllowed && !exists {
 		log.Fatalf("environment variable %s required", sqsChangeQueue)
 	}
 	Get[sqsChangeQueue] = v
 
 	v, exists = os.LookupEnv(sqsS3Queue)
-	if !exists {
+	if !missingEnvAllowed && !exists {
 		log.Fatalf("environment variable %s required", sqsS3Queue)
 	}
 	Get[sqsS3Queue] = v
 
 	v, exists = os.LookupEnv(sqsAlarmQueue)
-	if !exists {
+	if !missingEnvAllowed && !exists {
 		log.Fatalf("environment variable %s required", sqsAlarmQueue)
 	}
 	Get[sqsAlarmQueue] = v
 
 	v, exists = os.LookupEnv(snsAlarmTopicArn)
-	if !exists {
+	if !missingEnvAllowed && !exists {
 		log.Fatalf("environment variable %s required", snsAlarmTopicArn)
 	}
 	Get[snsAlarmTopicArn] = v
 
 	v, exists = os.LookupEnv(consoleLink)
-	if !exists {
+	if !missingEnvAllowed && !exists {
 		log.Fatalf("environment variable %s required", consoleLink)
 	}
 	Get[consoleLink] = v
