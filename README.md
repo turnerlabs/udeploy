@@ -113,3 +113,13 @@ The portal functions as a passive monitoring and active deployment platform. The
 
 </details>
 
+<details>
+  <summary>Publish Release</summary>
+
+NOTE: semver tag format required `v1.0.0-rc`
+```bash
+$ git tag {{TAG}}
+$ git push origin {{TAG}}
+```
+Once the GitHub Actions build is complete the Docker image tagged {{TAG}} release will be published to Quay.io. 
+</details>
