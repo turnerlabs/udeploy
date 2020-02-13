@@ -58,6 +58,6 @@ output "kms_key_id" {
 # SQS queue watched for s3 deployment 
 # changes when updating the portal ui.
 output "s3_change_queue" {
-  value = module.dev.s3_change_queue
+  value = module.env.s3_change_queue
 }
 
