@@ -36,6 +36,7 @@ type InstanceView struct {
 	FormattedVersion string `json:"formattedVersion"`
 	Version          string `json:"version"`
 	Revision         int64  `json:"revision"`
+	Build            string `json:"build"`
 
 	Containers []ContainerView `json:"containers"`
 	Deployment DeploymentView  `json:"deployment"`
@@ -289,6 +290,7 @@ func (i Instance) ToView(name string, appClaim user.AppClaim) InstanceView {
 		}
 	}
 
+	v.Build = i.Task.Definition.Build
 	v.Revision = i.Task.Definition.Revision
 	v.DesiredCount = i.Task.DesiredCount
 

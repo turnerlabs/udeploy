@@ -85,7 +85,9 @@
                             v-on:dragover.prevent="dragOver($event, inst)" 
                             v-on:drop="dragDrop($event, app, inst)" 
                             v-bind:class="statusClass(app, inst)" class="cell is-size-6 has-text-weight-bold">
-                            {{ inst.version }} <span v-if="inst.revision > 0">({{ inst.revision }})</span>
+                            {{ inst.formattedVersion }} 
+                            <span v-if="inst.revision > 0">({{ inst.revision }})</span>
+
                             <div class="is-pulled-right">
                                 <button v-if="actions(app.type, inst).restart && inst.isRunning" :disabled="!inst.claims.scale" title="restart instance" class="button" @click.stop.prevent="selected = { app: app, instance: inst }; modal.confirm = { show: true, code: inst.deployCode, message: 'Restart all running tasks for ' + inst.name + '.', action: restartInstance }">
                                     <span class="icon is-small">
@@ -161,12 +163,14 @@
                                 v-on:dragleave="dragLeave($event, app, inst)" 
                                 v-on:dragover.prevent="dragOver($event, inst)" 
                                 v-on:drop="dragDrop($event, app, inst)" 
-                                v-bind:class="statusClass(app, inst)">
-
+                                v-bind:class="statusClass(app, inst)"
+                                :title="formatDetails(inst.formattedVersion, inst.revision)">
                                 <div class="text">
-                                    <p class="is-size-6 has-text-weight-bold is-marginless" :title="inst.version">{{ formatVersion(inst.version) }}</p>
-                                    <p class="is-size-7"><span v-if="inst.revision > 0">revision {{ inst.revision }}</span></p>
+                                    <p class="is-size-6 has-text-weight-bold is-marginless">{{ formatVersion(inst.version) }}</p>
 
+                                    <div class="is-size-7" v-if="inst.build > 0">build {{ inst.build }}</div> 
+                                    <p></p>
+                                   
                                     <div v-if="inst.deployment.isPending">
                                         <progress class="progress is-small" v-bind:class="{'is-secondary': inst.deployment.isPending}" max="100">15%</progress>
                                     </div>
