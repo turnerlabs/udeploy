@@ -16,7 +16,5 @@ func mutate(text, existingValue, newValue string) string {
 		text = strings.Replace(text, match, newValue, -1)
 	}
 
-	text = strings.Replace(text, "\n", "<br />", -1)
-
 	return text
 }

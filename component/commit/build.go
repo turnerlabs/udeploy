@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/turnerlabs/udeploy/component/app"
-
 	"github.com/turnerlabs/udeploy/component/integration/github"
 )
 
@@ -46,6 +45,8 @@ func BuildRelease(org, repo, targetTag, currentTag, url, accessToken string, max
 			commit.Commit.Message = mutate(commit.Commit.Message, commitConfig.ExistingValue, commitConfig.NewValue)
 
 			commit.Commit.Message = tokenize(commit, targetTag)
+
+			commit.Commit.Message = formatForDisplay(commit.Commit.Message)
 
 			if nextTag, err := getCommitTag(commit.SHA, tags); err == nil {
 				tag = nextTag
