@@ -48,7 +48,10 @@ func populateInst(i app.Instance, ecsSvc *ecs.ECS, evtSvc *cloudwatchevents.Clou
 		return i, state, err
 	}
 
-	i.Task.Definition = app.DefinitionFrom(td, i.Task.ImageTagEx)
+	i.Task.Definition, err = app.DefinitionFrom(td, i.Task.ImageTagEx)
+	if err != nil {
+		state.SetError(err)
+	}
 
 	runningTasks, err := task.List(i, ecsSvc, "RUNNING")
 	if err != nil {

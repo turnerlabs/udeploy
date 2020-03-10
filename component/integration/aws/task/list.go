@@ -74,11 +74,16 @@ func GetTasksInfo(instance app.Instance, svc *ecs.ECS, tasks []*ecs.Task) ([]app
 
 			logLink := getLogLink(*o.TaskDefinition.ContainerDefinitions[0].LogConfiguration, taskID, *container.Name)
 
+			ver, err := version.FormatExtract(*o.TaskDefinition.ContainerDefinitions[0].Image, instance.Task.ImageTagEx)
+			if err != nil {
+				return []app.TaskInfo{}, err
+			}
+
 			taskInfo := app.TaskInfo{
 				TaskID:         taskID,
 				LastStatus:     *task.LastStatus,
 				LastStatusTime: time.Now(),
-				Version:        version.FormatExtract(*o.TaskDefinition.ContainerDefinitions[0].Image, instance.Task.ImageTagEx),
+				Version:        ver,
 				LogLink:        logLink,
 			}
 			if *task.LastStatus == "STOPPED" && task.StoppedReason != nil {
@@ -112,7 +117,10 @@ func keepMostRecentRevisions(tds []*ecs.TaskDefinition, regex string) map[string
 	releases := map[string]app.Definition{}
 
 	for _, td := range tds {
-		release := app.DefinitionFrom(td, regex)
+		release, err := app.DefinitionFrom(td, regex)
+		if err != nil {
+			continue
+		}
 
 		ver := release.FormatVersion()
 
@@ -123,10 +131,20 @@ func keepMostRecentRevisions(tds []*ecs.TaskDefinition, regex string) map[string
 		if len(ver) > 1 {
 			if tdv, found := releases[ver]; found {
 				if *td.Revision > tdv.Revision {
-					releases[ver] = app.DefinitionFrom(td, regex)
+					v, err := app.DefinitionFrom(td, regex)
+					if err != nil {
+						continue
+					}
+
+					releases[ver] = v
 				}
 			} else {
-				releases[ver] = app.DefinitionFrom(td, regex)
+				v, err := app.DefinitionFrom(td, regex)
+				if err != nil {
+					continue
+				}
+
+				releases[ver] = v
 			}
 		}
 	}

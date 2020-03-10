@@ -191,9 +191,9 @@ func NewDefinition(id string) Definition {
 }
 
 // DefinitionFrom ...
-func DefinitionFrom(td *ecs.TaskDefinition, imageTagRegEx string) Definition {
+func DefinitionFrom(td *ecs.TaskDefinition, imageTagRegEx string) (Definition, error) {
 
-	version, build := version.Extract(*td.ContainerDefinitions[0].Image, imageTagRegEx)
+	version, build, err := version.Extract(*td.ContainerDefinitions[0].Image, imageTagRegEx)
 
 	def := Definition{
 		ID: (*td.TaskDefinitionArn)[0:strings.LastIndex(*td.TaskDefinitionArn, ":")],
@@ -218,5 +218,5 @@ func DefinitionFrom(td *ecs.TaskDefinition, imageTagRegEx string) Definition {
 		def.Secrets[*e.Name] = value
 	}
 
-	return def
+	return def, err
 }

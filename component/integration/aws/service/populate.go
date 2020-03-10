@@ -67,7 +67,10 @@ func populateInst(i app.Instance, scalableTargets []*applicationautoscaling.Scal
 		return i, state, err
 	}
 
-	i.Task.Definition = app.DefinitionFrom(td, i.Task.ImageTagEx)
+	i.Task.Definition, err = app.DefinitionFrom(td, i.Task.ImageTagEx)
+	if err != nil {
+		state.SetError(err)
+	}
 
 	state.Version = i.FormatVersion()
 

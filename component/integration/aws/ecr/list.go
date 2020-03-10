@@ -26,7 +26,10 @@ func ListDefinitions(registry app.Instance) (map[string]app.Definition, error) {
 			continue
 		}
 
-		ver, build := version.Extract(*i.ImageTag, registry.Task.ImageTagEx)
+		ver, build, err := version.Extract(*i.ImageTag, registry.Task.ImageTagEx)
+		if err != nil {
+			continue
+		}
 
 		builds[*i.ImageTag] = app.Definition{
 			Version:  ver,
