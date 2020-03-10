@@ -147,6 +147,9 @@ includeTenplates().then(() => {
 
                 return version
             },
+            formatDetails(version, revision) {
+                return `${version} (revision ${revision})`
+            },
             hasEditPermission(app) {
                 if (!this.user) {
                     return false
