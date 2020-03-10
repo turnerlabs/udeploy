@@ -71,7 +71,10 @@ func populateInst(i app.Instance, svc *s3.S3, downloader *s3manager.Downloader) 
 		return i, state, err
 	}
 
-	v, b := version.Extract(ver, i.Task.ImageTagEx)
+	v, b, err := version.Extract(ver, i.Task.ImageTagEx)
+	if err != nil {
+		state.SetError(err)
+	}
 
 	i.Task.Definition.Description = ver
 	i.Task.Definition.Version = v

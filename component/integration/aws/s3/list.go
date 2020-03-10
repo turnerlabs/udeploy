@@ -59,7 +59,10 @@ func ListDefinitions(instance app.Instance) (map[string]app.Definition, error) {
 			continue
 		}
 
-		v, b := version.Extract(ver, instance.Task.ImageTagEx)
+		v, b, err := version.Extract(ver, instance.Task.ImageTagEx)
+		if err != nil {
+			continue
+		}
 
 		def := app.Definition{
 			Version:  v,

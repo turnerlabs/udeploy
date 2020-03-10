@@ -6,32 +6,35 @@ import (
 )
 
 // FormatExtract ...
-func FormatExtract(image, regex string) string {
+func FormatExtract(image, regex string) (string, error) {
 
-	version, build := Extract(image, regex)
+	version, build, err := Extract(image, regex)
 
 	if len(build) > 0 {
-		return fmt.Sprintf("%s.%s", version, build)
+		return fmt.Sprintf("%s.%s", version, build), err
 	}
 
-	return version
+	return version, err
 }
 
 // Extract ...
-func Extract(field, regex string) (string, string) {
-	tag := regexp.MustCompile(regex)
+func Extract(field, regex string) (string, string, error) {
+	tag, err := regexp.Compile(regex)
+	if err != nil {
+		return "", "", err
+	}
 
 	matches := tag.FindAllStringSubmatch(field, -1)
 
 	if missingVersion(matches) {
-		return "", ""
+		return "", "", nil
 	}
 
 	if missingBuildNumber(matches) {
-		return matches[0][1], ""
+		return matches[0][1], "", nil
 	}
 
-	return matches[0][1], matches[0][2]
+	return matches[0][1], matches[0][2], nil
 }
 
 func missingVersion(matches [][]string) bool {
