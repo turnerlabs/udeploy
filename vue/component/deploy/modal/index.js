@@ -226,6 +226,10 @@ Vue.component('deploy-modal', {
             }
 
             return false
+        },
+        formatCommitMessage(msg) {
+            msg = msg.replace(/\n/gi, "<br/>")
+            return msg
         }
     }
 })
