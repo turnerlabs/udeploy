@@ -7,6 +7,7 @@ func (a Application) Copy() Application {
 		Name:      a.Name,
 		Type:      a.Type,
 		Repo:      a.Repo.Copy(),
+		ProjectID: a.ProjectID,
 		Instances: map[string]Instance{},
 	}
 

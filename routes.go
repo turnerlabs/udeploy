@@ -81,13 +81,13 @@ func startRouter(changeNotifier *broker.Broker) {
 	//--------------------------------------------------
 	//- Broadcast real-time app changes to clients
 	//--------------------------------------------------
-	events := e.Group("/events", auth.UnAuthError, request.Context)
+	events := e.Group("/events", auth.UnAuthError, request.EventStreamContext)
 	events.GET("/app/changes", func(c echo.Context) error { return handler.Change(c, changeNotifier) })
 
 	//--------------------------------------------------
 	//- V1 routes
 	//--------------------------------------------------
-	v1 := e.Group("/v1", auth.UnAuthError, request.Context)
+	v1 := e.Group("/v1", auth.UnAuthError, request.RouteContext)
 
 	v1.GET("/user", func(c echo.Context) error {
 		ctx := c.Get("ctx").(mongo.SessionContext)
@@ -101,6 +101,10 @@ func startRouter(changeNotifier *broker.Broker) {
 	v1.GET("/notices", handler.GetNotices, auth.RequireAdmin)
 	v1.POST("/notices/:id", handler.SaveNotice, auth.RequireAdmin)
 	v1.DELETE("/notices/:id", handler.DeleteNotice, auth.RequireAdmin)
+
+	v1.GET("/projects", handler.GetProjects, auth.RequireAdmin)
+	v1.POST("/projects/:id", handler.SaveProject, auth.RequireAdmin)
+	v1.DELETE("/projects/:id", handler.DeleteProject, auth.RequireAdmin)
 
 	v1.GET("/apps", handler.GetApps)
 	v1.POST("/apps/filter", handler.FilterApps)
@@ -129,6 +133,7 @@ func startRouter(changeNotifier *broker.Broker) {
 	ui.Static("/:app/instance/:instance", "vue/pages/instance")
 	ui.Static("/users", "vue/pages/users")
 	ui.Static("/notices", "vue/pages/notices")
+	ui.Static("/projects", "vue/pages/projects")
 
 	e.Static("/*", "vue")
 

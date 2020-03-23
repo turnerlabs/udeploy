@@ -10,6 +10,7 @@ Vue.component('header-bar', {
                 <td>
                     <span class="buttons has-addons">
                         <a class="button is-primary is-small" v-bind:class="{ 'is-outlined': !page.apps }" :disabled="page.apps" href="/apps">Apps</a>
+                        <a v-if="user.admin" class="button is-primary is-small" v-bind:class="{ 'is-outlined': !page.projects }" :disabled="page.projects" href="/apps/projects">Projects</a>
                         <a v-if="user.admin" class="button is-primary is-small" v-bind:class="{ 'is-outlined': !page.notices }" :disabled="page.notices" href="/apps/notices">Notices</a>
                         <a v-if="user.admin" class="button is-primary is-small" v-bind:class="{ 'is-outlined': !page.users }" :disabled="page.users" href="/apps/users">Users</a>
                     </span>
