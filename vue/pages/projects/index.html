@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html class="has-background-white-ter">
+<head>
+  <title>uDeploy</title>
+
+  <link rel="stylesheet" type="text/css" href="/component/header/bar.css?auto-version=14419" />
+  <link rel="stylesheet" type="text/css" href="/pages/projects/index.css?auto-version=14419"  />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.4/css/bulma.min.css" />
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+</head>
+<body>
+    <div id="projects" v-cloak>
+        <header-bar v-bind:user="user" v-bind:page="page" v-bind:config="config"></header-bar>
+
+        <div class="container box is-family-primary">
+          <div class="content">
+            <div v-if="!isLoading && projects.length > 0" class="is-pulled-right">
+              <button class="button is-success" :disabled="!canSave" @click="save">Save</button>
+              <button class="button is-warning" @click="cancel">Cancel</button>
+            </div>
+            <h4><a href="/apps">APPS</a> > PROJECTS</h4> 
+            <hr />
+                       
+            <alert-banner v-bind:alerts="alerts"></alert-banner>
+
+            <progress v-if="isLoading" class="progress is-small is-dark" max="100"></progress>
+
+            <div>
+              <table>
+                  <tr v-if="projects.length > 0"><th>Name</th><th>Apps</th><th></th></tr>
+                  <tr v-for="(project, index) in projects">
+                      <td class="name">
+                          <div class="field"> 
+                            <input class="input" type="text" v-on:change="didEdit(index)" v-model="project.name" v-on:keyup="validateField($event, '[A-Za-z0-9._%+-]+', 'REQUIRED: project Name', index)" title="" placeholder="Application project">
+                          </div>
+                      </td>
+                      <td>
+                        {{ project.apps.length }}
+                      </td>
+                      <td>
+                          <button title="Delete project." class="button is-pulled-right" :disabled="!user.admin || project.apps.length > 0" @click="deleteProject(index)">
+                            <span class="icon is-small">
+                                <i class="fas fa-trash-alt"></i>
+                            </span>
+                          </button>
+                      </td>
+                  </tr>
+                  <tr>
+                    <td></td>
+                    <td></td>
+                    <td>
+                      <button title="Add project." class="button is-pulled-right" :disabled="!user.admin" @click="addProject()">
+                        <span class="icon is-small">
+                            <i class="fas fa-plus"></i>
+                        </span>
+                      </button>
+                    </td>
+                </tr>
+              </table>
+              
+              <alert-banner v-bind:alerts="alerts"></alert-banner>
+
+              <div v-if="!isLoading && projects.length > 0" class="has-text-centered">
+                <button class="button is-success" :disabled="!canSave" @click="save">Save</button>
+                <button class="button is-warning" @click="cancel">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+    </div>
+</body>
+</html>
+
+<script src="/component/header/bar.js?auto-version=14419" type="module"></script>
+<script src="/component/alert/banner.js?auto-version=14419" type="module"></script>
+<script src="/pages/projects/index.js?auto-version=14419" type="module"></script>

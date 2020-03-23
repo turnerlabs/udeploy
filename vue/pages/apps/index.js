@@ -10,6 +10,8 @@ includeTenplates().then(() => {
             config: { consoleLink: "" },
 
             apps: [],
+            projects: [],
+
             modal: {
                 deploy: {show: false},
                 scale: {show: false, action: ""},
@@ -170,12 +172,11 @@ includeTenplates().then(() => {
             cacheApp(app) {
                 let that = this
                 
-                that.apps.forEach(function (a, i) {
-                    if (a.name == app.name) {
-                        a.isRefreshing = true
-                        Vue.set(that.apps, i, a)
-                    }
-                });
+                app.isRefreshing = true;
+
+                let item = that.updateProject(app);
+
+                Vue.set(that.projects, item.i, item.project);
 
                 fetch('/v1/apps/' + app.name + '/cache', { method: "PUT" })
                 .then(function(response) {
@@ -290,7 +291,7 @@ includeTenplates().then(() => {
 
                         that.clearErrorsBy("connection");
 
-                        let jumpToHash = (that.apps.length === 0)
+                        let jumpToHash = (that.projects.length === 0)
 
                         that.refreshApps(jumpToHash);
                     };
@@ -306,16 +307,24 @@ includeTenplates().then(() => {
                     source.addEventListener('message', function(e) {
                         let app = JSON.parse(e.data);
 
-                        for (let a in that.apps) {
-                            if (that.apps[a].name == app.name) {
-                                Vue.set(that.apps, a, app)
-                                that.updateTime();
-                            }
-                        }
+                        let item = that.updateProject(app);
+
+                        Vue.set(that.projects, item.i, item.project);
+                        that.updateTime();
+                        
                     }, false);
                 } else {
                     that.alerts.push({ error: new Error("browser does not support real-time updates")})
                 }
+            },
+            showProject(proj) {
+                for (let i in proj.apps) {
+                    if (this.showApp(proj.apps[i])) {
+                        return true    
+                    }
+                }
+
+                return false
             },
             showApp(app) {
 
@@ -349,11 +358,13 @@ includeTenplates().then(() => {
                 return false
             },
             getInstance(appName, instanceName) {
-                for (let a in this.apps) {
-                    if (this.apps[a].name == appName) {
-                        for (let i in this.apps[a].instances) {
-                            if (this.apps[a].instances[i].name == instanceName) {
-                                return this.apps[a].instances[i];
+                for (let p in this.projects) {
+                    for (let a in this.projects[p].apps) {
+                        if (this.projects[p].apps[a].name == appName) {
+                            for (let i in this.projects[p].apps[a].instances) {
+                                if (this.projects[p].apps[a].instances[i].name == instanceName) {
+                                    return this.projects[p].apps[a].instances[i];
+                                }
                             }
                         }
                     }
@@ -362,11 +373,13 @@ includeTenplates().then(() => {
                 return undefined
             },
             updateInstance(appName, instanceName, instance) {
-                for (let a in this.apps) {
-                    if (this.apps[a].name == appName) {
-                        for (let i in this.apps[a].instances) {
-                            if (this.apps[a].instances[i].name == instanceName) {
-                                this.apps[a].instances[i] = instance;
+                for (let p in this.projects) {
+                    for (let a in p.apps) {
+                        if (p.apps[a].name == appName) {
+                            for (let i in p.apps[a].instances) {
+                                if (p.apps[a].instances[i].name == instanceName) {
+                                    p.apps[a].instances[i] = instance;
+                                }
                             }
                         }
                     }
@@ -412,10 +425,12 @@ includeTenplates().then(() => {
                     if (data.message) {
                         return Promise.reject(new Error(data.message))
                     } 
+
+                    that.projects = that.groupByProject(data)
                     
-                    that.apps = data;
                     that.updateTime();
                 }).catch(function(e) {
+
                     that.alerts.push({ error: e });                    
                 }).finally(function() {
                     that.isLoading = false;
@@ -424,6 +439,59 @@ includeTenplates().then(() => {
                         that.jumpTo();
                     }
                 }); 
+            },
+            updateProject: function(app) {
+                for (let x=0; x < this.projects.length; x++) {
+                    let proj = this.projects[x];
+
+                    if (proj.id === this.extractProject(app).id) {
+                        for (let y=0; y < proj.apps.length; y++) {
+                            if (proj.apps[y].id === app.id) {
+                                proj.apps[y] = app;
+
+                                return { i: x, project: proj };
+                            }
+                        }
+                    }
+                }
+
+                return { i: -1, project: {} };
+            },
+            extractProject: function(app) {
+                const noProjectId = "000000000000000000000000";
+
+                return (app.project.id === noProjectId) 
+                    ? { id: `${noProjectId}-${app.id}`, name: app.name, is: false }
+                    : Object.assign(app.project, { is: true });
+            },
+            groupByProject: function(apps) {
+                let projects = {};
+
+                for (let x=0; x < apps.length; x++) {
+                    let proj = this.extractProject(apps[x]);
+                    
+                    if (proj.id in projects) {
+                        let p = projects[proj.id];
+
+                        p.apps.push(apps[x]);
+                        
+                        projects[proj.id] = p;
+                    } else {
+                        projects[proj.id] = {
+                            id: proj.id,
+                            name: proj.name,
+                            apps: [apps[x]],
+                            is: proj.is
+                        }
+                    }
+                }
+               
+                let list = [];
+                for (let [key, value] of Object.entries(projects)) {
+                    list.push(value)
+                }
+
+                return list
             },
             getVersion: function() {
                 let that = this

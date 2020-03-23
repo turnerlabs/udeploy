@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/turnerlabs/udeploy/component/cache"
+	"github.com/turnerlabs/udeploy/component/project"
 	"github.com/turnerlabs/udeploy/component/user"
 
 	"github.com/turnerlabs/udeploy/component/session"
@@ -35,5 +36,10 @@ func GetCachedApp(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, apps[0].ToView(usr))
+	project, err := project.Get(ctx, apps[0].ProjectID)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, apps[0].ToView(usr, project))
 }

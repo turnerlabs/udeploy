@@ -1,11 +1,12 @@
 package audit
 
 import (
-	"github.com/turnerlabs/udeploy/component/user"
 	"context"
 	"fmt"
 	"log"
 	"time"
+
+	"github.com/turnerlabs/udeploy/component/user"
 
 	"github.com/turnerlabs/udeploy/component/session"
 

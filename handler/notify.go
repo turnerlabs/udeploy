@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/turnerlabs/udeploy/component/app"
+	"github.com/turnerlabs/udeploy/component/project"
 	"github.com/turnerlabs/udeploy/component/user"
 
 	"github.com/turnerlabs/udeploy/component/session"
@@ -42,7 +43,12 @@ func NotifyClients(c echo.Context, updatesChan chan interface{}) error {
 			}
 
 			if _, isUserApp := usr.Apps[app.Name]; isUserApp {
-				b, err := json.Marshal(app.ToView(usr))
+				project, err := project.Get(ctx, app.ProjectID)
+				if err != nil {
+					return err
+				}
+
+				b, err := json.Marshal(app.ToView(usr, project))
 				if err != nil {
 					c.Logger().Debug(err)
 				}

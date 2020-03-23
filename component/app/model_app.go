@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/turnerlabs/udeploy/component/project"
 	"github.com/turnerlabs/udeploy/component/user"
 	"github.com/turnerlabs/udeploy/component/version"
 
@@ -39,16 +40,22 @@ type Application struct {
 	Type string     `json:"type" bson:"type"`
 	Repo Repository `json:"repo" bson:"repository"`
 
+	ProjectID primitive.ObjectID `json:"projectId" bson:"projectId"`
+
 	Instances map[string]Instance `json:"instances" bson:"instances"`
 }
 
 // ToView ...
-func (a Application) ToView(usr user.User) AppView {
+func (a Application) ToView(usr user.User, project project.Project) AppView {
 	view := AppView{
-		ID:        a.ID,
-		Name:      a.Name,
-		Type:      a.Type,
-		Repo:      a.Repo,
+		ID:   a.ID,
+		Name: a.Name,
+		Type: a.Type,
+		Repo: a.Repo,
+		Project: ProjectView{
+			ID:   a.ProjectID,
+			Name: project.Name,
+		},
 		Instances: []InstanceView{},
 	}
 
@@ -88,9 +95,10 @@ func (a Application) GetErrorInstances() map[string]Instance {
 }
 
 // Matches ...
-func (a Application) Matches(filter Filter) bool {
+func (a Application) Matches(filter Filter, p project.Project) bool {
 	for _, t := range filter.Terms {
-		if strings.Contains(strings.ToLower(a.Name), strings.ToLower(t)) {
+		if strings.Contains(strings.ToLower(a.Name), strings.ToLower(t)) ||
+			(len(p.Name) > 0 && strings.Contains(strings.ToLower(p.Name), strings.ToLower(t))) {
 			return true
 		}
 	}
@@ -111,7 +119,16 @@ type AppView struct {
 	Type string     `json:"type"`
 	Repo Repository `json:"repo"`
 
+	Project ProjectView `json:"project"`
+
 	Instances []InstanceView `json:"instances"`
+}
+
+// ProjectView ...
+type ProjectView struct {
+	ID primitive.ObjectID `json:"id,omitempty"`
+
+	Name string `json:"name"`
 }
 
 // ToBusiness ...
@@ -121,6 +138,7 @@ func (a AppView) ToBusiness() Application {
 		Name:      a.Name,
 		Type:      a.Type,
 		Repo:      a.Repo,
+		ProjectID: a.Project.ID,
 		Instances: map[string]Instance{},
 	}
 
