@@ -1,5 +1,6 @@
 import {env} from "../../env/parse.js";
 import {obj} from "../../copy/object.js";
+import { formatCommitMessage } from "../../format/index.js";
 
 Vue.component('deploy-modal', {
     template: '#deploy-modal-template',
@@ -47,7 +48,7 @@ Vue.component('deploy-modal', {
         selectedVersion: function(key) {
             this.error = "";
             this.warn = "";
-            
+
             let build = this.versions.data[key];
 
             this.baseVersion = build.version
@@ -139,6 +140,7 @@ Vue.component('deploy-modal', {
                 return Promise.resolve(data);
             })
             .then(function(commits) {
+                commits.forEach(c => c.message = formatCommitMessage(c.message))
                 that.commits = commits;
             })
             .catch(function(e) {
@@ -226,10 +228,6 @@ Vue.component('deploy-modal', {
             }
 
             return false
-        },
-        formatCommitMessage(msg) {
-            msg = msg.replace(/\n/gi, "<br/>")
-            return msg
         }
     }
 })

@@ -1,6 +1,7 @@
 import {url} from "../../component/url/params.js";
 import {obj} from "../../component/copy/object.js";
 import {includeTenplates} from "../../component/html/include.js";
+import { formatCommitMessage } from "../../component/format/index.js";
 
 includeTenplates().then(() => {
     var instance = new Vue({
@@ -84,6 +85,7 @@ includeTenplates().then(() => {
                     return Promise.resolve(data);
                 })
                 .then(function(commits) {
+                    commits.forEach(c => c.message = formatCommitMessage(c.message))
                     that.commits = commits;
                 })
                 .catch(function(e) {
