@@ -123,3 +123,7 @@ $ git push origin {{TAG}}
 ```
 Once the GitHub Actions build is complete the Docker image tagged {{TAG}} release will be published to Quay.io. 
 </details>
+
+## How To Guides
+
+[Set Up a Lambda](/guides/lambda/README.md)
