@@ -18,13 +18,23 @@ resource "aws_lambda_alias" "function_alias" {
 }
 ```
 
+Be sure that whatever is invoking your lambda is pointing to the alias and not the function.  For example:
+```
+resource "aws_lambda_event_source_mapping" "lambda_event" {
+  batch_size       = 1
+  enabled          = true
+  event_source_arn = aws_sqs_queue.queue.arn
+  function_name    = aws_lambda_alias.function_alias.arn
+}
+```
+
 ### AWS Console 
 
 In this screenshot you can see that the lambda description is set to **1.0.0.20**.  This is the version that will be parsed by the regex in uDeploy.  You can put anything you want here as you are responsible for creating the regex.
 
 ![Description](./console_description.png)
 
-In this screenshot you can see the alias **ams-aerial-lrc-lambda-dev-alias** is currently pointing to version 8.  Each time a new version of the lambda is published you must point your alias to the new version.  Pointing the alias to $LATEST will not work.
+In this screenshot you can see the alias **ams-aerial-lrc-lambda-dev-alias** is currently pointing to version 8.  In your CI/CD process, each time a new version of the lambda is published you must point your alias to the new version.  Pointing the alias to $LATEST will not work.  When you deploy your lambda to another environment via uDeploy it will handle repointing your alias.
 
 ![Alias and Version](./console_version.png)
 
