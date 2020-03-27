@@ -5,7 +5,7 @@ A simple web based deployment [portal](/docs/PORTAL.md) for AWS resources.
 Authorized users can perform drag-n-drop deployments without understanding the technical aspects of the AWS resource being deployed. Resources like Fargate Tasks, Lambda Functions, and S3 Objects are versioned, deployed, and monitored in the same way reducing complexity.
 
 <details>
-  <summary>Reasoning</summary>
+  <summary>Why?</summary>
 
 ### Goals ###
 
@@ -53,6 +53,7 @@ Authorized users can perform drag-n-drop deployments without understanding the t
 |Deployment Propagation|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Provides option for automatically pushing deployments to QA, UAT, or PROD without user interaction keeping environments in sync.|
 |Environment Migration|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Supports configuring specific environment variables to be automatically migrated between environments.|
 |GitHub Integration|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Provides a quick view into version changes before and after deployments.|
+|Projects|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Allows applications to be grouped by projects for organization and function.|
 
 Supported Browser: Chrome 
 
@@ -84,9 +85,9 @@ Supported Browser: Chrome
 </details>
 
 <details>
-  <summary>Setup</summary>
+  <summary>Infrastructure</summary>
 
-* [Locally](/docs/START.md)
+* [Local](/docs/START.md)
 * [Fargate](/docs/SETUP.md)
   
 </details>
@@ -114,7 +115,7 @@ The portal functions as a passive monitoring and active deployment platform. The
 </details>
 
 <details>
-  <summary>Publish Release</summary>
+  <summary>Publish Build</summary>
 
 NOTE: semver tag format required `v1.0.0-rc`
 ```bash
@@ -124,6 +125,9 @@ $ git push origin {{TAG}}
 Once the GitHub Actions build is complete the Docker image tagged {{TAG}} release will be published to Quay.io. 
 </details>
 
-## How To Guides
+<details>
+  <summary>Configure Apps</summary>
 
-[Set Up a Lambda](/guides/lambda/README.md)
+[Lambda](/docs/guides/lambda/README.md)
+
+</details>
