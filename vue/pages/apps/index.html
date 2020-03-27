@@ -131,7 +131,7 @@
             </table>
             </div>
 
-            <div v-if="view.grid">
+            <div v-if="view.grid" style="margin-bottom: 20px;">
                 <div v-for="project in sortApps(projects)" v-if="showProject(project)" class="app panel">
                     <p class="panel-heading has-text-right has-text-weight-bold is-size-4 has-text-grey-darker has-background-white-bis" v-if="project.is">
                         {{ project.name.toUpperCase() }}
@@ -178,7 +178,7 @@
                                                         :title="formatDetails(inst.formattedVersion, inst.revision)">
                                                         <div class="text">
                                                             <p class="is-size-6 has-text-weight-bold is-marginless">{{ formatVersion(inst.version) }}</p>
-                                                            <div class="is-size-7" v-if="inst.build > 0">build {{ inst.build }}</div> 
+                                                            <div class="is-size-7" v-if="inst.build.length > 0">build {{ inst.build }}</div> 
                                                             <p></p>
 
                                                             <div v-if="inst.deployment.isPending">
