@@ -10,14 +10,14 @@ Authorized users can perform drag-n-drop deployments without understanding the t
 ### Goals ###
 
 * Create portal to deploy and monitor AWS resources
+* Make projects searchable for quick access to details, versions, and documentation
 * Enable consitent application versioning across multiple AWS resource types
 * Secure deployments by application and/or environment
 * Allow simple drag-n-drop deployments
 * Provide high level environment resource notifications and troubleshooting
-* Make projects searchable for quick access to details, versions, and documentation
 * Improve resource monitoring and interaction for integration partners
-* Support authetication with any OAuth2 API
-* Enable deployment workflow innovation (avoid third-party timelines)
+* Support authentication with any OAuth2 API
+* Enable deployment workflow innovation (avoid third-party timelines and costs)
 * Centralize navigation to project resources by linking to scrum boards, config tools, and project documentation
 * Assist projects transitioning from [Harbor UI](https://github.com/turnerlabs/harbor-ui)
 
