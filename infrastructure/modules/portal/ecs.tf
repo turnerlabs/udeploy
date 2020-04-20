@@ -39,6 +39,11 @@ variable "ecs_autoscale_max_instances" {
 resource "aws_ecs_cluster" "app" {
   name = "${var.app}-${var.environment}"
   tags = var.tags
+
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
 }
 
 resource "aws_ecs_task_definition" "app" {
@@ -50,7 +55,7 @@ resource "aws_ecs_task_definition" "app" {
   execution_role_arn       = aws_iam_role.ecsTaskExecutionRole.arn
 
   # defined in role.tf
-  task_role_arn =  aws_iam_role.app_role.arn
+  task_role_arn = aws_iam_role.app_role.arn
 
   container_definitions = <<DEFINITION
 [
