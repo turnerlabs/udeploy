@@ -4,6 +4,8 @@ A simple web based deployment [portal](/docs/PORTAL.md) for AWS resources.
 
 Authorized users can perform drag-n-drop deployments without understanding the technical aspects of the AWS resource being deployed. Resources like Fargate Tasks, Lambda Functions, and S3 Objects are versioned, deployed, and monitored in the same way reducing complexity.
 
+This portal compliments CI/CD processes like GitHub Actions, Jenkins, TeamCity, AWS CodeBuild, CircleCI, and the like with a user friendly GUI. It is not intended to be a replacement for CI/CD pipelines.
+
 <details>
   <summary>Why?</summary>
 
