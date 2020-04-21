@@ -2,6 +2,7 @@ package oauth
 
 import (
 	"encoding/gob"
+	"strings"
 
 	"github.com/turnerlabs/udeploy/component/cfg"
 	"golang.org/x/oauth2"
@@ -20,11 +21,18 @@ func init() {
 		TokenURL: cfg.Get["OAUTH_TOKEN_URL"],
 	}
 
+	scopes := []string{}
+
+	s, found := cfg.Get["OAUTH_SCOPES"]
+	if found {
+		scopes = strings.Split(s, ",")
+	}
+
 	Config = &oauth2.Config{
 		ClientID:     cfg.Get["OAUTH_CLIENT_ID"],
 		ClientSecret: cfg.Get["OAUTH_CLIENT_SECRET"],
 		RedirectURL:  cfg.Get["OAUTH_REDIRECT_URL"],
-		Scopes:       []string{"openid", "offline_access"},
+		Scopes:       scopes,
 		Endpoint:     endpoint,
 	}
 }
