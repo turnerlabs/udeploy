@@ -14,13 +14,15 @@ const (
 	dbURI  = "DB_URI"
 	dbName = "DB_NAME"
 
-	oauthClientID     = "OAUTH_CLIENT_ID"
-	oauthClientSecret = "OAUTH_CLIENT_SECRET"
-	oauthRedirectURL  = "OAUTH_REDIRECT_URL"
-	oauthSignOutURL   = "OAUTH_SIGN_OUT_URL"
-	oauthAuthURL      = "OAUTH_AUTH_URL"
-	oauthTokenURL     = "OAUTH_TOKEN_URL"
-	oauthSessSign     = "OAUTH_SESSION_SIGN"
+	oauthClientID           = "OAUTH_CLIENT_ID"
+	oauthClientSecret       = "OAUTH_CLIENT_SECRET"
+	oauthRedirectURL        = "OAUTH_REDIRECT_URL"
+	oauthSignOutURL         = "OAUTH_SIGN_OUT_URL"
+	oauthAuthURL            = "OAUTH_AUTH_URL"
+	oauthTokenURL           = "OAUTH_TOKEN_URL"
+	oauthSessSign           = "OAUTH_SESSION_SIGN"
+	oauthScopes             = "OAUTH_SCOPES"
+	oauthSignOutRedirectURL = "OAUTH_SIGN_OUT_REDIRECT_URL"
 
 	sqsChangeQueue = "SQS_CHANGE_QUEUE"
 	sqsAlarmQueue  = "SQS_ALARM_QUEUE"
@@ -143,4 +145,14 @@ func init() {
 		Get[preCache] = "false"
 	}
 
+	// optional environment variables
+	v, exists = os.LookupEnv(oauthScopes)
+	if exists {
+		Get[oauthScopes] = v
+	}
+
+	v, exists = os.LookupEnv(oauthSignOutRedirectURL)
+	if exists {
+		Get[oauthSignOutRedirectURL] = v
+	}
 }

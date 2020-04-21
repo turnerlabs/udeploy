@@ -10,15 +10,17 @@ import (
 
 	echosession "github.com/turnerlabs/udeploy/component/session"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo/v4"
 	"github.com/turnerlabs/udeploy/component/integration/oauth"
 	"golang.org/x/oauth2"
 )
 
 const (
-	// AuthSessionName defines session for the user.
-	AuthSessionName = "oauth"
+	// AuthTokenName defines session for the user.
+	AuthTokenName = "oauth"
+
+	// IDTokenName defines id_token for the user.
+	IDTokenName = "id_token"
 
 	invalidSessionErr = "invalid session"
 
@@ -65,7 +67,12 @@ func UnAuthError(next echo.HandlerFunc) echo.HandlerFunc {
 
 func ensureUserToken(c echo.Context) (string, error) {
 	store := echosession.FromContext(c)
-	v, ok := store.Get(AuthSessionName)
+	v, ok := store.Get(AuthTokenName)
+	if !ok {
+		return "", errors.New(invalidSessionErr)
+	}
+
+	uid, ok := store.Get(UserIDParam)
 	if !ok {
 		return "", errors.New(invalidSessionErr)
 	}
@@ -96,7 +103,7 @@ func ensureUserToken(c echo.Context) (string, error) {
 			return "", err
 		}
 
-		store.Set(AuthSessionName, newToken)
+		store.Set(AuthTokenName, newToken)
 		if err := store.Save(); err != nil {
 			return "", err
 		}
@@ -104,23 +111,5 @@ func ensureUserToken(c echo.Context) (string, error) {
 		token = newToken
 	}
 
-	parsedToken, _ := jwt.Parse(token.AccessToken, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
-		}
-
-		// Currently this function causes an error that is ignored since the public key is not
-		// defined. Parsing the token does not required the JWT signature verification. At
-		// some point it may be worth verifying the signer.
-		//
-		// https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-signing-key-rollover
-		return jwt.ParseRSAPublicKeyFromPEM([]byte{})
-	})
-
-	claims, ok := parsedToken.Claims.(jwt.MapClaims)
-	if !ok {
-		return "", fmt.Errorf("failed to parse JWT claims")
-	}
-
-	return claims["upn"].(string), nil
+	return uid.(string), nil
 }
