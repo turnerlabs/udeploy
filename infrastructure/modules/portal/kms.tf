@@ -78,7 +78,7 @@ resource "aws_kms_key" "config" {
 
 resource "aws_kms_alias" "config" {
   name          = "alias/${var.app}-${var.environment}"
-  target_key_id = "${aws_kms_key.config.id}"
+  target_key_id = aws_kms_key.config.id
 }
 
 data "aws_iam_policy_document" "config" {

@@ -24,8 +24,8 @@ PATTERN
 }
 
 resource "aws_cloudwatch_event_target" "log-event" {
-  rule      = "${aws_cloudwatch_event_rule.log_notification.name}"
-  target_id = "${aws_cloudwatch_event_rule.log_notification.name}"
+  rule      = aws_cloudwatch_event_rule.log_notification.name
+  target_id = aws_cloudwatch_event_rule.log_notification.name
   arn       = "arn:aws:events:${var.region}:${var.portal_account_id}:event-bus/default"
   role_arn  = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.app}-${var.environment}"
 }
@@ -49,8 +49,8 @@ PATTERN
 }
 
 resource "aws_cloudwatch_event_target" "task-event" {
-  rule      = "${aws_cloudwatch_event_rule.task_notification.name}"
-  target_id = "${aws_cloudwatch_event_rule.task_notification.name}"
+  rule      = aws_cloudwatch_event_rule.task_notification.name
+  target_id = aws_cloudwatch_event_rule.task_notification.name
   arn       = "arn:aws:events:${var.region}:${var.portal_account_id}:event-bus/default"
   role_arn  = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.app}-${var.environment}"
 }
@@ -70,8 +70,8 @@ PATTERN
 }
 
 resource "aws_cloudwatch_event_target" "lambda-event" {
-  rule      = "${aws_cloudwatch_event_rule.lambda_notification.name}"
-  target_id = "${aws_cloudwatch_event_rule.lambda_notification.name}"
+  rule      = aws_cloudwatch_event_rule.lambda_notification.name
+  target_id = aws_cloudwatch_event_rule.lambda_notification.name
   arn       = "arn:aws:events:${var.region}:${var.portal_account_id}:event-bus/default"
   role_arn  = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.app}-${var.environment}"
 }

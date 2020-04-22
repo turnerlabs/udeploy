@@ -97,9 +97,9 @@ data "aws_iam_policy_document" "app_role_assume_role_policy" {
 }
 
 output "account_id" {
-  value = "${data.aws_caller_identity.current.account_id}"
+  value = data.aws_caller_identity.current.account_id
 }
 
 output "role_arn" {
-  value = "${aws_iam_role.app_role.arn}"
+  value = aws_iam_role.app_role.arn
 }
