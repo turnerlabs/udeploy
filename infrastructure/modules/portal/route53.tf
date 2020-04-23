@@ -3,7 +3,7 @@ data "aws_route53_zone" "route_zone" {
 }
 
 resource "aws_route53_record" "env" {
-  zone_id = "${data.aws_route53_zone.route_zone.zone_id}"
+  zone_id = data.aws_route53_zone.route_zone.zone_id
   name    = var.record_name
   type    = "A"
 
