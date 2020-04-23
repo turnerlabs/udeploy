@@ -38,7 +38,7 @@ jobs:
     - name: Build image
       uses: turnerlabs/fargate-cicd-action@master
       with:
-        args: . ./env; docker build -t $IMAGE .
+        args: . ./env; docker build -t $IMAGE --build-arg version=${{ steps.tagName.outputs.tag }}.${{ github.run_number }} .
     
     - name: Log in to Quay
       uses: turnerlabs/fargate-cicd-action@master
