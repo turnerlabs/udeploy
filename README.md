@@ -48,8 +48,8 @@ This portal compliments CI/CD processes like GitHub Actions, Jenkins, TeamCity, 
 |Start Instance|:white_check_mark:|:white_check_mark:|:white_check_mark:||Supports quickly starting a stopped service or task.|
 |Scale Instance|:white_check_mark:|:white_check_mark:|:white_check_mark:||Supports quickly scaling any service or task.|
 |Stop Instance|:white_check_mark:|:white_check_mark:|||Supports quickly  stopping a running service or task.|
-|Deployment Notifications|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Sends SNS notifications for AWS resource deployments and other changes in status.|
-|Error Notifications|:white_check_mark:|:white_check_mark:|:white_check_mark:||Sends SNS notifications for AWS resource errors. |
+|Deployment Notifications|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Sends SNS or Slack notifications for AWS resource deployments and other changes in status.|
+|Error Notifications|:white_check_mark:|:white_check_mark:|:white_check_mark:||Sends SNS or Slack notifications for AWS resource errors. |
 |Audit Deployments|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Tracks user deployments via an audit trail.|
 |Quick Linking|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Provides direct links to AWS logs, GitHub commits, Jira stories, and many more without browsing through the websites.|
 |Deployment Propagation|:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|Provides option for automatically pushing deployments to QA, UAT, or PROD without user interaction keeping environments in sync.|

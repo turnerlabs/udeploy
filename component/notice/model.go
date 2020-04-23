@@ -7,13 +7,14 @@ import (
 
 // Notice ...
 type Notice struct {
-	ID        primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
-	Name      string             `json:"name" bson:"name"`
-	Enabled   bool               `json:"enabled" bson:"enabled"`
-	SNSArn    string             `json:"snsArn" bson:"snsArn"`
-	Apps      []NoticeOption     `json:"apps" bson:"apps"`
-	Instances []NoticeOption     `json:"instances" bson:"instances"`
-	Events    NoticeEvents       `json:"events" bson:"events"`
+	ID           primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	Name         string             `json:"name" bson:"name"`
+	Enabled      bool               `json:"enabled" bson:"enabled"`
+	SNSArn       string             `json:"snsArn" bson:"snsArn"`
+	SlackWebHook string             `json:"slackWebHook" bson:"slackWebHook"`
+	Apps         []NoticeOption     `json:"apps" bson:"apps"`
+	Instances    []NoticeOption     `json:"instances" bson:"instances"`
+	Events       NoticeEvents       `json:"events" bson:"events"`
 }
 
 // NoticeOption ...
@@ -28,6 +29,14 @@ type NoticeEvents struct {
 	Running  bool `json:"running" bson:"running"`
 	Stopped  bool `json:"stopped" bson:"stopped"`
 	Deployed bool `json:"deployed" bson:"deployed"`
+}
+
+func (n Notice) IsSNS() bool {
+	return len(n.SNSArn) > 0
+}
+
+func (n Notice) IsSlack() bool {
+	return len(n.SlackWebHook) > 0
 }
 
 // Matches ...

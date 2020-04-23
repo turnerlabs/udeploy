@@ -24,7 +24,7 @@ includeTenplates().then(() => {
             "name": "New Notice",
             "enabled": true,
             "showCriteria": true,
-            "snsArn": "arn:aws:sns:us-east-1:{ACCOUNT}:{TOPIC}",
+            "endpoint": "",
             "apps": [],
             "instances": [],
             "events": {
@@ -65,6 +65,10 @@ includeTenplates().then(() => {
             .then(function(notices) {
                 for (let x = 0; x < notices.length; x++) {
                     notices[x].showCriteria = false;
+
+                    notices[x].endpoint = notices[x].snsArn || notices[x].slackWebHook;
+                    delete notices[x].snsArn;
+                    delete notices[x].slackWebHook;
 
                     notices[x].instances = that.addUniqueIds(notices[x].instances);
                     notices[x].apps = that.addUniqueIds(notices[x].apps);
@@ -237,10 +241,19 @@ includeTenplates().then(() => {
                 if (!this.notices[x].edited) {
                     continue
                 }
-                
+
+                const body = this.notices[x];
+
+                if (body.endpoint.startsWith('arn:aws:sns:')) {
+                    body.snsArn = body.endpoint;
+                }
+                else if (body.endpoint.startsWith('https://hooks.slack.com/')) {
+                    body.slackWebHook = body.endpoint;
+                }
+
                 actions.push(fetch('/v1/notices/' + this.notices[x].id, {
                     method: "POST",
-                    body: JSON.stringify(this.notices[x]),
+                    body: JSON.stringify(body),
                     headers: {
                         'Accept': 'application/json',
                         'Content-Type': 'application/json' 

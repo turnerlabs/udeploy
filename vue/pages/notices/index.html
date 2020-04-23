@@ -30,7 +30,7 @@
             <div>
               <p v-if="notices.length > 0">All notification events do not apply to all application types.</p>
               <table>
-                  <tr v-if="notices.length > 0"><th>Name</th><th>SNS (arn)</th><th></th><th class="has-text-centered">Enabled</th><th></th></tr>
+                  <tr v-if="notices.length > 0"><th>Name</th><th>Endpoint</th><th></th><th class="has-text-centered">Enabled</th><th></th></tr>
                   <tr v-for="(notice, index) in notices">
                       <td class="name">
                           <div class="field"> 
@@ -78,7 +78,7 @@
                       </td>
                       <td>
                           <div class="field"> 
-                            <input class="input" type="text" v-on:change="didEdit(index)" v-model="notice.snsArn" v-on:keyup="validateField($event, /arn:aws[a-zA-Z-]*:sns:[a-z]{2}-[a-z]+-\d{1}:\d{12}:[a-zA-Z0-9-_]+/g, 'REQUIRED: SNS ARN', index)" title="" placeholder="">
+                            <input class="input" type="text" v-on:change="didEdit(index)" v-model="notice.endpoint" v-on:keyup="validateField($event, /.*\S.*/, 'REQUIRED: SNS ARN or Slack Webhook URL', index)" title="" placeholder="SNS ARN or Slack Webhook URL">
                           </div>
                           <article v-if="notice.showCriteria" class="message is-primary">
                               <div class="message-header">

@@ -1,8 +1,8 @@
 package app
 
 import (
-	"github.com/turnerlabs/udeploy/component/user"
 	"context"
+	"github.com/turnerlabs/udeploy/component/user"
 
 	"github.com/turnerlabs/udeploy/component/session"
 

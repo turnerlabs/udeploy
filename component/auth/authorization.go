@@ -1,8 +1,8 @@
 package auth
 
 import (
-	"github.com/turnerlabs/udeploy/component/user"
 	"fmt"
+	"github.com/turnerlabs/udeploy/component/user"
 	"net/http"
 
 	"github.com/turnerlabs/udeploy/component/session"

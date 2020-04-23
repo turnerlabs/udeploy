@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/turnerlabs/udeploy/component/notice"
@@ -29,6 +30,10 @@ func SaveNotice(c echo.Context) error {
 	n := notice.Notice{}
 	if err := c.Bind(&n); err != nil {
 		return err
+	}
+
+	if n.IsSNS() && n.IsSlack() {
+		return fmt.Errorf("cannot have more than one endpoint per notice")
 	}
 
 	if err := notice.Set(ctx, n); err != nil {
