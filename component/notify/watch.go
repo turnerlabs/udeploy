@@ -3,12 +3,14 @@ package notify
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/turnerlabs/udeploy/component/app"
 	"github.com/turnerlabs/udeploy/component/notice"
 
 	"github.com/turnerlabs/udeploy/component/cfg"
 	"github.com/turnerlabs/udeploy/component/integration/aws/sns"
+	"github.com/turnerlabs/udeploy/component/integration/slack"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -48,16 +50,36 @@ func Watch(ctx mongo.SessionContext, messages chan interface{}) error {
 
 						if n.Matches(instanceName, t, change) {
 
-							subject := fmt.Sprintf("%s: %s %s %s (%s)", n.Name, application.Name, instanceName, inst.FormatVersion(), displayStatus(t, change))
+							status := displayStatus(t, change)
+							portalURL := fmt.Sprintf("%s/apps/%s/instance/%s", cfg.Get["URL"], application.Name, instanceName)
 
-							body := fmt.Sprintf("%s\n\n %s/apps/%s/instance/%s", subject, cfg.Get["URL"], application.Name, instanceName)
-							if inst.CurrentState.Error != nil {
-								body = fmt.Sprintf("%s \n\n %s", body, inst.CurrentState.Error)
+							switch {
+							case n.IsSNS():
+								subject := fmt.Sprintf("%s: %s %s %s (%s)", n.Name, application.Name, instanceName, inst.FormatVersion(), status)
+
+								body := fmt.Sprintf("%s\n\n %s", subject, portalURL)
+								if inst.CurrentState.Error != nil {
+									body = fmt.Sprintf("%s \n\n %s", body, inst.CurrentState.Error)
+								}
+
+								if err := sns.Publish(subject, body, n.SNSArn); err != nil {
+									log.Println(err)
+								}
+							case n.IsSlack():
+								subject := fmt.Sprintf(":%s: %s (%s)", Emoji(status), n.Name, strings.Title(status))
+
+								body := fmt.Sprintf("App: %s\nInstance: %s\nVersion: %s", application.Name, instanceName, inst.FormatVersion())
+								if inst.CurrentState.Error != nil {
+									body = fmt.Sprintf("%s\nError: %s", body, inst.CurrentState.Error)
+								}
+
+								msg := slack.Template(subject, body, Color(status), "View Details", portalURL)
+
+								if err := slack.Send(msg, n.SlackWebHook); err != nil {
+									log.Println(err)
+								}
 							}
 
-							if err := sns.Publish(subject, body, n.SNSArn); err != nil {
-								log.Println(err)
-							}
 						}
 					}
 				}

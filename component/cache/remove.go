@@ -1,7 +1,7 @@
 package cache
 
 import "go.mongodb.org/mongo-driver/bson/primitive"
- 
+
 func (c *appCache) Remove(appName string) {
 	c.mux.Lock()
 	defer c.mux.Unlock()

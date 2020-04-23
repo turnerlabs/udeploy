@@ -22,6 +22,7 @@ iac
 fargate.yml
 deploy.sh
 .vscode*
+.idea*
 
 **/test.json
 Dockerfile.*
@@ -36,3 +37,6 @@ data
 *.zip
 *.env
 *.backup
+
+# cstore
+cstore.yml
