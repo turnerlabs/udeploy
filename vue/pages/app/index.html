@@ -319,6 +319,11 @@
                               <div class="field">
                                 <p class="control">
                                   <input class="input name" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.s3Bucket" title="Name of the S3 bucket where files are deployed.">
+                                  <label class="help">Set up an S3 event to notify the portal when files are changed.
+                                    <span @click.stop.prevent="modal.image = { show: true, src: '/pages/app/img/s3-events.png', message: 'Under the S3 bucket [Properties] -> [Advanced Settings] -> [Events], set object creation to trigger notifications to an S3 change queue allowing deployments to be automatically detected.' }" class="icon is-small">
+                                        <i class="fas fa-info-circle"></i>
+                                    </span>
+                                  </label>
                                 </p>
                               </div>
                             </div>
@@ -344,7 +349,7 @@
                                 <p class="control">
                                   <input class="input name" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.s3ConfigKey" title="S3 key to the JSON config file.">
                                   <label class="help">Specify the deployed config file decorated with version metadata.
-                                    <span @click.stop.prevent="modal.image = { show: true, src: '/pages/app/img/s3-config-key.png', message: 'A config file in the deployment must be decorated with deployment metadata. The metadata fields version, build, and revision determine the which artifacts are currently deployed. Key/value pairs formatted as a JSON object inside the file are listed as environment variables when viewing instance details.' }" class="icon is-small">
+                                    <span @click.stop.prevent="modal.image = { show: true, src: '/pages/app/img/s3-config-key.png', message: 'A json config file in the deployment must be decorated with deployment metadata. The metadata fields version and revision determine which artifacts are currently deployed. Key/value pairs formatted as a JSON object inside the file are listed as environment variables when viewing instance details.' }" class="icon is-small">
                                         <i class="fas fa-info-circle"></i>
                                     </span>
                                   </label>
