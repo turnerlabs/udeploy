@@ -410,14 +410,10 @@
                               </div>
                             </div>
                           </div>
-                        <div v-if="app.type != 's3'" class="field is-horizontal">
+                        <div class="field is-horizontal">
                             <div class="field-label is-normal">
                               <label class="label">
                                   Version RegEx 
-                                  <label class="help">
-                                  <template v-if="app.type == 'lambda'" >(parse function description)</template>
-                                  <template v-else >(parse image tag)</template>
-                                  </label>
                               </label>
                             </div>
                             <div class="field-body">
@@ -439,6 +435,11 @@
                                         </span>
                                     </button>
                                   </template>
+                                  <label class="help">
+                                    <template v-if="app.type == 'lambda'" >Parse function description.</template>
+                                    <template v-else-if="app.type == 's3'" >Parse version metadata field.</template>
+                                    <template v-else >Parse image tag.</template>
+                                  </label>
                                 </p>
                               </div>
                             </div>
@@ -483,7 +484,7 @@
                         <div class="field is-horizontal">
                           <div class="field-label is-normal">
                               <label class="label">Env Variable Names</label>
-                              <p class="help">During deployments, the listed variables will be copied from the source to the target. Not applicable for deployments from ECR or S3.</p>
+                              <p class="help">During deployments, the listed variables will be copied from the source to the target. Not applicable for version deployments that only exist in ECR or S3 Registries.</p>
                           </div>
                           <div class="field-body">
                               <div class="field">  
