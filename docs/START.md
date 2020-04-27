@@ -1,6 +1,8 @@
 
 ### Run Locally ###
 
+Configure only the needed infrastructure in AWS to allow local development.
+
 #### 1. Clone ####
 ```bash
 $ mkdir udeploy && cd udeploy

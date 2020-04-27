@@ -87,10 +87,11 @@ Supported Browser: Chrome
 </details>
 
 <details>
-  <summary>Infrastructure</summary>
+  <summary>Install/Upgrade</summary>
 
-* [Local](/docs/START.md)
-* [Fargate](/docs/SETUP.md)
+* [Local (develop)](/docs/START.md)
+* [Install (AWS)](/docs/SETUP.md)
+* [Upgrade (AWS)](/docs/UPGRADE.md)
   
 </details>
 

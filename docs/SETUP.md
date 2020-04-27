@@ -1,6 +1,7 @@
 
-## Deploy Portal to Fargate ##
+## Install (AWS) ##
 
+Install the infrastructure and code to run the uDeploy portal in AWS.
 
 ### 1. Clone Infrastructure ###
 ```bash
