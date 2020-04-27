@@ -152,6 +152,10 @@ resource "aws_ecs_task_definition" "app" {
       {
         "valueFrom": "/${var.config_path}/OAUTH_REDIRECT_URL",
         "name": "OAUTH_REDIRECT_URL"
+      },
+      {
+        "valueFrom": "/${var.config_path}/OAUTH_SCOPES",
+        "name": "OAUTH_SCOPES"
       }
     ],
     "logConfiguration": {
