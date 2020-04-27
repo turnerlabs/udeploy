@@ -28,7 +28,7 @@ variable "app_user_database" {}
 variable "ip_whitelist" {}
 
 module "env" {
-  source = "github.com/turnerlabs/udeploy//infrastructure/modules/atlas?ref=v0.30.0-rc"
+  source = "github.com/turnerlabs/udeploy//infrastructure/modules/atlas?ref=v0.32.2-rc"
 
   mongodbatlas_public_key = var.mongodbatlas_public_key
 
