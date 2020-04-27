@@ -132,7 +132,8 @@ Once the GitHub Actions build is complete the Docker image tagged {{TAG}} releas
 
 Step by step instructions for configuring applications in a running instance of the portal.
 
-* [Lambda Function](/docs/guides/lambda/README.md)
-* [Fargate Task](/docs/guides/fargate/README.md)
+* [Lambda Functions](/docs/guides/lambda/README.md)
+* [Fargate Tasks](/docs/guides/fargate/README.md)
+* [S3 Buckets](/docs/guides/s3/README.md)
 
 </details>
