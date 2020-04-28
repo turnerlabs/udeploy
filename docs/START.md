@@ -65,6 +65,7 @@ $ export OAUTH_TOKEN_URL=https://login.microsoftonline.com/{{TENANT_ID}}/oauth2/
 $ export OAUTH_REDIRECT_URL=http://localhost:8080/oauth2/response)
 $ export OAUTH_SIGN_OUT_URL=https://login.microsoftonline.com/{{TENANT_ID}}/oauth2/logout?client_id={{CLIENT_ID}})
 $ export OAUTH_SESSION_SIGN=F1Li3rvehgcrF8DMHJ7OyxO4w9Y3D
+$ export OAUTH_SCOPES=openid,offline_access,email 
 ```
 
 The `OAUTH_SESSION_SIGN` should be updated to a any secure string.

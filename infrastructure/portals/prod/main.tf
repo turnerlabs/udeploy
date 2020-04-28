@@ -47,6 +47,8 @@ module "env" {
     saml_users = var.saml_users
 
     config_path = var.config_path
+
+    parameter_store = var.parameter_store
 }
 
 # KMS Key used to encrypt the portal 

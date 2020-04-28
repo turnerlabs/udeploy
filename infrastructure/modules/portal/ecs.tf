@@ -57,127 +57,25 @@ resource "aws_ecs_task_definition" "app" {
   # defined in role.tf
   task_role_arn = aws_iam_role.app_role.arn
 
-  container_definitions = <<DEFINITION
-[
-  {
-    "name": "${var.container_name}",
-    "image": "${var.image}",
-    "essential": true,
-    "portMappings": [
-      {
-        "protocol": "tcp",
-        "containerPort": ${var.container_port},
-        "hostPort": ${var.container_port}
-      }
-    ],
-    "environment": [
-      {
-        "name": "PORT",
-        "value": "${var.container_port}"
-      },
-      {
-        "name": "HEALTHCHECK",
-        "value": "${var.health_check}"
-      },
-      {
-        "name": "APP",
-        "value": "${var.app}"
-      },
-      {
-        "name": "ENVIRONMENT",
-        "value": "${var.environment}"
-      },
-      {
-        "name": "PRE_CACHE",
-        "value": "true"
-      },
-      {
-        "name": "URL",
-        "value": "https://${var.record_name}"
-      },
-      {
-        "name": "KMS_KEY_ID",
-        "value": "${aws_kms_key.config.id}"
-      }
-    ],
-    "secrets": [
-      {
-        "valueFrom": "/${var.config_path}/DB_URI",
-        "name": "DB_URI"
-      },
-      {
-        "valueFrom": "/${var.config_path}/OAUTH_SIGN_OUT_URL",
-        "name": "OAUTH_SIGN_OUT_URL"
-      },
-      {
-        "valueFrom": "/${var.config_path}/CONSOLE_LINK",
-        "name": "CONSOLE_LINK"
-      },
-      {
-        "valueFrom": "/${var.config_path}/ENV",
-        "name": "ENV"
-      },
-      {
-        "valueFrom": "/${var.config_path}/SQS_CHANGE_QUEUE",
-        "name": "SQS_CHANGE_QUEUE"
-      },
-      {
-        "valueFrom": "/${var.config_path}/DB_NAME",
-        "name": "DB_NAME"
-      },
-      {
-        "valueFrom": "/${var.config_path}/OAUTH_CLIENT_ID",
-        "name": "OAUTH_CLIENT_ID"
-      },
-      {
-        "valueFrom": "/${var.config_path}/OAUTH_CLIENT_SECRET",
-        "name": "OAUTH_CLIENT_SECRET"
-      },
-      {
-        "valueFrom": "/${var.config_path}/OAUTH_SESSION_SIGN",
-        "name": "OAUTH_SESSION_SIGN"
-      },
-      {
-        "valueFrom": "/${var.config_path}/OAUTH_TOKEN_URL",
-        "name": "OAUTH_TOKEN_URL"
-      },
-      {
-        "valueFrom": "/${var.config_path}/SQS_ALARM_QUEUE",
-        "name": "SQS_ALARM_QUEUE"
-      },
-      {
-        "valueFrom": "/${var.config_path}/OAUTH_AUTH_URL",
-        "name": "OAUTH_AUTH_URL"
-      },
-      {
-        "valueFrom": "/${var.config_path}/SNS_ALARM_TOPIC_ARN",
-        "name": "SNS_ALARM_TOPIC_ARN"
-      },
-      {
-        "valueFrom": "/${var.config_path}/SQS_S3_QUEUE",
-        "name": "SQS_S3_QUEUE"
-      },
-      {
-        "valueFrom": "/${var.config_path}/OAUTH_REDIRECT_URL",
-        "name": "OAUTH_REDIRECT_URL"
-      },
-      {
-        "valueFrom": "/${var.config_path}/OAUTH_SCOPES",
-        "name": "OAUTH_SCOPES"
-      }
-    ],
-    "logConfiguration": {
-      "logDriver": "awslogs",
-      "options": {
-        "awslogs-group": "/fargate/service/${var.app}-${var.environment}",
-        "awslogs-region": "us-east-1",
-        "awslogs-stream-prefix": "ecs"
-      }
-    }
-  }
-]
-DEFINITION
+  container_definitions = var.parameter_store ? templatefile("${path.module}/task-definitions/parameter-store.tpl", local.task_def_params) : templatefile("${path.module}/task-definitions/stash.tpl", local.task_def_params)
+}
 
+locals {
+  task_def_params = {
+    "app" = "${var.app}"
+    "image" = "${var.image}"
+    "container_name" = "${var.container_name}"
+    "container_port" = "${var.container_port}"
+    "environment" = "${var.environment}"
+    "health_check" = "${var.health_check}"
+    "record_name" = "${var.record_name}"
+    "config_path" = "${var.config_path}"
+    "config_subpath" = join( "/", slice(split("/", "${var.config_path}"), 1, length(split("/", "${var.config_path}"))))
+    "sqs_change_queue" = "${aws_sqs_queue.notification_queue.name}"
+    "sqs_alarm_queue" = "${aws_sqs_queue.alarm_queue.name}" 
+    "sqs_s3_queue" = "${aws_sqs_queue.s3_queue.name}" 
+    "sns_alarm_topic_arn" = "${aws_sns_topic.alarms.arn}"
+  }
 }
 
 resource "aws_ecs_service" "app" {

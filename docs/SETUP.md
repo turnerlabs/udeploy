@@ -44,18 +44,7 @@ db.users.insert({"admin":true,"email":"User.Email@domain.com","apps":{}})
 
 IMPORTANT: The email address is case sensitive.
 
-### 5. Configure Event Notifications ###
-
-Replace `{{TOKENS}}` in `./infrastructure/portals/prod/.env` file.
-
-```bash
-SQS_CHANGE_QUEUE=udeploy-prod-notification-queue.fifo
-SQS_ALARM_QUEUE=udeploy-prod-alarm-queue
-SQS_S3_QUEUE=udeploy-prod-s3-queue
-SNS_ALARM_TOPIC_ARN=arn:aws:sns:us-east-1:{{ACCOUNT_ID}}:{{APP}}-prod-alarms
-```
-
-### 6. Create Portal Infrastucture ####
+### 5. Create Portal Infrastucture ####
 
 Replace `{{TOKENS}}` in [infrastructure/portals/prod/terraform.tfvars](/infrastructure/portals/prod/terraform.tfvars).
 
@@ -64,7 +53,7 @@ $ terraform init -var-file=infrastructure/portals/prod/terraform.tfvars infrastr
 $ terraform apply -var-file=infrastructure/portals/prod/terraform.tfvars infrastructure/portals/prod
 ```
 
-### 7. Configure User Authentication ###
+### 6. Configure User Authentication ###
 
 The portal uses OIDC with OAuth2 for authenticating users before loading user authorization from the database. Choose an authentication option.
 
@@ -115,7 +104,7 @@ OAUTH_CLIENT_SECRET={{OKTA_CLIENT_SECRET}}
 
 OAUTH_TOKEN_URL={{OKTA_TOKEN_URL}}
 OAUTH_AUTH_URL={{OKTA_SIGNIN_URL}}
-OAUTH_SIGN_OUT_URL={{OKTA_SIGNOUT_URL}}?client_id={{OKTA_CLIENT_ID}}
+OAUTH_SIGN_OUT_URL={{OKTA_SIGNOUT_URL}}??post_logout_redirect_uri=https:://{{PORTAL_DOMAIN}}
 
 OAUTH_SCOPES=openid,email
 ```
@@ -183,22 +172,50 @@ OAUTH_SCOPES=openid,email
 
 NOTE: The `OAUTH_SESSION_SIGN` should be updated to a secure string.
 
-### 8. Push Configuration to Parameter Store ### 
+### 7. Push Configuration to AWS ### 
 
-Install [cstore](https://github.com/turnerlabs/cstore) and run the following commands from the repository root to store configuration in SSM Parameter Store.
+Install >= **v0.1.0** [Stash](https://github.com/dabblebox/stash) and run the following commands from the repository root to sync configuration.
 
 ```bash
 $ export AWS_REGION=us-east-1
 $ export AWS_PROFILE=aws-account-profile
 ```
 
+<details>
+  <summary>AWS SSM Parameter Store (uses env vars)</summary>
+
 ```bash
-$ cstore push infrastructure/portals/prod/.env -s aws-parameter -t prod
+$ stash sync infrastructure/portals/prod/.env -s secrets-manager
 ```
 
-When prompted, set context to `udeploy` and the KMS Key ID to the `kms_key_id` from the Terraform output.
+When prompted:
+- **context**: udeploy
+- **secrets**: multiple
+- **kms_key_id**: use the `kms_key_id` from the Terraform output
 
- ### 9. Link Other AWS Accounts (optional) ### 
+</details>
+
+<details>
+  <summary>AWS Secrets Manager (direct to memory)</summary>
+
+```bash
+$ stash sync infrastructure/portals/prod/.env -s secrets-manager
+```
+
+When prompted:
+- **context**: udeploy
+- **secrets**: multiple
+- **kms_key_id**: use the `kms_key_id` from the Terraform output
+
+In [infrastructure/portals/prod/terraform.tfvars](/infrastructure/portals/prod/terraform.tfvars), set `parameter_store = false` to pull configuration from AWS Secrets Manager.
+
+```bash
+$ terraform apply -var-file=infrastructure/portals/prod/terraform.tfvars infrastructure/portals/prod
+```
+
+</details>
+
+ ### 8. Link Other AWS Accounts (optional) ### 
 
  To deploy resources accross multiple AWS accounts, provide permissions to each additional AWS account the portal should control. 
 

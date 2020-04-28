@@ -13,14 +13,10 @@
 
 udeploy
 
-# fargate-create
-*.env
 .terraform
-
-iac
-
 fargate.yml
 deploy.sh
+
 .vscode*
 .idea*
 
@@ -38,5 +34,5 @@ data
 *.env
 *.backup
 
-# cstore
-cstore.yml
+# stash
+*.env

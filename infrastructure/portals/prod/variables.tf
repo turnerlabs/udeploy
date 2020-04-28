@@ -70,3 +70,6 @@ variable "saml_role" {
 
 variable "config_path" {
 }
+
+variable "parameter_store" {
+}

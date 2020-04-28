@@ -73,7 +73,7 @@ Supported Browser: Chrome
 |terraform|v0.12|
 |docker-compose|v1.24|
 |aws cli|v1.16|
-|cstore|v3.6|
+|[stash](https://github.com/dabblebox/stash)|v0.1.0|
 
 ### Operational ###
 

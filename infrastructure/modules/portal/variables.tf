@@ -67,6 +67,10 @@ variable "zone_name" {
 variable "record_name" {
 }
 
+variable "parameter_store" {
+  default = true
+}
+
 variable "image" {
   default = "quay.io/turner/udeploy:v0.32.2-rc.8"
 }

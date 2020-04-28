@@ -29,6 +29,7 @@ data "aws_iam_policy_document" "app_policy" {
   statement {
     actions = [
       "secretsmanager:GetSecretValue",
+<<<<<<< HEAD
       "secretsmanager:CreateSecret",
       "secretsmanager:UpdateSecret",
       "secretsmanager:DeleteSecret",
@@ -36,6 +37,12 @@ data "aws_iam_policy_document" "app_policy" {
 
     resources = [
       "arn:aws:secretsmanager:${var.region}:${data.aws_caller_identity.current.account_id}:secret:${var.app}/${var.environment}/*",
+=======
+    ]
+
+    resources = [
+      "arn:aws:secretsmanager:${var.region}:${data.aws_caller_identity.current.account_id}:secret:${var.config_path}/*",
+>>>>>>> direct integration with secrets manager
     ]
   }
   statement {

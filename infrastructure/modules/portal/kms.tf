@@ -52,6 +52,7 @@ locals {
   # list of role users and saml users for policies
   role_and_saml_ids = flatten([
     "${aws_iam_role.ecsTaskExecutionRole.unique_id}:*",
+    "${aws_iam_role.app_role.unique_id}:*",
     local.saml_user_ids,
   ])
 }

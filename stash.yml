@@ -1,0 +1,18 @@
+## Stash Catalog ##
+version: 0.0.0-local
+context: udeploy
+files:
+  template:
+    path: infrastructure/portals/${ENV}/.env
+    type: env
+    service: secrets-manager
+    opt:
+      group_delimiter: _
+      secrets: multiple
+    keys:
+    - ${STASH_KEY_PREFIX}/CONSOLE
+    - ${STASH_KEY_PREFIX}/DB
+    - ${STASH_KEY_PREFIX}/OAUTH
+    tags:
+    - infrastructure
+    - portals
