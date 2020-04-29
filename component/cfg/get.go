@@ -8,6 +8,7 @@ import (
 const (
 	missingEnvOk = "MISSING_ENV_OK"
 
+	app = "APP"
 	url = "URL"
 	env = "ENV"
 
@@ -33,6 +34,8 @@ const (
 	consoleLink = "CONSOLE_LINK"
 
 	preCache = "PRE_CACHE"
+
+	kmsKeyID = "KMS_KEY_ID"
 )
 
 // Get ...
@@ -43,7 +46,13 @@ func init() {
 
 	_, missingEnvAllowed := os.LookupEnv(missingEnvOk)
 
-	v, exists := os.LookupEnv(url)
+	v, exists := os.LookupEnv(app)
+	if !missingEnvAllowed && !exists {
+		log.Fatalf("environment variable %s required", app)
+	}
+	Get[app] = v
+
+	v, exists = os.LookupEnv(url)
 	if !missingEnvAllowed && !exists {
 		log.Fatalf("environment variable %s required", url)
 	}
@@ -154,5 +163,10 @@ func init() {
 	v, exists = os.LookupEnv(oauthSignOutRedirectURL)
 	if exists {
 		Get[oauthSignOutRedirectURL] = v
+	}
+
+	v, exists = os.LookupEnv(kmsKeyID)
+	if exists {
+		Get[kmsKeyID] = v
 	}
 }

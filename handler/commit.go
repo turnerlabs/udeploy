@@ -29,7 +29,12 @@ func GetInstanceCommits(c echo.Context) error {
 		return fmt.Errorf("%s instance not found", c.Param("instance"))
 	}
 
-	commits, err := commit.BuildRelease(app.Repo.Org, app.Repo.Name, inst.Version(), "", apiURL, app.Repo.AccessToken, 50, app.Repo.CommitConfig)
+	ver := inst.Task.Definition.Version.Full()
+	if app.Repo.TagFormatVersion() {
+		ver = inst.Task.Definition.Version.Version
+	}
+
+	commits, err := commit.BuildRelease(app.Repo.Org, app.Repo.Name, ver, "", apiURL, app.Repo.AccessToken, 50, app.Repo.CommitConfig)
 	if err != nil {
 		return err
 	}

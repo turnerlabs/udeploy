@@ -71,21 +71,20 @@ func populateInst(i app.Instance, svc *s3.S3, downloader *s3manager.Downloader) 
 		return i, state, err
 	}
 
-	v, b, err := version.Extract(ver, i.Task.ImageTagEx)
+	v, err := version.Extract(ver, i.Task.ImageTagEx)
 	if err != nil {
 		state.SetError(err)
 	}
 
 	i.Task.Definition.Description = ver
 	i.Task.Definition.Version = v
-	i.Task.Definition.Build = b
 
 	i.Task.Definition.Revision, err = strconv.ParseInt(revision, 10, 64)
 	if err != nil {
 		return i, state, err
 	}
 
-	state.Version = i.FormatVersion()
+	state.Version = i.Task.Definition.Version.Full()
 
 	buff := &aws.WriteAtBuffer{}
 

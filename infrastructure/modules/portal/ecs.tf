@@ -80,6 +80,10 @@ resource "aws_ecs_task_definition" "app" {
         "value": "${var.health_check}"
       },
       {
+        "name": "APP",
+        "value": "${var.app}"
+      },
+      {
         "name": "ENVIRONMENT",
         "value": "${var.environment}"
       },
@@ -90,6 +94,10 @@ resource "aws_ecs_task_definition" "app" {
       {
         "name": "URL",
         "value": "https://${var.record_name}"
+      },
+      {
+        "name": "KMS_KEY_ID",
+        "value": "${aws_kms_key.config.id}"
       }
     ],
     "secrets": [

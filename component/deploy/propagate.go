@@ -33,7 +33,7 @@ func Propagate(ctx mongo.SessionContext, messages chan interface{}) error {
 								continue
 							}
 
-							action := fmt.Sprintf("automatic %s deployment trigger by %s deployment (%s)", targetName, name, updatedInst.FormatVersion())
+							action := fmt.Sprintf("automatic %s deployment trigger by %s deployment (%s)", targetName, name, updatedInst.Task.Definition.Version.Full())
 
 							if err := audit.CreateEntry(ctx, application.Name, targetName, action); err != nil {
 								return err

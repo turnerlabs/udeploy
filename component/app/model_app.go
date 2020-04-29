@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/turnerlabs/udeploy/component/cfg"
 	"github.com/turnerlabs/udeploy/component/project"
 	"github.com/turnerlabs/udeploy/component/user"
 	"github.com/turnerlabs/udeploy/component/version"
@@ -28,8 +29,6 @@ const (
 	//
 	// https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-throttle-logic.html
 	FailedTaskExpiration = 20
-
-	Undetermined = "undetermined"
 )
 
 // Application ...
@@ -106,6 +105,11 @@ func (a Application) Matches(filter Filter, p project.Project) bool {
 	return len(filter.Terms) == 0
 }
 
+// RepoAccessTokenKey ...
+func (a Application) RepoAccessTokenKey() string {
+	return fmt.Sprintf("%s/%s/%s/repo/access-token", cfg.Get["APP"], cfg.Get["ENV"], a.Name)
+}
+
 // Filter ...
 type Filter struct {
 	Terms []string `json:"terms"`
@@ -154,9 +158,17 @@ type Repository struct {
 	Org  string `json:"org" bson:"org"`
 	Name string `json:"name" bson:"name"`
 
-	AccessToken string `json:"accessToken" bson:"accessToken"`
+	TagFormat string `json:"tagFormat" bson:"tagFormat"`
 
 	CommitConfig CommitConfig `json:"commitConfig" bson:"commitConfig"`
+
+	// Source: SecretsManager
+	AccessToken string `json:"accessToken" bson:"-"`
+}
+
+// TagFormatVersion ...
+func (r Repository) TagFormatVersion() bool {
+	return r.TagFormat == "version" || r.TagFormat == ""
 }
 
 // CommitConfig ...
@@ -172,9 +184,8 @@ type CommitConfig struct {
 type Definition struct {
 	ID string `json:"id"`
 
-	Version  string `json:"version"`
-	Build    string `json:"build"`
-	Revision int64  `json:"revision"`
+	Version  version.Version `json:"version"`
+	Revision int64           `json:"revision"`
 
 	Description string `json:"description"`
 
@@ -182,20 +193,6 @@ type Definition struct {
 	Secrets     map[string]string `json:"secrets"`
 
 	Registry bool `json:"registry"`
-}
-
-// FormatVersion ...
-func (d Definition) FormatVersion() string {
-
-	if d.Version == "" {
-		return Undetermined
-	}
-
-	if len(d.Build) > 0 {
-		return fmt.Sprintf("%s.%s", d.Version, d.Build)
-	}
-
-	return d.Version
 }
 
 // NewDefinition ...
@@ -211,13 +208,12 @@ func NewDefinition(id string) Definition {
 // DefinitionFrom ...
 func DefinitionFrom(td *ecs.TaskDefinition, imageTagRegEx string) (Definition, error) {
 
-	version, build, err := version.Extract(*td.ContainerDefinitions[0].Image, imageTagRegEx)
+	version, err := version.Extract(*td.ContainerDefinitions[0].Image, imageTagRegEx)
 
 	def := Definition{
 		ID: (*td.TaskDefinitionArn)[0:strings.LastIndex(*td.TaskDefinitionArn, ":")],
 
 		Version:  version,
-		Build:    build,
 		Revision: *td.Revision,
 
 		Description: *td.ContainerDefinitions[0].Image,

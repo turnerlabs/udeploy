@@ -72,7 +72,7 @@ func populateInst(i app.Instance, scalableTargets []*applicationautoscaling.Scal
 		state.SetError(err)
 	}
 
-	state.Version = i.FormatVersion()
+	state.Version = i.Task.Definition.Version.Full()
 
 	stoppedTasks, err := getTaskDetails(svc, i, []*ecs.Task{}, "STOPPED", "")
 	if err != nil {

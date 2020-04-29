@@ -55,7 +55,7 @@ func Watch(ctx mongo.SessionContext, messages chan interface{}) error {
 
 							switch {
 							case n.IsSNS():
-								subject := fmt.Sprintf("%s: %s %s %s (%s)", n.Name, application.Name, instanceName, inst.FormatVersion(), status)
+								subject := fmt.Sprintf("%s: %s %s %s (%s)", n.Name, application.Name, instanceName, inst.Task.Definition.Version.Full(), status)
 
 								body := fmt.Sprintf("%s\n\n %s", subject, portalURL)
 								if inst.CurrentState.Error != nil {
@@ -68,7 +68,7 @@ func Watch(ctx mongo.SessionContext, messages chan interface{}) error {
 							case n.IsSlack():
 								subject := fmt.Sprintf(":%s: %s (%s)", Emoji(status), n.Name, strings.Title(status))
 
-								body := fmt.Sprintf("App: %s\nInstance: %s\nVersion: %s", application.Name, instanceName, inst.FormatVersion())
+								body := fmt.Sprintf("App: %s\nInstance: %s\nVersion: %s", application.Name, instanceName, inst.Task.Definition.Version.Full())
 								if inst.CurrentState.Error != nil {
 									body = fmt.Sprintf("%s\nError: %s", body, inst.CurrentState.Error)
 								}

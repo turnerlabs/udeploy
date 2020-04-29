@@ -131,7 +131,25 @@
                           </div>
                       </div>
                     </div>
-                   
+
+                    <hr />
+
+                    <div class="field is-horizontal">
+                      <div class="field-label is-normal">
+                        <label class="label">Tag Format</label>
+                      </div>
+                      <div class="field-body">
+                          <div class="field">
+                            <div class="select">
+                              <select v-model="app.repo.tagFormat" :disabled="!user.admin" title="The tag format in the repository.">
+                                <option value="version" default>Version Only</option>
+                                <option value="full">Version with Build</option>
+                              </select>
+                            </div>
+                          </div>
+                      </div>
+                    </div>
+
                     <hr />
 
                     <div class="field is-horizontal">
@@ -420,7 +438,7 @@
                               <div class="field">
                                 <p class="control">
                                   <template v-if="app.type == 'lambda'">
-                                    <input class="input name" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.task.imageTagEx" :placeholder="lambdaRegex" title="The first regex capture group defines the version number and the second the build number that will be displayed when the version is deployed."> 
+                                    <input class="input name" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.task.imageTagEx" :placeholder="lambdaRegex" title="The first regex capture group defines the version number, the second defines the delimiter between version and build, and the third the build number that will be displayed when the version is deployed."> 
                                     <button class="button" title="default to semantic version" @click="i.task.imageTagEx = lambdaRegex">
                                         <span class="icon is-small">
                                             <i class="fas fa-arrow-left"></i>
@@ -428,7 +446,7 @@
                                     </button>
                                   </template>
                                   <template v-else>
-                                    <input class="input name" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.task.imageTagEx" :placeholder="serviceRegex" title="The first regex capture group defines the version number and the second the build number that will be displayed when the version is deployed.">
+                                    <input class="input name" :disabled="!i.claims['edit'] && !user.admin" type="text" v-model="i.task.imageTagEx" :placeholder="serviceRegex" title="The first regex capture group defines the version number, the second defines the delimiter between version and build, and the third the build number that will be displayed when the version is deployed.">
                                     <button class="button" title="default to semantic version" @click="i.task.imageTagEx = serviceRegex">
                                         <span class="icon is-small">
                                             <i class="fas fa-arrow-left"></i>

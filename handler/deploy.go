@@ -37,7 +37,7 @@ func DeployRevision(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, deploySuccess{
 		Image:    inst.Task.Definition.Description,
-		Version:  inst.FormatVersion(),
+		Version:  inst.Task.Definition.Version.Full(),
 		Revision: inst.Task.Definition.Revision,
 	})
 }

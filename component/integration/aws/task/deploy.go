@@ -80,13 +80,13 @@ func Deploy(source app.Instance, target app.Instance, sourceRevision int64, sour
 				targetContainer = targetContainer.SetImage(opts.Image)
 
 				verEnv, buildEnv := source.RepoVersion()
-				verValue, buildValue, err := version.Extract(opts.Image, source.Task.ImageTagEx)
+				verValue, err := version.Extract(opts.Image, source.Task.ImageTagEx)
 				if err != nil {
 					return nil, err
 				}
 
-				environment = setEnvironmentVar(environment, verEnv, verValue)
-				environment = setEnvironmentVar(environment, buildEnv, buildValue)
+				environment = setEnvironmentVar(environment, verEnv, verValue.Version)
+				environment = setEnvironmentVar(environment, buildEnv, verValue.Build)
 			} else {
 				environment = cloneEnvironment(sourceContainer.Environment, environment, target.Task.CloneEnvVars)
 			}

@@ -39,7 +39,7 @@ func ListDefinitions(instance app.Instance) (map[string]app.Definition, error) {
 			continue
 		}
 
-		version, build, err := extractVersion(instance, funcVersion)
+		version, err := extractVersion(instance, funcVersion)
 		if err != nil {
 			continue
 		}
@@ -53,17 +53,16 @@ func ListDefinitions(instance app.Instance) (map[string]app.Definition, error) {
 		}
 
 		def := app.Definition{
-			Description: version,
+			Description: version.Full(),
 
 			Version:  version,
-			Build:    build,
 			Revision: revision,
 
 			Environment: env,
 			Secrets:     map[string]string{},
 		}
 
-		versions[def.FormatVersion()] = def
+		versions[def.Version.Full()] = def
 	}
 
 	return versions, nil

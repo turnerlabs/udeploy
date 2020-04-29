@@ -18,7 +18,7 @@ func Deploy(source app.Instance, target app.Instance, revision int64, opts task.
 
 	svc := ecs.New(session)
 
-	newOutput, err := task.Deploy(source, target, revision, source.Version(), opts)
+	newOutput, err := task.Deploy(source, target, revision, source.Task.Definition.Version.Version, opts)
 	if err != nil {
 		return err
 	}

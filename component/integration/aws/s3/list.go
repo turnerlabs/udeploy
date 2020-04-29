@@ -59,25 +59,24 @@ func ListDefinitions(instance app.Instance) (map[string]app.Definition, error) {
 			continue
 		}
 
-		v, b, err := version.Extract(ver, instance.Task.ImageTagEx)
+		v, err := version.Extract(ver, instance.Task.ImageTagEx)
 		if err != nil {
 			continue
 		}
 
 		def := app.Definition{
+			Description: v.Full(),
+
 			Version:  v,
-			Build:    b,
 			Revision: n,
 
 			Environment: map[string]string{},
 			Secrets:     map[string]string{},
 
-			Description: v,
-
 			Registry: true,
 		}
 
-		versions[def.FormatVersion()] = def
+		versions[def.Version.Full()] = def
 	}
 
 	return versions, nil

@@ -25,12 +25,6 @@ $ terraform apply -var-file=infrastructure/base/terraform.tfvars  infrastructure
 $ cp infrastructure/env.template infrastructure/portals/prod/.env
 ```
 
-In `infrastructure/portals/prod/.env` Replace `{{DOMAIN}}` with the portal domain.
-
-```
-URL=https://{{DOMAIN}}
-```
-
 ### 4. Create Database ###
 
 Create an empty MongoDB database preferably called `udeploy-prod` on an Atlas M2 (General) cluster or equivalent. [Want to Terraform Atlas MongoDB?](ATLAS.md) If not, delete [atlas.tf](/infrastructure/portals/prod/atlas.tf).
