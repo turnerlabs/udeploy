@@ -7,6 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/turnerlabs/udeploy/component/integration/aws/s3"
+	"github.com/turnerlabs/udeploy/component/version"
 
 	"github.com/labstack/echo/v4"
 	"github.com/turnerlabs/udeploy/component/app"
@@ -58,22 +59,22 @@ func GetBuilds(c echo.Context) error {
 			}
 
 			for _, b := range ecrBuilds {
-				v := b.FormatVersion()
+				v := b.Version.Full()
 
-				if v == app.Undetermined {
+				if v == version.Undetermined {
 					continue
 				}
 
 				if _, exists := builds[v]; !exists {
-					builds[b.FormatVersion()] = b
+					builds[v] = b
 				}
 			}
 		}
 
 		// If the instance version no longer exists in the registry or
 		// scanned task definitions, make it available for deployments.
-		if _, exists := builds[sourceRegistry.FormatVersion()]; !exists {
-			builds[sourceRegistry.FormatVersion()] = sourceRegistry.Task.Definition
+		if _, exists := builds[sourceRegistry.Task.Definition.Version.Full()]; !exists {
+			builds[sourceRegistry.Task.Definition.Version.Full()] = sourceRegistry.Task.Definition
 		}
 
 	case app.AppTypeLambda:
@@ -102,7 +103,7 @@ func GetBuilds(c echo.Context) error {
 	for ver, details := range builds {
 		revision := buildView{
 			Revision: details.Revision,
-			Version:  details.Version,
+			Version:  details.Version.Version,
 			Registry: details.Registry,
 		}
 

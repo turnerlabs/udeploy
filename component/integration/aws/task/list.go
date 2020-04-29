@@ -74,7 +74,7 @@ func GetTasksInfo(instance app.Instance, svc *ecs.ECS, tasks []*ecs.Task) ([]app
 
 			logLink := getLogLink(*o.TaskDefinition.ContainerDefinitions[0].LogConfiguration, taskID, *container.Name)
 
-			ver, err := version.FormatExtract(*o.TaskDefinition.ContainerDefinitions[0].Image, instance.Task.ImageTagEx)
+			ver, err := version.Extract(*o.TaskDefinition.ContainerDefinitions[0].Image, instance.Task.ImageTagEx)
 			if err != nil {
 				return []app.TaskInfo{}, err
 			}
@@ -83,7 +83,7 @@ func GetTasksInfo(instance app.Instance, svc *ecs.ECS, tasks []*ecs.Task) ([]app
 				TaskID:         taskID,
 				LastStatus:     *task.LastStatus,
 				LastStatusTime: time.Now(),
-				Version:        ver,
+				Version:        ver.Full(),
 				LogLink:        logLink,
 			}
 			if *task.LastStatus == "STOPPED" && task.StoppedReason != nil {
@@ -122,9 +122,9 @@ func keepMostRecentRevisions(tds []*ecs.TaskDefinition, regex string) map[string
 			continue
 		}
 
-		ver := release.FormatVersion()
+		ver := release.Version.Full()
 
-		if ver == "undetermined" {
+		if ver == version.Undetermined {
 			continue
 		}
 

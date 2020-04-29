@@ -40,6 +40,7 @@ includeTenplates().then(() => {
                 "type": "service",
                 "project": { "id": "000000000000000000000000"},
                 "repo": { 
+                    "tagFormat": "version",
                     "commitConfig" : {
                         "limit": 20,
                     },

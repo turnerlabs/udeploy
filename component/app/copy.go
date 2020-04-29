@@ -24,6 +24,7 @@ func (r Repository) Copy() Repository {
 		Org:          r.Org,
 		Name:         r.Name,
 		AccessToken:  r.AccessToken,
+		TagFormat:    r.TagFormat,
 		CommitConfig: r.CommitConfig.Copy(),
 	}
 }
@@ -97,8 +98,7 @@ func (i Instance) Copy() Instance {
 func (d Definition) Copy() Definition {
 	n := Definition{
 		ID:          d.ID,
-		Version:     d.Version,
-		Build:       d.Build,
+		Version:     d.Version.Copy(),
 		Revision:    d.Revision,
 		Description: d.Description,
 		Environment: map[string]string{},

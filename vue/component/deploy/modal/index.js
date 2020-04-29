@@ -51,9 +51,13 @@ Vue.component('deploy-modal', {
 
             let build = this.versions.data[key];
 
-            this.baseVersion = build.version
+            this.baseVersion = build.version;
 
-            this.getCommits(build.version);
+            console.log(this.app.repo);
+
+            (this.app.repo.tagFormat === "version" || this.app.repo.tagFormat === "")
+                ? this.getCommitsBetween(this.instance.version, build.version)
+                : this.getCommitsBetween(this.instance.formattedVersion, key)
         },
         selectedSource: function (instance) {
             let that = this;
@@ -123,12 +127,12 @@ Vue.component('deploy-modal', {
                 return a.order - b.order;
             });
         },
-        getCommits(version) {
+        getCommitsBetween(startVersion, endVersion) {
             this.commits = [];
             this.loadingChanges = true
 
             let that = this
-            fetch('/v1/apps/'+this.app.name+"/version/range/"+this.instance.version+"/to/"+version+"/commits")
+            fetch('/v1/apps/'+this.app.name+"/version/range/"+startVersion+"/to/"+endVersion+"/commits")
             .then(function(response) {
                 return response.json()
             })

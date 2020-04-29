@@ -77,7 +77,7 @@ func populateInst(i app.Instance, ecsSvc *ecs.ECS, evtSvc *cloudwatchevents.Clou
 		state.SetStopped()
 	}
 
-	state.Version = i.FormatVersion()
+	state.Version = i.Task.Definition.Version.Full()
 
 	i.Task.DesiredCount = *target.EcsParameters.TaskCount
 	i.Task.CronEnabled = isCronEnabled(*ruleOutput.State)

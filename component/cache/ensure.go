@@ -7,6 +7,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/turnerlabs/udeploy/component/app"
+	"github.com/turnerlabs/udeploy/component/integration/aws/secretsmanager"
 	"github.com/turnerlabs/udeploy/component/supplement"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -44,6 +45,13 @@ func EnsureApp(ctx mongo.SessionContext, appName string) error {
 		}
 
 		dbApp.Instances = instances
+
+		token, err := secretsmanager.Get(apps[0].RepoAccessTokenKey())
+		if err != nil {
+			return err
+		}
+
+		dbApp.Repo.AccessToken = token
 
 		return Apps.Update(dbApp)
 	}

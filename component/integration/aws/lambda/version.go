@@ -1,28 +1,21 @@
 package lambda
 
 import (
-	"errors"
-	"regexp"
-
 	"github.com/aws/aws-sdk-go/service/lambda"
 	"github.com/turnerlabs/udeploy/component/app"
+	"github.com/turnerlabs/udeploy/component/version"
 )
 
-func extractVersion(instance app.Instance, config *lambda.FunctionConfiguration) (string, string, error) {
-	tag := regexp.MustCompile(instance.Task.ImageTagEx)
+func extractVersion(instance app.Instance, config *lambda.FunctionConfiguration) (version.Version, error) {
 
-	matches := tag.FindStringSubmatch(*config.Description)
-	if matches == nil || len(matches) < 2 {
-		return "", "", errors.New("failed to extract version")
+	version, err := version.Extract(*config.Description, instance.Task.ImageTagEx)
+	if err != nil {
+		return version, err
 	}
 
-	version := matches[1]
-	build := (*config.RevisionId)[0:8]
-
-	if len(matches) > 2 && len(matches[2]) > 0 {
-		version = matches[1]
-		build = matches[2]
+	if len(version.Build) == 0 {
+		version.Build = (*config.RevisionId)[0:8]
 	}
 
-	return version, build, nil
+	return version, nil
 }

@@ -14,7 +14,7 @@ Each ECR image should be tagged with the version **v1.10.0-build** and build **#
 
 The `ECR Registry` field should be populated if any images only exist in ECR. Any image in an existing Fargate Task Definition will be displayed automatically.
 
-The `Version RegEx` field should contain a regular expression with a capturing group for the version and a second capturing group for the build number. 
+The `Version RegEx` field should contain a regular expression with a capturing group for the version, and a second for the delimiter between the version and build number, and a third for the build number. 
 
 ![Edit](./portal_edit_ecr.png)
 

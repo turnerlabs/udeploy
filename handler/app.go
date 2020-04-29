@@ -7,6 +7,7 @@ import (
 
 	"github.com/turnerlabs/udeploy/component/cfg"
 	"github.com/turnerlabs/udeploy/component/integration/aws/lambda"
+	"github.com/turnerlabs/udeploy/component/integration/aws/secretsmanager"
 	"github.com/turnerlabs/udeploy/component/project"
 
 	"github.com/turnerlabs/udeploy/component/session"
@@ -39,6 +40,17 @@ func GetApp(c echo.Context) error {
 	}
 
 	apps[0].Instances = instances
+
+	token, err := secretsmanager.Get(apps[0].RepoAccessTokenKey())
+	if err != nil {
+		return err
+	}
+
+	apps[0].Repo.AccessToken = token
+
+	if err := cache.Apps.Update(apps[0]); err != nil {
+		return err
+	}
 
 	project, err := project.Get(ctx, apps[0].ProjectID)
 	if err != nil {
@@ -187,6 +199,22 @@ func SaveApp(c echo.Context) error {
 		}
 	}
 
+	if len(newApp.Repo.AccessToken) > 0 {
+		err := secretsmanager.Save(
+			newApp.RepoAccessTokenKey(),
+			newApp.Repo.AccessToken,
+			"Repository Access Token",
+			cfg.Get["KMS_KEY_ID"])
+
+		if err != nil {
+			return err
+		}
+	} else if len(originalApp.Repo.AccessToken) > 0 {
+		if err := secretsmanager.Delete(newApp.RepoAccessTokenKey()); err != nil {
+			return err
+		}
+	}
+
 	if err := app.Set(ctx, originalAppName, newApp); err != nil {
 		return err
 	}
@@ -232,6 +260,12 @@ func DeleteApp(c echo.Context) error {
 			if err := lambda.DeleteAlarm(i.FunctionName, i.Role); err != nil {
 				return err
 			}
+		}
+	}
+
+	if len(targetApp.Repo.AccessToken) > 0 {
+		if err := secretsmanager.Delete(targetApp.RepoAccessTokenKey()); err != nil {
+			return err
 		}
 	}
 

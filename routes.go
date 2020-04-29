@@ -108,9 +108,9 @@ func startRouter(changeNotifier *broker.Broker) {
 
 	v1.GET("/apps", handler.GetApps)
 	v1.POST("/apps/filter", handler.FilterApps)
-	v1.GET("/apps/:app", handler.GetCachedApp)
+	v1.GET("/apps/:app", handler.GetApp)
+	v1.PUT("/apps/:app/cache", handler.GetApp)
 	v1.DELETE("/apps/:app", handler.DeleteApp, auth.RequireAdmin)
-	v1.PUT("/apps/:app/cache", handler.GetCachedApp)
 	v1.POST("/apps/:app", handler.SaveApp)
 	v1.GET("/apps/:app/instances/:registryInstance/registry", build.GetBuilds)
 

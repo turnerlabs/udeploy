@@ -229,8 +229,8 @@ func (i Instance) ToView(name string, appClaim user.AppClaim) InstanceView {
 
 	v := InstanceView{
 		Name:             name,
-		FormattedVersion: i.FormatVersion(),
-		Version:          i.Version(),
+		FormattedVersion: i.Task.Definition.Version.Full(),
+		Version:          i.Task.Definition.Version.Version,
 		Containers:       []ContainerView{},
 		IsRunning:        i.CurrentState.IsRunning(),
 		CronExpression:   i.Task.CronExpression,
@@ -268,11 +268,7 @@ func (i Instance) ToView(name string, appClaim user.AppClaim) InstanceView {
 		},
 	}
 
-	if v.Tokens == nil {
-		v.Tokens = map[string]string{}
-	}
-
-	v.Tokens["VERSION"] = i.Version()
+	v.Tokens = map[string]string{"VERSION": i.Task.Definition.Version.Version}
 
 	if v.Links == nil {
 		v.Links = []Link{}
@@ -290,7 +286,7 @@ func (i Instance) ToView(name string, appClaim user.AppClaim) InstanceView {
 		}
 	}
 
-	v.Build = i.Task.Definition.Build
+	v.Build = i.Task.Definition.Version.Build
 	v.Revision = i.Task.Definition.Revision
 	v.DesiredCount = i.Task.DesiredCount
 
@@ -326,38 +322,4 @@ func (i Instance) RepoVersion() (string, string) {
 	}
 
 	return "", ""
-}
-
-// FormatVersion ...
-func (i Instance) FormatVersion() string {
-
-	if i.Task.Definition.Version == "" {
-		return "undetermined"
-	}
-
-	if len(i.Task.Definition.Build) > 0 {
-		return fmt.Sprintf("%s.%s", i.Task.Definition.Version, i.Task.Definition.Build)
-	}
-
-	return i.Task.Definition.Version
-}
-
-// Version ...
-func (i Instance) Version() string {
-
-	if i.Task.Definition.Version == "" {
-		return "undetermined"
-	}
-
-	return i.Task.Definition.Version
-}
-
-// Build ...
-func (i Instance) Build() string {
-
-	if i.Task.Definition.Build == "" {
-		return "undetermined"
-	}
-
-	return i.Task.Definition.Build
 }

@@ -61,14 +61,13 @@ func populateInst(i app.Instance, svc *lambda.Lambda, cwsvc *cloudwatch.CloudWat
 		return i, state, err
 	}
 
-	version, build, err := extractVersion(i, fo.Configuration)
+	version, err := extractVersion(i, fo.Configuration)
 	if err != nil {
 		return i, state, err
 	}
 
 	i.Task.Definition.Version = version
-	i.Task.Definition.Build = build
-	i.Task.Definition.Description = fmt.Sprintf("%s.%s", version, build)
+	i.Task.Definition.Description = version.Full()
 
 	env := map[string]string{}
 
@@ -91,7 +90,7 @@ func populateInst(i app.Instance, svc *lambda.Lambda, cwsvc *cloudwatch.CloudWat
 
 	i.Task.DesiredCount = 1
 
-	state.Version = i.FormatVersion()
+	state.Version = i.Task.Definition.Version.Full()
 
 	region, err := getRegion(*fo.Configuration.FunctionArn)
 	if err != nil {
