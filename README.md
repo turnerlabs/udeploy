@@ -6,6 +6,8 @@ Authorized users can perform drag-n-drop deployments without understanding the t
 
 This portal compliments CI/CD processes like GitHub Actions, Jenkins, TeamCity, AWS CodeBuild, CircleCI, and the like with a user friendly GUI. It is not intended to be a replacement for CI/CD pipelines.
 
+![BuildNPublish](https://github.com/turnerlabs/udeploy/workflows/BuildNPublish/badge.svg?branch=master)
+
 <details>
   <summary>Why?</summary>
 
