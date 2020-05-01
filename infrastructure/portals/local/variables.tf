@@ -36,3 +36,10 @@ variable "private_subnets" {
 variable "public_subnets" {
 }
 
+# Allow other AWS accounts to publish events
+# to this account for app status updates
+variable "linked_account_ids" {
+  type        = list(string)
+  default     = []
+}
+

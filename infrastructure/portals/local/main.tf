@@ -26,3 +26,6 @@ output "aws_profile" {
   value = var.aws_profile
 }
 
+data "aws_caller_identity" "current" {
+}
+
