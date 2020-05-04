@@ -93,11 +93,14 @@ resource "aws_sqs_queue" "s3_queue" {
   "Statement": [
     {
       "Effect": "Allow",
-      "Principal": { "AWS": ${jsonencode(concat(data.template_file.linked_account_ids.*.rendered, ["${data.aws_caller_identity.current.account_id}"]))} },
+      "Principal": "*",
       "Action": "sqs:SendMessage",
-      "Resource": "arn:aws:sqs:*:*:${var.app}-${var.environment}-s3-queue",
+      "Resource": "arn:aws:sqs:${var.region}:${data.aws_caller_identity.current.account_id}:${var.app}-${var.environment}-s3-queue",
       "Condition": {
-        "ArnEquals": { "aws:SourceArn": "arn:aws:s3:*:*:*" }
+        "StringEquals": {
+          "AWS:SourceAccount": ${jsonencode(concat(data.template_file.linked_account_ids.*.rendered, ["${data.aws_caller_identity.current.account_id}"]))}
+        },
+        "ArnLike": { "aws:SourceArn": "arn:aws:s3:*:*:*" }
       }
     }
   ]
