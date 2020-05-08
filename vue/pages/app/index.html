@@ -404,6 +404,19 @@
                               </div>
                             </div>
                         </div>
+                        <div v-if="app.type == 's3'" class="field is-horizontal">
+                          <div class="field-label is-normal">
+                            <label class="label">CloudFront (ID)</label>
+                          </div>
+                          <div class="field-body">
+                            <div class="field">
+                              <p class="control">
+                                <input class="input name" :disabled="!i.claims['edit'] && !user.admin" type="text"  v-model="i.cloudFrontId" title="The CloudFront Distribution ID that serves your static s3 bucket on a cdn.">
+                                <label class="help">Specify the CloudFront Distribution id that will be used to create an invalidation object upon deployment.</label>
+                              </p>
+                            </div>
+                          </div>
+                        </div>                         
                         <div v-if="app.type == 'service' || app.type == 'scheduled-task'" class="field is-horizontal">
                             <div class="field-label is-normal">
                               <label class="label">ECR Registry (URI)</label>
@@ -427,7 +440,7 @@
                                 </p>
                               </div>
                             </div>
-                          </div>
+                          </div>                         
                         <div class="field is-horizontal">
                             <div class="field-label is-normal">
                               <label class="label">
