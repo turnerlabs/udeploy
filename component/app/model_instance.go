@@ -25,7 +25,7 @@ type InstanceView struct {
 	S3Prefix         string `json:"s3Prefix,omitempty"`
 	S3RegistryBucket string `json:"s3RegistryBucket,omitempty"`
 	S3RegistryPrefix string `json:"s3RegistryPrefix,omitempty"`
-	CloudFrontId     string `json:"cloudFrontId,omitempty"`
+	CloudFrontID     string `json:"cloudFrontId,omitempty"`
 
 	Repository     string   `json:"repository,omitempty"`
 	RepositoryRole string   `json:"repositoryRole,omitempty"`
@@ -90,7 +90,7 @@ type Instance struct {
 	S3Prefix         string `json:"s3Prefix,omitempty" bson:"s3Prefix"`
 	S3RegistryBucket string `json:"s3RegistryBucket,omitempty" bson:"s3RegistryBucket"`
 	S3RegistryPrefix string `json:"s3RegistryPrefix,omitempty" bson:"s3RegistryPrefix"`
-	CloudFrontId     string `json:"cloudFrontId,omitempty" bson:"cloudFrontId"`
+	CloudFrontID     string `json:"cloudFrontId,omitempty" bson:"cloudFrontId"`
 
 	Repository     string `json:"repository,omitempty" bson:"repository"`
 	RepositoryRole string `json:"repositoryRole,omitempty" bson:"repositoryRole"`
@@ -202,7 +202,7 @@ func (v InstanceView) ToBusiness() Instance {
 		S3ConfigKey:      v.S3ConfigKey,
 		S3RegistryBucket: v.S3RegistryBucket,
 		S3RegistryPrefix: v.S3RegistryPrefix,
-		CloudFrontId:     v.CloudFrontId,
+		CloudFrontID:     v.CloudFrontID,
 		DeployCode:       v.DeployCode,
 		AutoPropagate:    v.AutoPropagate,
 		AutoScale:        v.AutoScale,
@@ -250,7 +250,7 @@ func (i Instance) ToView(name string, appClaim user.AppClaim) InstanceView {
 		S3ConfigKey:      i.S3ConfigKey,
 		S3RegistryBucket: i.S3RegistryBucket,
 		S3RegistryPrefix: i.S3RegistryPrefix,
-		CloudFrontId:     i.CloudFrontId,
+		CloudFrontID:     i.CloudFrontID,
 		Repository:       i.Repository,
 		RepositoryRole:   i.RepositoryRole,
 		DeployCode:       i.DeployCode,

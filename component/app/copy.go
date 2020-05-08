@@ -78,7 +78,7 @@ func (i Instance) Copy() Instance {
 		S3ConfigKey:      i.S3ConfigKey,
 		S3RegistryBucket: i.S3RegistryBucket,
 		S3RegistryPrefix: i.S3RegistryPrefix,
-		CloudFrontId:     i.CloudFrontId,
+		CloudFrontID:     i.CloudFrontID,
 		DeployCode:       i.DeployCode,
 		AutoPropagate:    i.AutoPropagate,
 		AutoScale:        i.AutoScale,
