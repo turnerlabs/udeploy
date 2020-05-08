@@ -85,6 +85,9 @@ data "aws_iam_policy_document" "app_policy" {
       "s3:DeleteObject",
       "s3:ListBucket",
       "sts:AssumeRole",
+      "cloudfront:CreateInvalidation",
+      "cloudfront:GetInvalidation",
+      "cloudfront:ListInvalidations",      
     ]
 
     resources = [
