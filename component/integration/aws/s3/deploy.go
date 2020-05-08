@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"mime"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -282,12 +283,15 @@ func upload(target app.Instance, workingDir string, metadata map[string]*string,
 			key = fmt.Sprintf("%s/%s", target.S3Prefix, key)
 		}
 
+		contentType := mime.TypeByExtension(filepath.Ext(filePath))
+
 		objects = append(objects, s3manager.BatchUploadObject{
 			Object: &s3manager.UploadInput{
-				Key:      aws.String(key),
-				Bucket:   aws.String(target.S3Bucket),
-				Body:     file,
-				Metadata: metadata,
+				Key:         aws.String(key),
+				Bucket:      aws.String(target.S3Bucket),
+				Body:        file,
+				Metadata:    metadata,
+				ContentType: aws.String(contentType),
 			},
 		})
 
