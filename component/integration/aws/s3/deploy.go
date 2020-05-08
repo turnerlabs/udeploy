@@ -96,22 +96,18 @@ func Deploy(ctx mongo.SessionContext, actionID primitive.ObjectID, source app.In
 		return err
 	}
 
-	if err = invalidateCache(target, session); err != nil {
-		return err
+	if len(target.CloudFrontID) > 0 {
+		return invalidateCache(target, session)
 	}
 
 	return nil
 }
 
 func invalidateCache(target app.Instance, session *session.Session) error {
-	if target.CloudFrontId == "" {
-		return nil
-	}
-
 	now := time.Now().Format(time.RFC3339Nano)
 	svc := cloudfront.New(session)
 	input := &cloudfront.CreateInvalidationInput{
-		DistributionId: aws.String(target.CloudFrontId),
+		DistributionId: aws.String(target.CloudFrontID),
 		InvalidationBatch: &cloudfront.InvalidationBatch{
 			Paths: &cloudfront.Paths{
 				Items:    aws.StringSlice([]string{"/*"}),
@@ -121,11 +117,8 @@ func invalidateCache(target app.Instance, session *session.Session) error {
 		},
 	}
 
-	if _, err := svc.CreateInvalidation(input); err != nil {
-		return err
-	}
-
-	return nil
+	_, err := svc.CreateInvalidation(input)
+	return err
 }
 
 func createConfigFile(unzippedPath string, target app.Instance, env map[string]string) error {
