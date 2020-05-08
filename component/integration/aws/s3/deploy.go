@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -23,6 +24,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/cloudfront"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 
@@ -91,6 +93,35 @@ func Deploy(ctx mongo.SessionContext, actionID primitive.ObjectID, source app.In
 	}
 
 	if err = upload(target, unzippedPath, metadata, session); err != nil {
+		return err
+	}
+
+	if err = invalidateCache(target, session); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func invalidateCache(target app.Instance, session *session.Session) error {
+	if target.CloudFrontId == "" {
+		return nil
+	}
+
+	now := time.Now().Format(time.RFC3339Nano)
+	svc := cloudfront.New(session)
+	input := &cloudfront.CreateInvalidationInput{
+		DistributionId: aws.String(target.CloudFrontId),
+		InvalidationBatch: &cloudfront.InvalidationBatch{
+			Paths: &cloudfront.Paths{
+				Items:    aws.StringSlice([]string{"/*"}),
+				Quantity: aws.Int64(1),
+			},
+			CallerReference: aws.String(now),
+		},
+	}
+
+	if _, err := svc.CreateInvalidation(input); err != nil {
 		return err
 	}
 
