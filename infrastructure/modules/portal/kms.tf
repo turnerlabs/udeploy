@@ -42,6 +42,7 @@ locals {
   saml_user_ids = flatten([
     data.aws_caller_identity.current.user_id,
     data.aws_caller_identity.current.account_id,
+    "${aws_iam_role.app_role.unique_id}:*",
     formatlist(
       "%s:%s",
       data.aws_iam_role.saml_role_config.unique_id,
