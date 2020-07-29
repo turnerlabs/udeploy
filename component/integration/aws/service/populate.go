@@ -211,9 +211,17 @@ func getServiceError(tasks []*ecs.Task, expiration time.Duration) (int, error) {
 		if t.StopCode != nil && t.StoppedReason != nil {
 			if *t.StopCode != ecs.TaskStopCodeUserInitiated {
 
-				if time.Now().Sub(*t.ExecutionStoppedAt) < expiration {
-					reason = errors.New(*t.StoppedReason)
-					count++
+				switch *t.StopCode {
+				case ecs.TaskStopCodeTaskFailedToStart:
+					if time.Now().Sub(*t.CreatedAt) < expiration {
+						reason = errors.New(*t.StoppedReason)
+						count++
+					}
+				default:
+					if time.Now().Sub(*t.ExecutionStoppedAt) < expiration {
+						reason = errors.New(*t.StoppedReason)
+						count++
+					}
 				}
 			}
 		}
