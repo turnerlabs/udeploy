@@ -6,7 +6,7 @@ Configure only the needed infrastructure in AWS to allow local development.
 #### 1. Clone ####
 ```bash
 $ mkdir udeploy && cd udeploy
-$ git clone --branch v0.32.2-rc git@github.com:turnerlabs/udeploy.git infrastructure
+$ git clone --branch v0.33.1-rc git@github.com:turnerlabs/udeploy.git infrastructure
 ```
 
 The following commands should be executed from the repository root unless otherwise specified.

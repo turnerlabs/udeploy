@@ -6,7 +6,7 @@ Install the infrastructure and code to run the uDeploy portal in AWS.
 ### 1. Clone Infrastructure ###
 ```bash
 $ mkdir udeploy && cd udeploy
-$ git clone --branch v0.32.2-rc git@github.com:turnerlabs/udeploy.git infrastructure
+$ git clone --branch v0.33.1-rc git@github.com:turnerlabs/udeploy.git infrastructure
 ```
 
 ### 2. Create Base Infrastucture ###
