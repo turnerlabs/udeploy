@@ -2,7 +2,7 @@
 
 If running version >= **v0.30.0-rc**, follow these steps to upgrade uDeploy.
 
-### LATEST: v0.33.1-rc
+### LATEST: v0.33.2-rc
 
 1. Update configuration.
 
@@ -49,14 +49,14 @@ provider "aws" {
 }
 
 module “prod” {
-    source = "github.com/turnerlabs/udeploy//infrastructure/modules/portal?ref=v0.33.1-rc"
+    source = "github.com/turnerlabs/udeploy//infrastructure/modules/portal?ref=v0.33.2-rc"
 }
 ```
 
 `infrastructure/portals/prod/terraform.tfvars`
 
 ```
-image = "quay.io/turner/udeploy:v0.33.1-rc.17"
+image = "quay.io/turner/udeploy:v0.33.2-rc.18"
 ```
 
 4. Apply changes.

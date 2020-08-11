@@ -6,10 +6,6 @@
   width: 100%;
 }
 
-.app-row {
-  overflow-x: auto;
-}
-
 .instance {
   height: 200px;
 }

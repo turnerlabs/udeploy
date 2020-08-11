@@ -68,7 +68,7 @@ variable "record_name" {
 }
 
 variable "image" {
-  default = "quay.io/turner/udeploy:v0.33.1-rc.17"
+  default = "quay.io/turner/udeploy:v0.33.2-rc.18"
 }
 
 # Allow other AWS accounts to publish events
