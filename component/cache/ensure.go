@@ -74,7 +74,7 @@ func Ensure(ctx mongo.SessionContext) error {
 
 	for _, a := range apps {
 		if err := EnsureApp(ctx, a.Name); err != nil {
-			log.Printf("APP_CACHE: %s\n", err)
+			log.Printf("APP_CACHE: %s %s\n", a.Name, err)
 		} else {
 			cached++
 		}

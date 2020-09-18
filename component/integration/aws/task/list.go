@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/turnerlabs/udeploy/component/app"
-	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 	"github.com/turnerlabs/udeploy/component/version"
 )
 
@@ -41,7 +41,9 @@ func ListDefinitions(instance app.Instance) (map[string]app.Definition, error) {
 
 	session := session.New()
 
-	config.Merge([]string{instance.Role}, session)
+	if len(instance.Role) > 0 {
+		session.Config.WithCredentials(stscreds.NewCredentials(session, instance.Role))
+	}
 
 	svc := ecs.New(session)
 	arns, err := listTaskDefinitionArns(svc, instance.Task.Family, "", arns)

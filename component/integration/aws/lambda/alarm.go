@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/turnerlabs/udeploy/component/cfg"
-	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudwatch"
 )
@@ -15,7 +15,9 @@ import (
 func DeleteAlarm(functionName, role string) error {
 	session := session.New()
 
-	config.Merge([]string{role}, session)
+	if len(role) > 0 {
+		session.Config.WithCredentials(stscreds.NewCredentials(session, role))
+	}
 
 	svc := cloudwatch.New(session)
 
@@ -30,7 +32,9 @@ func DeleteAlarm(functionName, role string) error {
 func UpsertAlarm(functionName, functionAlias, role, snsTopicArn string) error {
 	session := session.New()
 
-	config.Merge([]string{role}, session)
+	if len(role) > 0 {
+		session.Config.WithCredentials(stscreds.NewCredentials(session, role))
+	}
 
 	svc := cloudwatch.New(session)
 
