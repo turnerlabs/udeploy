@@ -20,6 +20,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 
 	"github.com/google/uuid"
 
@@ -31,7 +32,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 
 	"github.com/turnerlabs/udeploy/component/app"
-	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 	"github.com/turnerlabs/udeploy/component/integration/aws/task"
 )
 
@@ -44,7 +44,20 @@ func Deploy(ctx mongo.SessionContext, actionID primitive.ObjectID, source app.In
 
 	session := session.New()
 
-	config.Merge([]string{source.Role, source.RepositoryRole, target.Role}, session)
+	sourceConfig := aws.NewConfig()
+	if len(source.Role) > 0 {
+		sourceConfig.WithCredentials(stscreds.NewCredentials(session, source.Role))
+	}
+
+	targetConfig := aws.NewConfig()
+	if len(target.Role) > 0 {
+		targetConfig.WithCredentials(stscreds.NewCredentials(session, target.Role))
+	}
+
+	repoConfig := aws.NewConfig()
+	if len(source.RepositoryRole) > 0 {
+		repoConfig.WithCredentials(stscreds.NewCredentials(session, source.RepositoryRole))
+	}
 
 	workingDir := fmt.Sprintf("tmp/%s", uuid.New())
 	if err := os.MkdirAll(workingDir, os.ModePerm); err != nil {
@@ -57,12 +70,17 @@ func Deploy(ctx mongo.SessionContext, actionID primitive.ObjectID, source app.In
 		}
 	}()
 
-	version, err := getRevisionDetails(source, revision, session)
+	repoSVC := s3.New(session, repoConfig)
+
+	version, err := getRevisionDetails(source, revision, repoSVC)
 	if err != nil {
 		return err
 	}
 
-	zipPath, err := download(source, revision, workingDir, session)
+	sess := session.Copy(repoConfig)
+	downloader := s3manager.NewDownloader(sess)
+
+	zipPath, err := download(source, revision, workingDir, downloader)
 	if err != nil {
 		return err
 	}
@@ -79,7 +97,10 @@ func Deploy(ctx mongo.SessionContext, actionID primitive.ObjectID, source app.In
 	}
 
 	if !opts.Override {
-		if opts.Environment, err = buildConfig(source, target, session); err != nil {
+		sourceDownloader := s3manager.NewDownloader(session.Copy(sourceConfig))
+		targetDownloader := s3manager.NewDownloader(session.Copy(targetConfig))
+
+		if opts.Environment, err = buildConfig(source, target, sourceDownloader, targetDownloader); err != nil {
 			return err
 		}
 	}
@@ -88,16 +109,20 @@ func Deploy(ctx mongo.SessionContext, actionID primitive.ObjectID, source app.In
 		return err
 	}
 
-	if err = purge(target, session); err != nil {
+	targetSVC := s3.New(sess, targetConfig)
+	if err = purge(target, targetSVC); err != nil {
 		return err
 	}
 
-	if err = upload(target, unzippedPath, metadata, session); err != nil {
+	uploadSess := session.Copy(targetConfig)
+	uploader := s3manager.NewUploader(uploadSess)
+
+	if err = upload(target, unzippedPath, metadata, uploader); err != nil {
 		return err
 	}
 
 	if len(target.CloudFrontID) > 0 {
-		return invalidateCache(target, session)
+		return invalidateCache(target, uploadSess)
 	}
 
 	return nil
@@ -142,8 +167,7 @@ func createConfigFile(unzippedPath string, target app.Instance, env map[string]s
 	return nil
 }
 
-func getRevisionDetails(source app.Instance, revision int64, sess *session.Session) (string, error) {
-	svc := s3.New(sess)
+func getRevisionDetails(source app.Instance, revision int64, svc *s3.S3) (string, error) {
 
 	o, err := svc.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(source.S3RegistryBucket),
@@ -161,7 +185,7 @@ func getRevisionDetails(source app.Instance, revision int64, sess *session.Sessi
 	return ver, nil
 }
 
-func buildConfig(source, target app.Instance, sess *session.Session) (map[string]string, error) {
+func buildConfig(source, target app.Instance, sourceDownloader, targetDownloader *s3manager.Downloader) (map[string]string, error) {
 
 	if len(target.S3Prefix) > 0 {
 		target.S3ConfigKey = fmt.Sprintf("%s/%s", target.S3Prefix, target.S3ConfigKey)
@@ -176,11 +200,9 @@ func buildConfig(source, target app.Instance, sess *session.Session) (map[string
 		return map[string]string{}, err
 	}
 
-	downloader := s3manager.NewDownloader(sess)
-
 	dlBuff := aws.NewWriteAtBuffer(buff.Bytes())
 
-	_, err := downloader.Download(dlBuff, &s3.GetObjectInput{
+	_, err := targetDownloader.Download(dlBuff, &s3.GetObjectInput{
 		Bucket: aws.String(target.S3Bucket),
 		Key:    aws.String(target.S3ConfigKey),
 	})
@@ -204,7 +226,7 @@ func buildConfig(source, target app.Instance, sess *session.Session) (map[string
 	if len(target.Task.CloneEnvVars) > 0 {
 		sourceBuff := aws.NewWriteAtBuffer([]byte{})
 
-		_, err = downloader.Download(sourceBuff, &s3.GetObjectInput{
+		_, err = sourceDownloader.Download(sourceBuff, &s3.GetObjectInput{
 			Bucket: aws.String(source.S3Bucket),
 			Key:    aws.String(source.S3ConfigKey),
 		})
@@ -228,8 +250,7 @@ func buildConfig(source, target app.Instance, sess *session.Session) (map[string
 	return newConfig, nil
 }
 
-func purge(target app.Instance, sess *session.Session) error {
-	svc := s3.New(sess)
+func purge(target app.Instance, svc *s3.S3) error {
 
 	listInput := &s3.ListObjectsInput{
 		Bucket: aws.String(target.S3Bucket),
@@ -275,9 +296,7 @@ func purge(target app.Instance, sess *session.Session) error {
 	return nil
 }
 
-func upload(target app.Instance, workingDir string, metadata map[string]*string, sess *session.Session) error {
-	uploader := s3manager.NewUploader(sess)
-
+func upload(target app.Instance, workingDir string, metadata map[string]*string, uploader *s3manager.Uploader) error {
 	objects := []s3manager.BatchUploadObject{}
 
 	fileList := []string{}
@@ -328,8 +347,7 @@ func upload(target app.Instance, workingDir string, metadata map[string]*string,
 }
 
 // download ...
-func download(source app.Instance, revision int64, workingDir string, sess *session.Session) (string, error) {
-	downloader := s3manager.NewDownloader(sess)
+func download(source app.Instance, revision int64, workingDir string, downloader *s3manager.Downloader) (string, error) {
 
 	zipFile := fmt.Sprintf("%s/deployment.zip", workingDir)
 

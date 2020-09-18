@@ -4,10 +4,10 @@ import (
 	"strings"
 
 	"github.com/turnerlabs/udeploy/component/app"
-	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 	"github.com/turnerlabs/udeploy/component/version"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecr"
 )
@@ -51,7 +51,9 @@ func List(i app.Instance) ([]*ecr.ImageIdentifier, error) {
 
 	session := session.New()
 
-	config.Merge([]string{i.RepositoryRole}, session)
+	if len(i.RepositoryRole) > 0 {
+		session.Config.WithCredentials(stscreds.NewCredentials(session, i.RepositoryRole))
+	}
 
 	svc := ecr.New(session)
 

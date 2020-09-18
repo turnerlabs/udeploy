@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/turnerlabs/udeploy/component/app"
-	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/lambda"
 )
@@ -20,7 +20,9 @@ func Scale(ctx context.Context, instance app.Instance, desiredCount int64) error
 
 	session := session.New()
 
-	config.Merge([]string{instance.Role}, session)
+	if len(instance.Role) > 0 {
+		session.Config.WithCredentials(stscreds.NewCredentials(session, instance.Role))
+	}
 
 	svc := lambda.New(session)
 

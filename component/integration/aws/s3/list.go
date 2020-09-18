@@ -7,10 +7,10 @@ import (
 	"strings"
 
 	"github.com/turnerlabs/udeploy/component/app"
-	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 	"github.com/turnerlabs/udeploy/component/version"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 )
@@ -29,7 +29,9 @@ func ListDefinitions(instance app.Instance) (map[string]app.Definition, error) {
 
 	session := session.New()
 
-	config.Merge([]string{instance.Role, instance.RepositoryRole}, session)
+	if len(instance.RepositoryRole) > 0 {
+		session.Config.WithCredentials(stscreds.NewCredentials(session, instance.RepositoryRole))
+	}
 
 	svc := s3.New(session)
 
@@ -86,7 +88,9 @@ func ListDefinitions(instance app.Instance) (map[string]app.Definition, error) {
 func List(bucket, registry, role string) ([]*s3.Object, error) {
 	session := session.New()
 
-	config.Merge([]string{role}, session)
+	if len(role) > 0 {
+		session.Config.WithCredentials(stscreds.NewCredentials(session, role))
+	}
 
 	svc := s3.New(session)
 

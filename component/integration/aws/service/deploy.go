@@ -2,10 +2,10 @@ package service
 
 import (
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/turnerlabs/udeploy/component/app"
-	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 	"github.com/turnerlabs/udeploy/component/integration/aws/task"
 )
 
@@ -14,7 +14,9 @@ func Deploy(source app.Instance, target app.Instance, revision int64, opts task.
 
 	session := session.New()
 
-	config.Merge([]string{target.Role}, session)
+	if len(target.Role) > 0 {
+		session.Config.WithCredentials(stscreds.NewCredentials(session, target.Role))
+	}
 
 	svc := ecs.New(session)
 
