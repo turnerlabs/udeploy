@@ -22,11 +22,6 @@ variable "app_user_password" {}
 # name of the database that the user will have access
 variable "app_user_database" {}
 
-# A whitelist of IPs/CIDR blocks that can access this Atlas project
-# list need to be in the following format:
-# IP,description|CIDR,description|CIDR,description ...
-variable "ip_whitelist" {}
-
 module "env" {
   source = "github.com/turnerlabs/udeploy//infrastructure/modules/atlas?ref=v0.33.2-rc"
 
@@ -43,8 +38,6 @@ module "env" {
   app_user_password = var.app_user_password
 
   app_user_database = var.app_user_database
-
-  ip_whitelist = var.ip_whitelist
 }
 
 output "DB_URI" {
