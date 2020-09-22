@@ -39,3 +39,7 @@
 [v-cloak] {
   display: none;
 }
+
+.cursor-pointer {
+  cursor: pointer;
+}

@@ -104,6 +104,22 @@ includeTenplates().then(() => {
         },
 
         methods: {
+            toggleProject(e) {
+                this.projects = this.projects.map((p) => {
+                    if (p.name === e.name) {
+                        p.collapsed = !p.collapsed;
+                    }
+                    return p;
+                });
+            },
+            collapseProjects() {
+                this.projects = this.projects.map((p) => {
+                    if (p.apps.length > 1) {
+                        p.collapsed = true;
+                    }
+                    return p;
+                });
+            },
             jumpTo() {
                 let hash = window.location.hash.replace("#", "")
             
