@@ -38,7 +38,14 @@
                             </select>
                         </div>
                     </div>
-                    <div class="column is-4">    
+                    <div class="column is-4">
+                        <div class="buttons is-right">
+                            <button title="Collapse all projects" class="button" @click.stop.prevent="collapseProjects()">
+                                <span class="icon is-small">
+                                    <i v-if="view.grid" title="Collapse all projects" class="has-text-right cursor-pointer fa fa-angle-double-down" @click="collapseProjects()"></i>
+                                </span>
+                            </button>
+                        </div>
                     </div>
                     <div class="column is-1">
                         <div class="buttons has-addons is-right">
@@ -133,10 +140,12 @@
 
             <div v-if="view.grid" style="margin-bottom: 20px;">
                 <div v-for="project in sortApps(projects)" v-if="showProject(project)" class="app panel">
-                    <p class="panel-heading has-text-right has-text-weight-bold is-size-4 has-text-grey-darker has-background-white-bis" v-if="project.is">
+                    <p class="panel-heading has-text-right has-text-weight-bold is-size-4 has-text-grey-darker has-background-white-bis cursor-pointer" v-if="project.is" @click="toggleProject(project)">
                         {{ project.name.toUpperCase() }}
+                        <i v-if="project.collapsed" class="fas fa-angle-down"></i>
+                        <i v-if="!project.collapsed" class="fas fa-angle-left"></i>
                     </p>
-                    <div class="panel-block has-background-white">
+                    <div class="panel-block has-background-white" v-if="!project.collapsed">
                         <div class="tile is-ancestor">
                             <div class="tile is-vertical">
                                 <div :id="app.name" v-for="(app, index) in sortApps(project.apps)" v-if="showApp(app)" class="tile" v-bind:class="{ 'project-app': index != project.apps.length - 1}">
