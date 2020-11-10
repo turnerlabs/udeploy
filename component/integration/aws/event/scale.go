@@ -8,10 +8,10 @@ import (
 	"github.com/turnerlabs/udeploy/component/user"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudwatchevents"
 	"github.com/aws/aws-sdk-go/service/ecs"
-	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 	"github.com/turnerlabs/udeploy/component/integration/aws/task"
 	sess "github.com/turnerlabs/udeploy/component/session"
 )
@@ -21,7 +21,9 @@ func Scale(ctx context.Context, instance app.Instance, desiredCount int64, resta
 
 	session := session.New()
 
-	config.Merge([]string{instance.Role}, session)
+	if len(instance.Role) > 0 {
+		session.Config.WithCredentials(stscreds.NewCredentials(session, instance.Role))
+	}
 
 	evtSvc := cloudwatchevents.New(session)
 	ecsSvc := ecs.New(session)

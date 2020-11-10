@@ -63,6 +63,7 @@ func Watch(ctx mongo.SessionContext, messages chan interface{}) error {
 								}
 
 								if err := sns.Publish(subject, body, n.SNSArn); err != nil {
+									log.Println(n.SNSArn)
 									log.Println(err)
 								}
 							case n.IsSlack():
@@ -76,6 +77,7 @@ func Watch(ctx mongo.SessionContext, messages chan interface{}) error {
 								msg := slack.Template(subject, body, Color(status), "View Details", portalURL)
 
 								if err := slack.Send(msg, n.SlackWebHook); err != nil {
+									log.Println(n.SlackWebHook)
 									log.Println(err)
 								}
 							}

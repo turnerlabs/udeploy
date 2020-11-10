@@ -5,10 +5,10 @@ import (
 
 	"github.com/turnerlabs/udeploy/component/app"
 
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudwatchevents"
 	"github.com/aws/aws-sdk-go/service/ecs"
-	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 	"github.com/turnerlabs/udeploy/component/integration/aws/task"
 )
 
@@ -20,7 +20,9 @@ func Populate(instances map[string]app.Instance) (map[string]app.Instance, error
 	for name, i := range instances {
 		session := session.New()
 
-		config.Merge([]string{i.Role}, session)
+		if len(i.Role) > 0 {
+			session.Config.WithCredentials(stscreds.NewCredentials(session, i.Role))
+		}
 
 		evtSvc := cloudwatchevents.New(session)
 		ecsSvc := ecs.New(session)
@@ -142,6 +144,7 @@ func getServiceInfo(instance app.Instance, ecsSvc *ecs.ECS, evtSvc *cloudwatchev
 	}
 	targetOutput, err := evtSvc.ListTargetsByRule(targetInput)
 	if err != nil {
+
 		return nil, nil, nil, err
 	}
 	if len(targetOutput.Targets) == 0 {

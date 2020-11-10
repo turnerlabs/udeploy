@@ -7,10 +7,10 @@ import (
 	"strconv"
 
 	"github.com/turnerlabs/udeploy/component/app"
-	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/arn"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudwatch"
 	"github.com/aws/aws-sdk-go/service/lambda"
@@ -22,7 +22,9 @@ func Populate(instances map[string]app.Instance) (map[string]app.Instance, error
 	for key, instance := range instances {
 		session := session.New()
 
-		config.Merge([]string{instance.Role}, session)
+		if len(instance.Role) > 0 {
+			session.Config.WithCredentials(stscreds.NewCredentials(session, instance.Role))
+		}
 
 		svc := lambda.New(session)
 		cwsvc := cloudwatch.New(session)

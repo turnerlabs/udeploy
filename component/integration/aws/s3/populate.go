@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 	"github.com/turnerlabs/udeploy/component/version"
 
 	"github.com/turnerlabs/udeploy/component/app"
@@ -14,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 )
@@ -24,7 +24,9 @@ func Populate(instances map[string]app.Instance) (map[string]app.Instance, error
 	for key, instance := range instances {
 		sess := session.New()
 
-		config.Merge([]string{instance.Role}, sess)
+		if len(instance.Role) > 0 {
+			sess.Config.WithCredentials(stscreds.NewCredentials(sess, instance.Role))
+		}
 
 		svc := s3.New(sess)
 		downloader := s3manager.NewDownloader(sess)

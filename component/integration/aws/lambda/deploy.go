@@ -16,11 +16,11 @@ import (
 	"github.com/turnerlabs/udeploy/component/app"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/aws/aws-sdk-go/service/lambda"
 	"github.com/google/uuid"
-	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 	"github.com/turnerlabs/udeploy/component/integration/aws/task"
 )
 
@@ -42,28 +42,37 @@ func deployFromLambda(source, target app.Instance, revision int64, opts task.Dep
 
 	session := session.New()
 
-	config.Merge([]string{source.Role, target.Role}, session)
+	sourceConfig := aws.NewConfig()
+	if len(source.Role) > 0 {
+		sourceConfig.WithCredentials(stscreds.NewCredentials(session, source.Role))
+	}
 
-	svc := lambda.New(session)
+	targetConfig := aws.NewConfig()
+	if len(target.Role) > 0 {
+		targetConfig.WithCredentials(stscreds.NewCredentials(session, target.Role))
+	}
+
+	sourceSVC := lambda.New(session, sourceConfig)
+	targetSVC := lambda.New(session, targetConfig)
 
 	sourceFuncArn := fmt.Sprintf("%s:%d", source.FunctionName, revision)
 
-	sourceFunc, err := svc.GetFunction(&lambda.GetFunctionInput{
+	sourceFunc, err := sourceSVC.GetFunction(&lambda.GetFunctionInput{
 		FunctionName: aws.String(sourceFuncArn),
 	})
 	if err != nil {
 		return err
 	}
 
-	if err := deployCodeFromLambda(*sourceFunc.Code.Location, target.FunctionName, svc); err != nil {
+	if err := deployCodeFromLambda(*sourceFunc.Code.Location, target.FunctionName, targetSVC); err != nil {
 		return err
 	}
 
-	if err := deployConfig(source, target, opts, svc); err != nil {
+	if err := deployConfig(source, target, opts, sourceSVC, targetSVC); err != nil {
 		return err
 	}
 
-	vo, err := svc.PublishVersion(&lambda.PublishVersionInput{
+	vo, err := targetSVC.PublishVersion(&lambda.PublishVersionInput{
 		FunctionName: aws.String(target.FunctionName),
 		Description:  sourceFunc.Configuration.Description,
 	})
@@ -71,7 +80,7 @@ func deployFromLambda(source, target app.Instance, revision int64, opts task.Dep
 		return err
 	}
 
-	_, err = svc.UpdateAlias(&lambda.UpdateAliasInput{
+	_, err = targetSVC.UpdateAlias(&lambda.UpdateAliasInput{
 		Name:            aws.String(target.FunctionAlias),
 		FunctionName:    aws.String(target.FunctionName),
 		FunctionVersion: vo.Version,
@@ -83,15 +92,30 @@ func deployFromLambda(source, target app.Instance, revision int64, opts task.Dep
 func deployFromS3(source, target app.Instance, revision int64, opts task.DeployOptions) error {
 	session := session.New()
 
-	config.Merge([]string{source.Role, source.RepositoryRole, target.Role}, session)
+	sourceConfig := aws.NewConfig()
+	if len(source.Role) > 0 {
+		sourceConfig.WithCredentials(stscreds.NewCredentials(session, source.Role))
+	}
+
+	targetConfig := aws.NewConfig()
+	if len(target.Role) > 0 {
+		targetConfig.WithCredentials(stscreds.NewCredentials(session, target.Role))
+	}
+
+	repoConfig := aws.NewConfig()
+	if len(source.RepositoryRole) > 0 {
+		repoConfig.WithCredentials(stscreds.NewCredentials(session, source.RepositoryRole))
+	}
 
 	key := fmt.Sprintf("%d.zip", revision)
 	if len(source.S3RegistryPrefix) > 0 {
 		key = fmt.Sprintf("%s/%d.zip", source.S3RegistryPrefix, revision)
 	}
 
-	svc := lambda.New(session)
-	_, err := svc.UpdateFunctionCode(&lambda.UpdateFunctionCodeInput{
+	sourceSVC := lambda.New(session, sourceConfig)
+	targetSVC := lambda.New(session, targetConfig)
+
+	_, err := targetSVC.UpdateFunctionCode(&lambda.UpdateFunctionCodeInput{
 		FunctionName: aws.String(target.FunctionName),
 		S3Bucket:     aws.String(source.S3RegistryBucket),
 		S3Key:        aws.String(key),
@@ -100,18 +124,18 @@ func deployFromS3(source, target app.Instance, revision int64, opts task.DeployO
 		return err
 	}
 
-	if err := deployConfig(source, target, opts, svc); err != nil {
+	if err := deployConfig(source, target, opts, sourceSVC, targetSVC); err != nil {
 		return err
 	}
 
-	s3svc := s3.New(session)
+	s3svc := s3.New(session, repoConfig)
 
 	ver, err := getVersion(source.S3RegistryBucket, key, s3svc)
 	if err != nil {
 		return err
 	}
 
-	vo, err := svc.PublishVersion(&lambda.PublishVersionInput{
+	vo, err := targetSVC.PublishVersion(&lambda.PublishVersionInput{
 		FunctionName: aws.String(target.FunctionName),
 		Description:  aws.String(ver),
 	})
@@ -119,7 +143,7 @@ func deployFromS3(source, target app.Instance, revision int64, opts task.DeployO
 		return err
 	}
 
-	_, err = svc.UpdateAlias(&lambda.UpdateAliasInput{
+	_, err = targetSVC.UpdateAlias(&lambda.UpdateAliasInput{
 		Name:            aws.String(target.FunctionAlias),
 		FunctionName:    aws.String(target.FunctionName),
 		FunctionVersion: vo.Version,
@@ -189,16 +213,16 @@ func deleteOldRevisions(target app.Instance, deployVersion *lambda.FunctionConfi
 	return nil
 }
 
-func deployConfig(source, target app.Instance, opts task.DeployOptions, svc *lambda.Lambda) error {
+func deployConfig(source, target app.Instance, opts task.DeployOptions, sourceSVC *lambda.Lambda, targetSVC *lambda.Lambda) error {
 
-	sourceFunc, err := svc.GetFunction(&lambda.GetFunctionInput{
+	sourceFunc, err := sourceSVC.GetFunction(&lambda.GetFunctionInput{
 		FunctionName: aws.String(fmt.Sprintf("%s:%s", source.FunctionName, source.FunctionAlias)),
 	})
 	if err != nil {
 		return err
 	}
 
-	currentFunc, err := svc.GetFunction(&lambda.GetFunctionInput{
+	currentFunc, err := targetSVC.GetFunction(&lambda.GetFunctionInput{
 		FunctionName: aws.String(fmt.Sprintf("%s:%s", target.FunctionName, target.FunctionAlias)),
 	})
 	if err != nil {
@@ -220,7 +244,7 @@ func deployConfig(source, target app.Instance, opts task.DeployOptions, svc *lam
 		input.Environment.SetVariables(aws.StringMap(opts.Environment))
 	}
 
-	_, err = svc.UpdateFunctionConfiguration(&input)
+	_, err = targetSVC.UpdateFunctionConfiguration(&input)
 
 	return err
 }

@@ -2,10 +2,10 @@ package service
 
 import (
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/turnerlabs/udeploy/component/app"
-	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 )
 
 // Scale ...
@@ -13,7 +13,9 @@ func Scale(instance app.Instance, desiredCount int64, restart bool) error {
 
 	session := session.New()
 
-	config.Merge([]string{instance.Role}, session)
+	if len(instance.Role) > 0 {
+		session.Config.WithCredentials(stscreds.NewCredentials(session, instance.Role))
+	}
 
 	svc := ecs.New(session)
 

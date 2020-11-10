@@ -3,10 +3,10 @@ package event
 import (
 	"fmt"
 
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudwatchevents"
 	"github.com/turnerlabs/udeploy/component/app"
-	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 	"github.com/turnerlabs/udeploy/component/integration/aws/task"
 )
 
@@ -17,23 +17,25 @@ func Deploy(source app.Instance, target app.Instance, revision int64, opts task.
 		return err
 	}
 
+	return updateTargetRevision(target, newOutput.TaskDefinitionArn)
+}
+
+func updateTargetRevision(instance app.Instance, taskArn *string) error {
 	session := session.New()
 
-	config.Merge([]string{source.Role, target.Role}, session)
+	if len(instance.Role) > 0 {
+		session.Config.WithCredentials(stscreds.NewCredentials(session, instance.Role))
+	}
 
 	svc := cloudwatchevents.New(session)
 
-	return updateTargetRevision(target, svc, newOutput.TaskDefinitionArn)
-}
-
-func updateTargetRevision(instance app.Instance, svc *cloudwatchevents.CloudWatchEvents, taskArn *string) error {
-	input := &cloudwatchevents.ListTargetsByRuleInput{
+	resp, err := svc.ListTargetsByRule(&cloudwatchevents.ListTargetsByRuleInput{
 		Rule: &instance.EventRule,
-	}
-	resp, err := svc.ListTargetsByRule(input)
+	})
 	if err != nil {
 		return err
 	}
+
 	if len(resp.Targets) == 0 {
 		return fmt.Errorf("event target not found")
 	}
@@ -44,14 +46,14 @@ func updateTargetRevision(instance app.Instance, svc *cloudwatchevents.CloudWatc
 
 	resp.Targets[0].EcsParameters.TaskDefinitionArn = taskArn
 
-	putInput := &cloudwatchevents.PutTargetsInput{
+	putResp, err := svc.PutTargets(&cloudwatchevents.PutTargetsInput{
 		Rule:    &instance.EventRule,
 		Targets: resp.Targets,
-	}
-	putResp, err := svc.PutTargets(putInput)
+	})
 	if err != nil {
 		return err
 	}
+
 	if putResp != nil {
 		if len(putResp.FailedEntries) > 0 {
 			for _, entry := range putResp.FailedEntries {
@@ -59,5 +61,6 @@ func updateTargetRevision(instance app.Instance, svc *cloudwatchevents.CloudWatc
 			}
 		}
 	}
+
 	return nil
 }

@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/turnerlabs/udeploy/component/app"
-	"github.com/turnerlabs/udeploy/component/integration/aws/config"
 	"github.com/turnerlabs/udeploy/component/version"
 )
 
@@ -30,20 +30,30 @@ func (do DeployOptions) DeployImage() bool {
 func Deploy(source app.Instance, target app.Instance, sourceRevision int64, sourceVersion string, opts DeployOptions) (td *ecs.TaskDefinition, err error) {
 	session := session.New()
 
-	config.Merge([]string{source.Role, target.Role}, session)
+	sourceConfig := aws.NewConfig()
+	if len(source.Role) > 0 {
+		sourceConfig.WithCredentials(stscreds.NewCredentials(session, source.Role))
+	}
 
-	svc := ecs.New(session)
+	targetConfig := aws.NewConfig()
+	if len(target.Role) > 0 {
+		targetConfig.WithCredentials(stscreds.NewCredentials(session, target.Role))
+	}
+
+	sourceSVC := ecs.New(session, sourceConfig)
 
 	sourceTaskArn := fmt.Sprintf("%s:%d", source.Task.Family, sourceRevision)
-	sourceOutput, err := svc.DescribeTaskDefinition(&ecs.DescribeTaskDefinitionInput{
+	sourceOutput, err := sourceSVC.DescribeTaskDefinition(&ecs.DescribeTaskDefinitionInput{
 		TaskDefinition: aws.String(sourceTaskArn),
 	})
 	if err != nil {
 		return nil, err
 	}
 
+	targetSVC := ecs.New(session, targetConfig)
+
 	targetTaskArn := fmt.Sprintf("%s:%d", target.Task.Family, target.Task.Definition.Revision)
-	targetOutput, err := svc.DescribeTaskDefinition(&ecs.DescribeTaskDefinitionInput{
+	targetOutput, err := targetSVC.DescribeTaskDefinition(&ecs.DescribeTaskDefinitionInput{
 		TaskDefinition: aws.String(targetTaskArn),
 	})
 	if err != nil {
@@ -104,7 +114,7 @@ func Deploy(source app.Instance, target app.Instance, sourceRevision int64, sour
 		return nil, fmt.Errorf("number of container definitions not compatible")
 	}
 
-	newOutput, err := svc.RegisterTaskDefinition(&ecs.RegisterTaskDefinitionInput{
+	newOutput, err := targetSVC.RegisterTaskDefinition(&ecs.RegisterTaskDefinitionInput{
 		Family:                  targetOutput.TaskDefinition.Family,
 		ContainerDefinitions:    containerDefinitions,
 		Cpu:                     targetOutput.TaskDefinition.Cpu,
