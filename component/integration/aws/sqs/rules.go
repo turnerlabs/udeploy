@@ -3,7 +3,6 @@ package sqs
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"strings"
 
@@ -153,6 +152,7 @@ type lambdaMessageDetail struct {
 	EventName         string            `json:"eventName"`
 	ErrorCode         string            `json:"errorCode"`
 	RequestParameters requestParameters `json:"requestParameters"`
+	ResponseElements  responseElements  `json:"responseElements"`
 }
 
 type requestParameters struct {
@@ -160,8 +160,12 @@ type requestParameters struct {
 	AliasName    string `json:"name"`
 }
 
+type responseElements struct {
+	AliasArn string `json:"aliasArn"`
+}
+
 func (d lambdaMessageDetail) taskDefinition() string {
-	return fmt.Sprintf("%s-%s", d.RequestParameters.FunctionName, d.RequestParameters.AliasName)
+	return d.ResponseElements.AliasArn
 }
 
 type logMessageDetail struct {
@@ -174,7 +178,7 @@ func (d logMessageDetail) taskDefinition() (string, error) {
 		return "", errors.New("task definition not found")
 	}
 
-	return d.LogResponse.LogTaskDefinition.TaskDefinitionArn[strings.Index(d.LogResponse.LogTaskDefinition.TaskDefinitionArn, "/")+1 : strings.LastIndex(d.LogResponse.LogTaskDefinition.TaskDefinitionArn, ":")], nil
+	return d.LogResponse.LogTaskDefinition.TaskDefinitionArn[0:strings.LastIndex(d.LogResponse.LogTaskDefinition.TaskDefinitionArn, ":")], nil
 }
 
 type logResponse struct {

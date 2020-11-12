@@ -63,6 +63,8 @@ func populateInst(i app.Instance, svc *lambda.Lambda, cwsvc *cloudwatch.CloudWat
 		return i, state, err
 	}
 
+	i.Task.Definition = app.NewDefinition(*fo.Configuration.FunctionArn)
+
 	version, err := extractVersion(i, fo.Configuration)
 	if err != nil {
 		return i, state, err
