@@ -70,3 +70,9 @@ variable "saml_role" {
 
 variable "config_path" {
 }
+
+# Allow other AWS accounts to publish events
+# to this account for app status updates
+variable "linked_account_ids" {
+  type        = list(string)
+}
