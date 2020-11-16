@@ -19,8 +19,8 @@ import (
 // SPARINGLY.
 //
 // Currently AWS does not fire events when errors expire from ECS Task
-// history. Since monitored errors in ECS Task history cause an a
-// pplication to display an error state, the history must be monitored
+// history. Since monitored errors in ECS Task history cause an
+// application to display an error state, the history must be monitored
 // to determine when a service returns to a healthly state.
 func AWSPollEventlessChanges(ctx mongo.SessionContext) error {
 

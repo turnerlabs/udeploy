@@ -216,5 +216,11 @@ Update `linked_account_ids` in [infrastructure/base/terraform.tfvars](/infrastru
 $ terraform apply -var-file=infrastructure/base/terraform.tfvars  infrastructure/base
 ```
 
+Update `linked_account_ids` in [infrastructure/portals/prod/terraform.tfvars](/infrastructure/portals/prod/terraform.tfvars) with account ids of all linked accounts.
+
+```
+$ terraform apply -var-file=infrastructure/portals/prod/terraform.tfvars  infrastructure/portals/prod
+```
+
 
 

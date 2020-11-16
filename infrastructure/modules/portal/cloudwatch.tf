@@ -107,9 +107,43 @@ EOF
 
 }
 
+resource "aws_sns_topic_policy" "alarms" {
+  arn = aws_sns_topic.alarms.arn
+
+  policy = data.aws_iam_policy_document.alarms.json
+}
+
+data "aws_iam_policy_document" "alarms" {
+  policy_id = "${var.app}-${var.environment}-alarms"
+
+  statement {
+    sid = "allow linked accounts to publish to alarm topic"
+    effect = "Allow"
+    actions = ["SNS:Publish"]
+
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
+
+    resources = [
+      aws_sns_topic.alarms.arn,
+    ]
+
+    condition {
+      test     = "ArnLike"
+      variable = "aws:SourceArn"
+
+      values = [
+        for account_id in var.linked_account_ids:
+          "arn:aws:cloudwatch:${var.region}:${account_id}:alarm:*"
+      ]
+    }     
+  }
+}
+
 resource "aws_sns_topic_subscription" "lambda_alerts_sqs_target" {
   topic_arn = aws_sns_topic.alarms.arn
   protocol  = "sqs"
   endpoint  = aws_sqs_queue.alarm_queue.arn
 }
-

@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
+	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/turnerlabs/udeploy/component/cfg"
 	"github.com/turnerlabs/udeploy/component/integration/aws/lambda"
 	"github.com/turnerlabs/udeploy/component/integration/aws/secretsmanager"
@@ -12,7 +14,6 @@ import (
 
 	"github.com/turnerlabs/udeploy/component/session"
 
-	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/labstack/echo/v4"
 	"github.com/turnerlabs/udeploy/component/app"
 	"github.com/turnerlabs/udeploy/component/cache"
@@ -172,26 +173,18 @@ func SaveApp(c echo.Context) error {
 		if alarmARN, found := cfg.Get["SNS_ALARM_TOPIC_ARN"]; found {
 
 			for _, i := range newApp.Instances {
-				name := i.FunctionName
+				lambdaFunction, _ := getLambdaNameFrom(i.FunctionName)
 
-				if a, err := arn.Parse(i.FunctionName); err == nil {
-					name = a.Resource
-				}
-
-				if err := lambda.UpsertAlarm(name, i.FunctionAlias, i.Role, alarmARN); err != nil {
+				if err := lambda.UpsertAlarm(lambdaFunction, i.FunctionAlias, i.Role, alarmARN); err != nil {
 					return err
 				}
 			}
 
 			for name, i := range originalApp.Instances {
 				if _, found := newApp.Instances[name]; !found {
-					name := i.FunctionName
+					lambdaFunction, _ := getLambdaNameFrom(i.FunctionName)
 
-					if a, err := arn.Parse(i.FunctionName); err == nil {
-						name = a.Resource
-					}
-
-					if err := lambda.DeleteAlarm(name, i.Role); err != nil {
+					if err := lambda.DeleteAlarm(lambdaFunction, i.Role); err != nil {
 						log.Println(err)
 					}
 				}
@@ -243,6 +236,15 @@ func SaveApp(c echo.Context) error {
 	return c.JSON(http.StatusOK, v)
 }
 
+func getLambdaNameFrom(lambdaID string) (string, error) {
+	a, err := arn.Parse(lambdaID)
+	if err != nil {
+		return lambdaID, err
+	}
+
+	return strings.Replace(a.Resource, "function:", "", 1), nil
+}
+
 // DeleteApp ...
 func DeleteApp(c echo.Context) error {
 	ctx := c.Get("ctx").(mongo.SessionContext)
@@ -257,7 +259,9 @@ func DeleteApp(c echo.Context) error {
 	switch targetApp.Type {
 	case appTypeLambda:
 		for _, i := range targetApp.Instances {
-			if err := lambda.DeleteAlarm(i.FunctionName, i.Role); err != nil {
+			lambdaFunction, _ := getLambdaNameFrom(i.FunctionName)
+
+			if err := lambda.DeleteAlarm(lambdaFunction, i.Role); err != nil {
 				return err
 			}
 		}

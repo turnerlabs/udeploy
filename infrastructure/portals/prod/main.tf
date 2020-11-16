@@ -47,6 +47,8 @@ module "env" {
     saml_users = var.saml_users
 
     config_path = var.config_path
+
+    linked_account_ids = var.linked_account_ids
 }
 
 # KMS Key used to encrypt the portal 
