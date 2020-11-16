@@ -61,27 +61,31 @@ resource "aws_sqs_queue" "alarm_queue" {
 resource "aws_sqs_queue_policy" "alarm_queue_policy" {
   queue_url = aws_sqs_queue.alarm_queue.id
 
-  policy = <<POLICY
-{
-  "Version": "2012-10-17",
-  "Id": "sqspolicy",
-  "Statement": [
-    {
-      "Sid": "First",
-      "Effect": "Allow",
-      "Principal": "*",
-      "Action": "sqs:SendMessage",
-      "Resource": "${aws_sqs_queue.alarm_queue.arn}",
-      "Condition": {
-        "ArnEquals": {
-          "aws:SourceArn": "${aws_sns_topic.alarms.arn}"
-        }
-      }
-    }
-  ]
+  policy = data.aws_iam_policy_document.alarm_queue_policy.json
 }
-POLICY
 
+data "aws_iam_policy_document" "alarm_queue_policy" {
+  statement {
+    sid = "allow portal account to publish alarms"
+    effect = "Allow"
+
+    actions = ["sqs:SendMessage"]
+
+    resources = [aws_sqs_queue.alarm_queue.arn]
+
+    principals {
+      type = "AWS"
+      identifiers = ["*"]
+    }
+
+    condition {
+      test     = "ArnEquals"
+      variable = "aws:SourceArn"
+
+      values = [aws_sns_topic.alarms.arn]
+    }
+
+  }
 }
 
 resource "aws_sqs_queue" "s3_queue" {
@@ -121,4 +125,3 @@ data "template_file" "linked_account_ids" {
     account = var.linked_account_ids[count.index]
   }
 }
-

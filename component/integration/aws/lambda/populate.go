@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/turnerlabs/udeploy/component/app"
 
@@ -109,15 +110,11 @@ func populateInst(i app.Instance, svc *lambda.Lambda, cwsvc *cloudwatch.CloudWat
 			region, *fo.Configuration.FunctionName),
 	})
 
-	rootAlarmName := i.FunctionName
-
-	if a, err := arn.Parse(i.FunctionName); err == nil {
-		rootAlarmName = a.Resource
-	}
+	lambdaFunction, _ := getLambdaNameFrom(i.FunctionName)
 
 	alarm, err := cwsvc.DescribeAlarms(&cloudwatch.DescribeAlarmsInput{
 		AlarmNames: aws.StringSlice([]string{
-			buildAlarmName(rootAlarmName),
+			buildAlarmName(lambdaFunction),
 		}),
 	})
 	if err != nil {
@@ -133,6 +130,15 @@ func populateInst(i app.Instance, svc *lambda.Lambda, cwsvc *cloudwatch.CloudWat
 	}
 
 	return i, state, nil
+}
+
+func getLambdaNameFrom(lambdaID string) (string, error) {
+	a, err := arn.Parse(lambdaID)
+	if err != nil {
+		return lambdaID, err
+	}
+
+	return strings.Replace(a.Resource, "function:", "", 1), nil
 }
 
 func getRegion(arn string) (string, error) {

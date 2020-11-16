@@ -75,28 +75,3 @@ resource "aws_cloudwatch_event_target" "lambda-event" {
   arn       = "arn:aws:events:${var.region}:${var.portal_account_id}:event-bus/default"
   role_arn  = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.app}-${var.environment}"
 }
-
-resource "aws_sns_topic" "alarms" {
-  name = "${var.app}-${var.environment}-alarms"
-
-  delivery_policy = <<EOF
-{
-  "http": {
-    "defaultHealthyRetryPolicy": {
-      "minDelayTarget": 20,
-      "maxDelayTarget": 20,
-      "numRetries": 3,
-      "numMaxDelayRetries": 0,
-      "numNoDelayRetries": 0,
-      "numMinDelayRetries": 0,
-      "backoffFunction": "linear"
-    },
-    "disableSubscriptionOverrides": false,
-    "defaultThrottlePolicy": {
-      "maxReceivesPerSecond": 1
-    }
-  }
-}
-EOF
-
-}

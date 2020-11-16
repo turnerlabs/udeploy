@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/turnerlabs/udeploy/component/cfg"
@@ -89,6 +90,9 @@ type alert struct {
 type alertMessage struct {
 	Trigger alertTrigger `json:"Trigger"`
 
+	AccountID string `json:"AWSAccountId"`
+	AlarmARN  string `json:"AlarmArn"`
+
 	NewStateReason string `json:"NewStateReason"`
 	NewStateValue  string `json:"NewStateValue"`
 	OldStateValue  string `json:"OldStateValue"`
@@ -125,9 +129,12 @@ func (a alert) toView() (MessageView, error) {
 		}
 	}
 
-	v := MessageView{
-		ID: fmt.Sprintf("%s-%s", name, alias),
+	alarmARN, err := arn.Parse(msg.AlarmARN)
+	if err != nil {
+		return MessageView{}, err
 	}
 
-	return v, nil
+	return MessageView{
+		ID: fmt.Sprintf("arn:aws:lambda:%s:%s:function:%s:%s", alarmARN.Region, msg.AccountID, name, alias),
+	}, nil
 }
