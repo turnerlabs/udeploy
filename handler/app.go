@@ -175,7 +175,7 @@ func SaveApp(c echo.Context) error {
 			for _, i := range newApp.Instances {
 				lambdaFunction, _ := getLambdaNameFrom(i.FunctionName)
 
-				if err := lambda.UpsertAlarm(lambdaFunction, i.FunctionAlias, i.Role, alarmARN); err != nil {
+				if err := lambda.UpsertAlarm(i.FunctionName, lambdaFunction, i.FunctionAlias, i.Role, alarmARN); err != nil {
 					return err
 				}
 			}
