@@ -29,7 +29,7 @@ func DeleteAlarm(functionName, role string) error {
 }
 
 // UpsertAlarm ...
-func UpsertAlarm(functionName, functionAlias, role, snsTopicArn string) error {
+func UpsertAlarm(functionID, functionName, functionAlias, role, snsTopicArn string) error {
 	session := session.New()
 
 	if len(role) > 0 {
@@ -40,7 +40,7 @@ func UpsertAlarm(functionName, functionAlias, role, snsTopicArn string) error {
 
 	_, err := svc.PutMetricAlarm(&cloudwatch.PutMetricAlarmInput{
 		AlarmName:          aws.String(buildAlarmName(functionName)),
-		AlarmDescription:   aws.String(fmt.Sprintf("monitor %s errors", functionName)),
+		AlarmDescription:   aws.String(fmt.Sprintf("%s:%s", functionID, functionAlias)),
 		ComparisonOperator: aws.String("GreaterThanThreshold"),
 		EvaluationPeriods:  aws.Int64(1),
 		MetricName:         aws.String("Errors"),

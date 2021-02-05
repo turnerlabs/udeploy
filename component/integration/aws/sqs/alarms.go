@@ -2,13 +2,10 @@ package sqs
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"strconv"
-	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/turnerlabs/udeploy/component/cfg"
@@ -90,8 +87,9 @@ type alert struct {
 type alertMessage struct {
 	Trigger alertTrigger `json:"Trigger"`
 
-	AccountID string `json:"AWSAccountId"`
-	AlarmARN  string `json:"AlarmArn"`
+	AccountID        string `json:"AWSAccountId"`
+	AlarmARN         string `json:"AlarmArn"`
+	AlarmDescription string `json:"AlarmDescription"`
 
 	NewStateReason string `json:"NewStateReason"`
 	NewStateValue  string `json:"NewStateValue"`
@@ -117,24 +115,7 @@ func (a alert) toView() (MessageView, error) {
 		return MessageView{}, err
 	}
 
-	name, alias := "", ""
-	for _, d := range msg.Trigger.Dimensions {
-		if d.Name == "Resource" {
-			values := strings.Split(d.Value, ":")
-
-			if len(values) == 2 {
-				name = values[0]
-				alias = values[1]
-			}
-		}
-	}
-
-	alarmARN, err := arn.Parse(msg.AlarmARN)
-	if err != nil {
-		return MessageView{}, err
-	}
-
 	return MessageView{
-		ID: fmt.Sprintf("arn:aws:lambda:%s:%s:function:%s:%s", alarmARN.Region, msg.AccountID, name, alias),
+		ID: msg.AlarmDescription,
 	}, nil
 }
