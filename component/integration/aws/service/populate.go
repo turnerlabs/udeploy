@@ -209,10 +209,11 @@ func getServiceError(tasks []*ecs.Task, expiration time.Duration) (int, error) {
 	var reason error
 	count := 0
 
+	const TaskStopCodeServiceSchedulerInitiated = "ServiceSchedulerInitiated"
+
 	for _, t := range tasks {
 		if t.StopCode != nil && t.StoppedReason != nil {
-			if *t.StopCode != ecs.TaskStopCodeUserInitiated {
-
+			if *t.StopCode != ecs.TaskStopCodeUserInitiated && *t.StopCode != TaskStopCodeServiceSchedulerInitiated {
 				switch *t.StopCode {
 				case ecs.TaskStopCodeTaskFailedToStart:
 					if time.Now().Sub(*t.CreatedAt) < expiration {
