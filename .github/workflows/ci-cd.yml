@@ -9,9 +9,6 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
-    - uses: olegtarasov/get-tag@v1
-      id: tagName
-
     - name: Log Build Number
       run : echo 'Build ${{ github.run_number }}'
 
@@ -30,7 +27,7 @@ jobs:
 
     - name: Set docker image
       env:
-        REPO: quay.io/turner/udeploy:${{ steps.tagName.outputs.tag }}.${{ github.run_number }}
+        REPO: quay.io/turner/udeploy:${GITHUB_REF##*/}.${{ github.run_number }}
       run: |
         echo "export IMAGE=$REPO" >> ./env
         cat ./env
@@ -38,7 +35,7 @@ jobs:
     - name: Build image
       uses: turnerlabs/fargate-cicd-action@master
       with:
-        args: . ./env; docker build -t $IMAGE --build-arg version=${{ steps.tagName.outputs.tag }}.${{ github.run_number }} .
+        args: . ./env; docker build -t $IMAGE --build-arg version=${GITHUB_REF##*/}.${{ github.run_number }} .
     
     - name: Log in to Quay
       uses: turnerlabs/fargate-cicd-action@master
