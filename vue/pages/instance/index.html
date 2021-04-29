@@ -69,6 +69,7 @@
                       Tasks ({{ instance.task.tasksInfo.length }}) <a title="refresh page" class="button is-pulled-right is-small" v-bind:class="{'is-loading': isPartialLoading}"  @click="refresh()"><span class="icon is-small"><i class="fas fa-sync"></i></span></a>
                   </div>
                   <div class="message-body">
+                    <div class="scroll">
                     <table>
                         <tr><th>ID Prefix</th><th>Version</th><th>Status</th><th>Reason</th></tr>
                         <tr v-for="ti in sortTasks(instance.task.tasksInfo)">
@@ -80,6 +81,7 @@
                           <td>{{ ti.reason }}</td>
                         </tr>
                     </table>
+                    </div>
                   </div>
                 </article>
 
