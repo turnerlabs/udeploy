@@ -202,7 +202,7 @@ func getTaskDetails(svc *ecs.ECS, inst app.Instance, tasks []*ecs.Task, status, 
 		return tasks, nil
 	}
 
-	return getTaskDetails(svc, inst, tasks, status, nextToken)
+	return getTaskDetails(svc, inst, tasks, status, *stoppedTasks.NextToken)
 }
 
 func getServiceError(tasks []*ecs.Task, expiration time.Duration) (int, error) {
