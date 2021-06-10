@@ -39,10 +39,10 @@
                         </div>
                     </div>
                     <div class="column is-4">
-                        <div class="buttons is-right">
-                            <button title="Collapse all projects" class="button" @click.stop.prevent="collapseProjects()">
+                        <div v-if="view.grid" class="buttons is-right">
+                            <button v-if="showCollapseAll" title="Collapse all projects." class="button" @click.stop.prevent="collapseProjects()">
                                 <span class="icon is-small">
-                                    <i v-if="view.grid" title="Collapse all projects" class="has-text-right cursor-pointer fa fa-angle-double-down" @click="collapseProjects()"></i>
+                                    <i class="has-text-right cursor-pointer fa fa-angle-double-left" @click="collapseProjects()"></i>
                                 </span>
                             </button>
                         </div>
@@ -142,8 +142,8 @@
                 <div v-for="project in sortApps(projects)" v-if="showProject(project)" class="app panel">
                     <p class="panel-heading has-text-right has-text-weight-bold is-size-4 has-text-grey-darker has-background-white-bis cursor-pointer" v-if="project.is" @click="toggleProject(project)">
                         {{ project.name.toUpperCase() }}
-                        <i v-if="project.collapsed" class="fas fa-angle-down"></i>
-                        <i v-if="!project.collapsed" class="fas fa-angle-left"></i>
+                        <i title="Expand project." v-if="project.collapsed" class="fas fa-angle-left toggle-collapse"></i>
+                        <i title="Collapse project." v-if="!project.collapsed" class="fas fa-angle-down toggle-collapse"></i>
                     </p>
                     <div class="panel-block has-background-white" v-if="!project.collapsed">
                         <div class="tile is-ancestor">

@@ -43,3 +43,7 @@
 .cursor-pointer {
   cursor: pointer;
 }
+
+.toggle-collapse {
+  width: 20px; 
+}
