@@ -12,6 +12,8 @@ includeTenplates().then(() => {
             apps: [],
             projects: [],
 
+            showCollapseAll: true,
+
             modal: {
                 deploy: {show: false},
                 scale: {show: false, action: ""},
@@ -109,16 +111,35 @@ includeTenplates().then(() => {
                     if (p.name === e.name) {
                         p.collapsed = !p.collapsed;
                     }
+
                     return p;
                 });
+
+                this.showCollapseAll = this.anyProjectExpanded();
             },
             collapseProjects() {
                 this.projects = this.projects.map((p) => {
                     if (p.apps.length > 1) {
                         p.collapsed = true;
                     }
+
                     return p;
                 });
+
+                this.showCollapseAll = false;
+            },
+            anyProjectExpanded() {
+                let expanded = false
+
+                this.projects.map((p) => {
+                    if (p.apps && p.apps.length > 1) {
+                        if (!p.collapsed) {
+                            expanded = true
+                        }
+                    }
+                });
+
+                return expanded
             },
             jumpTo() {
                 let hash = window.location.hash.replace("#", "")
@@ -430,7 +451,7 @@ includeTenplates().then(() => {
                 let body = {
                     terms: this.filter.terms.length > 0 ? this.filter.terms.trim().split(" ") : [],
                 }
-
+                
                 fetch('/v1/apps/filter', {
                     method: "POST",
                     body: JSON.stringify(body),
@@ -453,6 +474,7 @@ includeTenplates().then(() => {
                     that.alerts.push({ error: e });                    
                 }).finally(function() {
                     that.isLoading = false;
+                    that.showCollapseAll = true;
 
                     if (jump) {
                         that.jumpTo();
