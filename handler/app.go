@@ -193,14 +193,16 @@ func SaveApp(c echo.Context) error {
 	}
 
 	if len(newApp.Repo.AccessToken) > 0 {
-		err := secretsmanager.Save(
-			newApp.RepoAccessTokenKey(),
-			newApp.Repo.AccessToken,
-			"Repository Access Token",
-			cfg.Get["KMS_KEY_ID"])
+		if newApp.Repo.AccessToken != originalApp.Repo.AccessToken {
+			err := secretsmanager.Save(
+				newApp.RepoAccessTokenKey(),
+				newApp.Repo.AccessToken,
+				"Repository Access Token",
+				cfg.Get["KMS_KEY_ID"])
 
-		if err != nil {
-			return err
+			if err != nil {
+				return err
+			}
 		}
 	} else if len(originalApp.Repo.AccessToken) > 0 {
 		if err := secretsmanager.Delete(newApp.RepoAccessTokenKey()); err != nil {
