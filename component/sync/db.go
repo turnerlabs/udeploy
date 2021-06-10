@@ -5,6 +5,7 @@ import (
 
 	"github.com/turnerlabs/udeploy/component/action"
 	"github.com/turnerlabs/udeploy/component/app"
+	"github.com/turnerlabs/udeploy/component/integration/aws/secretsmanager"
 
 	"go.mongodb.org/mongo-driver/mongo"
 
@@ -43,7 +44,15 @@ func WatchDatabaseApps(ctx mongo.SessionContext) error {
 		}{}
 
 		if err := cur.Decode(&change); err != nil {
-			log.Fatal(err)
+			return err
+		}
+
+		if len(change.App.Repo.Org) > 0 {
+			gitHubAccessToken, err := secretsmanager.Get(change.App.RepoAccessTokenKey())
+			if err != nil {
+				return err
+			}
+			change.App.Repo.AccessToken = gitHubAccessToken
 		}
 
 		switch change.OperationType {
