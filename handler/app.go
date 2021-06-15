@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws/arn"
@@ -11,13 +12,13 @@ import (
 	"github.com/turnerlabs/udeploy/component/integration/aws/lambda"
 	"github.com/turnerlabs/udeploy/component/integration/aws/secretsmanager"
 	"github.com/turnerlabs/udeploy/component/project"
+	"github.com/turnerlabs/udeploy/component/supplement"
 
 	"github.com/turnerlabs/udeploy/component/session"
 
 	"github.com/labstack/echo/v4"
 	"github.com/turnerlabs/udeploy/component/app"
 	"github.com/turnerlabs/udeploy/component/cache"
-	"github.com/turnerlabs/udeploy/component/supplement"
 	"github.com/turnerlabs/udeploy/component/user"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -35,12 +36,14 @@ func GetApp(c echo.Context) error {
 		return err
 	}
 
-	instances, err := supplement.Instances(ctx, apps[0].Type, apps[0].Instances, true)
-	if err != nil {
-		return err
-	}
+	if !configOnly(c) {
+		instances, err := supplement.Instances(ctx, apps[0].Type, apps[0].Instances, true)
+		if err != nil {
+			return err
+		}
 
-	apps[0].Instances = instances
+		apps[0].Instances = instances
+	}
 
 	token, err := secretsmanager.Get(apps[0].RepoAccessTokenKey())
 	if err != nil {
@@ -49,8 +52,10 @@ func GetApp(c echo.Context) error {
 
 	apps[0].Repo.AccessToken = token
 
-	if err := cache.Apps.Update(apps[0]); err != nil {
-		return err
+	if !configOnly(c) {
+		if err := cache.Apps.Update(apps[0]); err != nil {
+			return err
+		}
 	}
 
 	project, err := project.Get(ctx, apps[0].ProjectID)
@@ -59,6 +64,16 @@ func GetApp(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, apps[0].ToView(usr, project))
+}
+
+func configOnly(c echo.Context) bool {
+	configOnly, err := strconv.ParseBool(c.QueryParam("configOnly"))
+
+	if err == nil && configOnly {
+		return true
+	}
+
+	return false
 }
 
 // FilterApps ..

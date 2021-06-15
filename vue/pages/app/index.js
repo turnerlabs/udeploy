@@ -88,7 +88,7 @@ includeTenplates().then(() => {
 
                 if (!that.isNew()) {
                     
-                    fetch('/v1/apps/'+that.params.app).then(function(response) {
+                    fetch('/v1/apps/'+that.params.app+"?configOnly=true").then(function(response) {
                         return response.json()
                     })
                     .then(function(data) {

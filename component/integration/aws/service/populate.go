@@ -38,17 +38,23 @@ func Populate(instances map[string]app.Instance) (map[string]app.Instance, error
 
 		ascv := applicationautoscaling.New(session)
 
-		ao, err := ascv.DescribeScalableTargets(&applicationautoscaling.DescribeScalableTargetsInput{
+		ao, targetErr := ascv.DescribeScalableTargets(&applicationautoscaling.DescribeScalableTargetsInput{
 			ServiceNamespace: aws.String("ecs"),
 			ResourceIds:      aws.StringSlice(resourceIds),
 		})
-		if err != nil {
-			return instances, err
+		if targetErr != nil {
+			ao = &applicationautoscaling.DescribeScalableTargetsOutput{
+				ScalableTargets: []*applicationautoscaling.ScalableTarget{},
+			}
 		}
 
-		i, state, err := populateInst(instance, ao.ScalableTargets, svc)
-		if err != nil {
-			state.SetError(err)
+		i, state, populateErr := populateInst(instance, ao.ScalableTargets, svc)
+
+		if populateErr != nil {
+			state.SetError(populateErr)
+		}
+		if targetErr != nil {
+			state.SetError(targetErr)
 		}
 
 		i.SetState(state)
@@ -234,7 +240,15 @@ func getServiceError(tasks []*ecs.Task, expiration time.Duration) (int, error) {
 }
 
 func isPending(svc *ecs.Service) bool {
-	return (len(svc.Deployments) > 1 && *svc.DesiredCount > 0) || *svc.DesiredCount > 0 && *svc.RunningCount == 0
+	return isActiveDeployment(svc) || isStarting(svc)
+}
+
+func isStarting(svc *ecs.Service) bool {
+	return *svc.DesiredCount > 0 && *svc.RunningCount == 0
+}
+
+func isActiveDeployment(svc *ecs.Service) bool {
+	return (len(svc.Deployments) > 1 && *svc.PendingCount > 0) || (len(svc.Deployments) > 1 && *svc.DesiredCount != *svc.RunningCount)
 }
 
 func isStopped(svc *ecs.Service) bool {
