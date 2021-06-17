@@ -3,8 +3,10 @@ package secretsmanager
 import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
+	"github.com/turnerlabs/udeploy/component/app"
 )
 
 // Save ...
@@ -43,6 +45,24 @@ func Save(key, value, description, KmsKeyID string) error {
 	}); err != nil {
 		return err
 	}
+
+	return err
+}
+
+// UpdateForInstance ...
+func UpdateForInstance(key, value string, inst app.Instance) error {
+	session := session.New()
+
+	if len(inst.ConfigRole) > 0 {
+		session.Config.WithCredentials(stscreds.NewCredentials(session, inst.ConfigRole))
+	}
+
+	svc := secretsmanager.New(session)
+
+	_, err := svc.UpdateSecret(&secretsmanager.UpdateSecretInput{
+		SecretId:     aws.String(key),
+		SecretString: aws.String(value),
+	})
 
 	return err
 }

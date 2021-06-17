@@ -565,6 +565,63 @@
                               </div>
                           </div>
                         </div>
+                        <div class="field is-horizontal">
+                          <div class="field-label is-normal">
+                            <label class="label">Config Role (ARN)</label>
+                          </div>
+                          <div class="field-body">
+                            <div class="field">
+                              <p class="control">
+                                <input class="input repo" :disabled="!i.claims['edit'] && !user.admin" type="text"  v-model="i.configRole" title="The AWS role arn that has permission to the configuration service.">
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="field is-horizontal">
+                          <div class="field-label is-normal">
+                              <label class="label">Configuration Links</label>
+                              <p class="help">Add links to AWS Secrets Manager secrets. Once linked, secrets can be viewed or edited by users with edit permission for the instance.</p>
+                          </div>
+                          <div class="field-body">
+                            <div class="box links">
+                            <table>
+                                <tr><th>Descriptive Name</th><th>AWS ARN or Name</th><th>AWS Service</th><td></td></tr>
+                                <tr v-for="(l, lIndex) in i.configLinks" :key="l.id">
+                                  <td>
+                                      <input class="input" :disabled="(!i.claims['edit'] && !user.admin)" type="text" v-model="l.name">
+                                  </td>
+                                  <td>
+                                    <input class="input" :disabled="(!i.claims['edit'] && !user.admin)" type="text" v-model="l.linkId">
+                                  </td>
+                                  <td>
+                                    <div class="select">
+                                      <select v-model="l.service">
+                                        <option value="secrets-manager" selected>Secrets Manager</option>
+                                        <!-- <option value="parameter-store">Parameter Store</option> -->
+                                      </select>
+                                    </div>
+                                  </td>
+                                  <td>
+                                    <button title="Remove config link." class="button is-pulled-right" v-if="(i.claims['edit'] || user.admin)" @click="removeConfigLink(index, lIndex)">
+                                      <span class="icon is-small">
+                                          <i class="fas fa-minus"></i>
+                                      </span>
+                                    </button>
+                                  </td>
+                                </tr>
+                                <tr><td></td><td></td><td></td>
+                                  <td>
+                                    <button title="Add config link." class="button is-pulled-right" :disabled="!i.claims['edit'] && !user.admin" @click="addConfigLink(index)">
+                                      <span class="icon is-small">
+                                          <i class="fas fa-plus"></i>
+                                      </span>
+                                    </button>
+                                  </td>
+                              </tr>
+                            </table>
+                            </div>
+                        </div>
+                      </div>
                     </div>
                     <hr />
                   </article>

@@ -57,6 +57,9 @@ type InstanceView struct {
 	Tokens map[string]string `json:"tokens"`
 
 	Links []Link `json:"links"`
+
+	ConfigRole  string       `json:"configRole"`
+	ConfigLinks []ConfigLink `json:"configLinks"`
 }
 
 // DeploymentView ...
@@ -92,13 +95,15 @@ type Instance struct {
 	S3RegistryPrefix string `json:"s3RegistryPrefix,omitempty" bson:"s3RegistryPrefix"`
 	CloudFrontID     string `json:"cloudFrontId,omitempty" bson:"cloudFrontId"`
 
-	Repository     string `json:"repository,omitempty" bson:"repository"`
-	RepositoryRole string `json:"repositoryRole,omitempty" bson:"repositoryRole"`
-	DeployCode     string `json:"deployCode" bson:"deployCode"`
-	AutoPropagate  bool   `json:"autoPropagate" bson:"autoPropagate"`
-	AutoScale      bool   `json:"autoScale"`
-	Task           Task   `json:"task" bson:"taskDefinition"`
-	Links          []Link `json:"links" bson:"links"`
+	Repository     string       `json:"repository,omitempty" bson:"repository"`
+	RepositoryRole string       `json:"repositoryRole,omitempty" bson:"repositoryRole"`
+	DeployCode     string       `json:"deployCode" bson:"deployCode"`
+	AutoPropagate  bool         `json:"autoPropagate" bson:"autoPropagate"`
+	AutoScale      bool         `json:"autoScale"`
+	Task           Task         `json:"task" bson:"taskDefinition"`
+	Links          []Link       `json:"links" bson:"links"`
+	ConfigRole     string       `json:"configRole" bson:"configRole"`
+	ConfigLinks    []ConfigLink `json:"configLinks" bson:"configLinks"`
 
 	// Calculated Fields
 	CurrentState  State `json:"-" bson:"-"`
@@ -185,6 +190,13 @@ type Link struct {
 	Generated   bool   `json:"generated" bson:"-"`
 }
 
+// ConfigLink ...
+type ConfigLink struct {
+	LinkID  string `json:"linkId" bson:"linkId"`
+	Name    string `json:"name" bson:"name"`
+	Service string `json:"service" bson:"service"`
+}
+
 // ToBusiness ...
 func (v InstanceView) ToBusiness() Instance {
 
@@ -195,6 +207,7 @@ func (v InstanceView) ToBusiness() Instance {
 		EventRule:        v.EventRule,
 		Repository:       v.Repository,
 		RepositoryRole:   v.RepositoryRole,
+		ConfigRole:       v.ConfigRole,
 		FunctionName:     v.FunctionName,
 		FunctionAlias:    v.FunctionAlias,
 		S3Bucket:         v.S3Bucket,
@@ -222,6 +235,10 @@ func (v InstanceView) ToBusiness() Instance {
 		if !l.Generated {
 			i.Links = append(i.Links, l)
 		}
+	}
+
+	for _, l := range v.ConfigLinks {
+		i.ConfigLinks = append(i.ConfigLinks, l)
 	}
 
 	return i
@@ -258,6 +275,8 @@ func (i Instance) ToView(name string, appClaim user.AppClaim) InstanceView {
 		AutoScale:        i.AutoScale,
 		Order:            i.Order,
 		Links:            i.Links,
+		ConfigRole:       i.ConfigRole,
+		ConfigLinks:      i.ConfigLinks,
 		Task: TaskView{
 			ImageTagEx:   i.Task.ImageTagEx,
 			CronEnabled:  i.Task.CronEnabled,
@@ -276,6 +295,10 @@ func (i Instance) ToView(name string, appClaim user.AppClaim) InstanceView {
 
 	if v.Links == nil {
 		v.Links = []Link{}
+	}
+
+	if v.ConfigLinks == nil {
+		v.ConfigLinks = []ConfigLink{}
 	}
 
 	for _, c := range appClaim.Claims[name] {

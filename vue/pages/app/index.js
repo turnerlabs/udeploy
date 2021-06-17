@@ -54,6 +54,7 @@ includeTenplates().then(() => {
                     "repository":"",
                     "deployCode":"",
                     "links": [],
+                    "configLinks": [],
                     "task":{
                         "family":"",
                         "registry":"",
@@ -105,6 +106,8 @@ includeTenplates().then(() => {
                         for (let x = 0; x < app.instances.length; x++) {
                             app.instances[x].links = app.instances[x].links.sort((a, b) => (a.generated < b.generated) ? 1 : -1)
                             app.instances[x].links = that.addUniqueIds(app.instances[x].links)
+
+                            app.instances[x].configLinks = that.addUniqueIds(app.instances[x].configLinks)
                         }
                         
                         that.app = app;
@@ -115,6 +118,7 @@ includeTenplates().then(() => {
                     })
                     .catch(function(e) {
                         that.addError(e.message, "general");
+                        throw e;
                     }); 
                 } else {
                     that.app = obj.copy(that.defaultApp);
@@ -140,6 +144,15 @@ includeTenplates().then(() => {
                 this.app.instances[index].links.push(
                 {
                     "id":  this.newUniqueId(this.app.instances[index].links)
+                });
+            },
+            removeConfigLink(index, linkIndex) {
+                this.app.instances[index].configLinks.splice(linkIndex, 1);
+            },
+            addConfigLink(index) {
+                this.app.instances[index].configLinks.push(
+                {
+                    "id":  this.newUniqueId(this.app.instances[index].configLinks)
                 });
             },
             addUniqueIds(list) {
@@ -254,6 +267,7 @@ includeTenplates().then(() => {
                         d.name = d.name + "-"+ this.app.instances.length
                         d.task.tasksInfo = [];
                         d.links = [];
+                        d.configLinks = [];
                         d.edited = true;
                     }
                 }

@@ -76,12 +76,12 @@
         </div>
     </section>
     <footer class="modal-card-foot content is-centered">
-        <div class="container has-text-centered">
+        <div class="container has-text-centered modal-controls">
             <div v-if="willPropagate()" class="box has-background-warning content">
                 This deployment will automatically propagate to other instances. Auto-propagation can be disabled in the application's instance <a :href="'/apps/' + app.name">settings</a>.
             </div>
             <div v-if="instance.deployCode.length > 0" class="field is-horizontal">
-                <input class="input is-danger" type="text" v-on:keyup="validateDeployCode" placeholder="authorization code required">
+                <input class="input" v-bind:class="{ 'is-danger': !deployAuthorized, 'is-success': deployAuthorized }" type="text" v-on:keyup="validateDeployCode" placeholder="authorization code required">
             </div>
             <div v-if="warn.length > 0" class="box has-background-warning content">
                 {{ warn }}

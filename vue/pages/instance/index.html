@@ -64,6 +64,24 @@
                   </div>
                 </article>
 
+                <article class="message is-primary" v-if="instance.configLinks && instance.configLinks.length > 0">
+                  <div class="message-header">
+                    Linked Configuration
+                  </div>
+                  <div class="message-body">
+                    <table class="env">
+                      <tr><th>Description</th><th>AWS Service</th><th></th></tr>
+                      <tr v-for="l in instance.configLinks">
+                        <td>{{ l.name }}</td>
+                        <td>{{ l.service.replace("-", " ") }}</td>
+                        <td>
+                          <button v-if="instance.claims['edit']" class="button is-info" @click="modal.config = { link: l, show: true };">Edit</button>
+                        </td>
+                      </tr>
+                  </table>
+                  </div>
+                </article>
+
                 <article class="message is-primary" v-if="instance.task.tasksInfo && instance.task.tasksInfo.length > 0">
                   <div class="message-header">
                       Tasks ({{ instance.task.tasksInfo.length }}) <a title="refresh page" class="button is-pulled-right is-small" v-bind:class="{'is-loading': isPartialLoading}"  @click="refresh()"><span class="icon is-small"><i class="fas fa-sync"></i></span></a>
@@ -143,7 +161,10 @@
           </div>
         </div>
 
+        <config-modal v-if="modal.config.show" @close="modal.config.show = false" :app="app" :instance="instance" :link="modal.config.link"></config-modal>
     </div>
+
+    <div html-template="/component/config/modal/index.html"></div>
 </body>
 </html>
 
@@ -151,4 +172,5 @@
 <script src="/component/header/bar.js?auto-version=14419" type="module"></script>
 <script src="/component/footer/bar.js?auto-version=14419" type="module"></script>
 <script src="/component/alert/banner.js?auto-version=14419" type="module"></script>
+<script src="/component/config/modal/index.js?auto-version=14419" type="module"></script>
 <script src="/pages/instance/index.js?auto-version=14419" type="module"></script>

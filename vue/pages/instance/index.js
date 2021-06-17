@@ -31,6 +31,13 @@ includeTenplates().then(() => {
             isPartialLoading: false,
             isLoadingCommits: false,
 
+            modal: {
+                config: {
+                    link: {},
+                    show: false,
+                }
+            },
+
             page: {},
             updated: ""
         },

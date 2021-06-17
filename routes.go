@@ -123,6 +123,9 @@ func startRouter(changeNotifier *broker.Broker) {
 	v1.GET("/apps/:app/instances/:instance/audit", handler.GetAuditEntries)
 	v1.GET("/apps/:app/version/range/:current/to/:target/commits", handler.GetVersionCommitsByRange, cache.EnsureCache)
 
+	v1.GET("/apps/:app/instances/:instance/config", handler.GetConfigValue, auth.RequireEdit)
+	v1.POST("/apps/:app/instances/:instance/config", handler.SaveConfigValue, auth.RequireEdit)
+
 	//--------------------------------------------------
 	//- UI static files
 	//--------------------------------------------------

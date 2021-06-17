@@ -1,0 +1,31 @@
+<script type="text/x-template" id="config-modal-template">
+<div class="modal is-active">
+<div class="modal-background"></div>
+<div class="modal-card">
+    <header class="modal-card-head">
+        <p class="modal-card-title">Configuration</p>
+        <button class="delete" @click="$emit('close')" aria-label="close" title="Discard changes."></button>
+    </header>
+    <section class="modal-card-body">
+        <div class="field is-horizontal">
+            <textarea id="value" class="textarea" placeholder="" v-model="value" rows="20"></textarea>  
+        </div>
+    </section>
+    <footer class="modal-card-foot content is-centered">
+        <div v-if="instance.claims['edit']" class="container has-text-centered modal-controls">
+            <div v-if="instance.deployCode.length > 0" class="field is-horizontal">
+                <input class="input" v-bind:class="{ 'is-danger': !saveAuthorized, 'is-success': saveAuthorized }" type="text" v-on:keyup="validateDeployCode" placeholder="authorization code required">
+            </div>
+            <div v-if="warn.length > 0" class="box has-background-warning content">
+                {{ warn }}
+            </div>
+            <div v-if="error.length > 0" class="box has-background-danger has-text-white content">
+                {{ error }}
+            </div>
+            <button class="button is-primary" v-bind:class="{ 'is-loading': pending }" :disabled="pending || !saveAuthorized ? true : false" @click="saveValue()">Save</button>
+            <button class="button is-warning" @click="$emit('close')" title="Discard changes.">Cancel</button>
+        </div>
+    </footer>
+</div>
+</div>
+</script>

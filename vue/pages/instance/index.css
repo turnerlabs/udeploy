@@ -31,6 +31,10 @@
   color: #000 !important;
 }
 
+.modal-controls {
+  width: 100%;
+}
+
 [v-cloak] {
   display: none;
 }

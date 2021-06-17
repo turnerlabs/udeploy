@@ -73,6 +73,7 @@ func (i Instance) Copy() Instance {
 		Repository:       i.Repository,
 		FunctionName:     i.FunctionName,
 		FunctionAlias:    i.FunctionAlias,
+		ConfigRole:       i.ConfigRole,
 		S3Bucket:         i.S3Bucket,
 		S3Prefix:         i.S3Prefix,
 		S3ConfigKey:      i.S3ConfigKey,
@@ -90,6 +91,10 @@ func (i Instance) Copy() Instance {
 
 	for _, l := range i.Links {
 		n.Links = append(n.Links, l)
+	}
+
+	for _, l := range i.ConfigLinks {
+		n.ConfigLinks = append(n.ConfigLinks, l)
 	}
 
 	return n

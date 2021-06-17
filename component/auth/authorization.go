@@ -2,8 +2,9 @@ package auth
 
 import (
 	"fmt"
-	"github.com/turnerlabs/udeploy/component/user"
 	"net/http"
+
+	"github.com/turnerlabs/udeploy/component/user"
 
 	"github.com/turnerlabs/udeploy/component/session"
 
@@ -56,5 +57,21 @@ func RequireScale(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		return echo.NewHTTPError(http.StatusUnauthorized, fmt.Sprintf("user %s unauthorized for scale on %s %s", usr.Email, c.Param("app"), c.Param("instance")))
+	}
+}
+
+// RequireEdit ...
+func RequireEdit(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+
+		ctx := c.Get("ctx").(mongo.SessionContext)
+
+		usr := ctx.Value(session.ContextKey("user")).(user.User)
+
+		if usr.HasPermission(c.Param("app"), c.Param("instance"), "edit") {
+			return next(c)
+		}
+
+		return echo.NewHTTPError(http.StatusUnauthorized, fmt.Sprintf("user %s unauthorized for edit on %s %s", usr.Email, c.Param("app"), c.Param("instance")))
 	}
 }
