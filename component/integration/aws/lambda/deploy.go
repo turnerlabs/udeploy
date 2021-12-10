@@ -68,7 +68,19 @@ func deployFromLambda(source, target app.Instance, revision int64, opts task.Dep
 		return err
 	}
 
+	if err := targetSVC.WaitUntilFunctionUpdated(&lambda.GetFunctionConfigurationInput{
+		FunctionName: aws.String(target.FunctionName),
+	}); err != nil {
+		return err
+	}
+
 	if err := deployConfig(source, target, opts, sourceSVC, targetSVC); err != nil {
+		return err
+	}
+
+	if err := targetSVC.WaitUntilFunctionUpdated(&lambda.GetFunctionConfigurationInput{
+		FunctionName: aws.String(target.FunctionName),
+	}); err != nil {
 		return err
 	}
 
@@ -124,7 +136,19 @@ func deployFromS3(source, target app.Instance, revision int64, opts task.DeployO
 		return err
 	}
 
+	if err := targetSVC.WaitUntilFunctionUpdated(&lambda.GetFunctionConfigurationInput{
+		FunctionName: aws.String(target.FunctionName),
+	}); err != nil {
+		return err
+	}
+
 	if err := deployConfig(source, target, opts, sourceSVC, targetSVC); err != nil {
+		return err
+	}
+
+	if err := targetSVC.WaitUntilFunctionUpdated(&lambda.GetFunctionConfigurationInput{
+		FunctionName: aws.String(target.FunctionName),
+	}); err != nil {
 		return err
 	}
 
@@ -272,7 +296,7 @@ func deployCodeFromLambda(sourceCodeURL, targetFuncName string, svc *lambda.Lamb
 		ZipFile:      b,
 	})
 
-	return nil
+	return err
 }
 
 func mapConfiguration(config lambda.FunctionConfiguration) lambda.UpdateFunctionConfigurationInput {

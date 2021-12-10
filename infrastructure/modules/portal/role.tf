@@ -71,6 +71,7 @@ data "aws_iam_policy_document" "app_policy" {
       "lambda:DeleteFunction",
       "lambda:PublishVersion",
       "lambda:GetFunction",
+      "lambda:GetFunctionConfiguration",
       "lambda:ListVersionsByFunction",
       "lambda:UpdateFunctionConfiguration",
       "lambda:UpdateFunctionCode",
