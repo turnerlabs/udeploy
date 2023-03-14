@@ -10,6 +10,8 @@ WORKDIR /deploy
 RUN sed -i'.av' -E "s/\?auto-version=[0-9]+/\?auto-version=$RANDOM/g" vue/pages/**/*.html
 RUN find vue/pages -name '*.av' -delete
 
+RUN MISSING_ENV_OK=true go test ./...
+
 RUN go build -ldflags '-X main.version='$version
 
 CMD ./udeploy
