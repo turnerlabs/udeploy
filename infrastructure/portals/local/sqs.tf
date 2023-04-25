@@ -93,7 +93,7 @@ resource "aws_sqs_queue" "s3_queue" {
   "Statement": [
     {
       "Effect": "Allow",
-      "Principal": { "AWS": ${jsonencode(concat(data.template_file.linked_account_ids.*.rendered, ["${data.aws_caller_identity.current.account_id}"]))} },
+      "Principal": { "AWS": ${jsonencode(concat(var.linked_account_ids, ["${data.aws_caller_identity.current.account_id}"]))} },
       "Action": "sqs:SendMessage",
       "Resource": "arn:aws:sqs:*:*:${var.app}-${var.environment}-s3-queue",
       "Condition": {
@@ -105,14 +105,3 @@ resource "aws_sqs_queue" "s3_queue" {
 POLICY
 
 }
-
-//render dynamic list of linked account ids
-data "template_file" "linked_account_ids" {
-  count    = length(var.linked_account_ids)
-  template = "$${account}"
-
-  vars = {
-    account = var.linked_account_ids[count.index]
-  }
-}
-

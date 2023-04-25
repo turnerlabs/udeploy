@@ -15,7 +15,7 @@ resource "mongodbatlas_cluster" "cluster" {
   replication_factor           = 3
   backup_enabled               = false
   auto_scaling_disk_gb_enabled = false
-  mongo_db_major_version       = "4.0"
+  mongo_db_major_version       = "6.0"
 
   provider_name               = "TENANT"
   disk_size_gb                = 2
@@ -24,34 +24,16 @@ resource "mongodbatlas_cluster" "cluster" {
   backing_provider_name       = "AWS"
 }
 
-resource "mongodbatlas_project_ip_whitelist" "ip_whitelist" {
-  count = var.ip_whitelist == "" ? 0 : 1
-  project_id = data.mongodbatlas_project.main.id
-
-  dynamic "whitelist" {
-    for_each = [for ip in split("|", var.ip_whitelist) : {
-      cidr_block = element(split(",", ip), 0)
-      comment    = element(split(",", ip), 1)
-    }]
-
-    content {
-      cidr_block = whitelist.value.cidr_block
-      comment    = whitelist.value.comment
-    }
-  }
-}
-
 resource "mongodbatlas_database_user" "app-user" {
-  username      = var.app_username
-  password      = var.app_user_password
-  project_id    = data.mongodbatlas_project.main.id
-  database_name = "admin"
+  username           = var.app_username
+  password           = var.app_user_password
+  project_id         = data.mongodbatlas_project.main.id
+  auth_database_name = "admin"
 
   roles {
     role_name     = "readWrite"
     database_name = var.app_user_database
   }
-
 }
 
 output "DB_URI" {
