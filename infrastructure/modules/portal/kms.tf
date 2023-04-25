@@ -35,16 +35,8 @@ resource "aws_kms_key" "config" {
   
   tags = var.tags
 
-  policy = data.template_file.config_policy.rendered
-}
 
-resource "aws_kms_alias" "config" {
-  name          = "alias/${var.app}-${var.environment}"
-  target_key_id = aws_kms_key.config.id
-}
-
-data "template_file" "config_policy" {
-  template = <<EOF
+  policy = <<EOF
   {
       "Version": "2012-10-17",
       "Statement": [
@@ -85,7 +77,7 @@ data "template_file" "config_policy" {
               "Resource": "*",
               "Condition": {
                   "StringNotLike": {
-                      "aws:userId": $${writePrincipals}
+                      "aws:userId": ${jsonencode(local.configUserIds)}
                   }
               }
           },
@@ -101,7 +93,7 @@ data "template_file" "config_policy" {
               "Resource": "*",
               "Condition": {
                   "StringNotLike": {
-                      "aws:userId": $${readPrincipals}
+                      "aws:userId": ${jsonencode(concat(local.configUserIds, local.configRoleIds))}
                   }
               }
           },
@@ -142,7 +134,7 @@ data "template_file" "config_policy" {
               "Resource": "*",
               "Condition": {
                   "StringLike": {
-                      "aws:userId": $${writePrincipals}
+                      "aws:userId": ${jsonencode(local.configUserIds)}
                   }
               }
           },
@@ -158,7 +150,7 @@ data "template_file" "config_policy" {
               "Resource": "*",
               "Condition": {
                   "StringLike": {
-                      "aws:userId": $${readPrincipals}
+                      "aws:userId": ${jsonencode(concat(local.configUserIds, local.configRoleIds))}
                   }
               }
           },
@@ -179,17 +171,11 @@ data "template_file" "config_policy" {
       ]
   }
   EOF
+}
 
-  vars = {
-    writePrincipals = jsonencode(local.configUserIds)
-
-    readPrincipals = jsonencode(
-      concat(
-        local.configUserIds,
-        local.configRoleIds,
-      ),
-    )
-  }
+resource "aws_kms_alias" "config" {
+  name          = "alias/${var.app}-${var.environment}"
+  target_key_id = aws_kms_key.config.id
 }
 
 output "config_key_id" {

@@ -15,7 +15,7 @@ resource "mongodbatlas_cluster" "cluster" {
   replication_factor           = 3
   backup_enabled               = false
   auto_scaling_disk_gb_enabled = false
-  mongo_db_major_version       = "4.2"
+  mongo_db_major_version       = "6.0"
 
   provider_name               = "TENANT"
   disk_size_gb                = 2
