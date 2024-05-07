@@ -29,5 +29,6 @@ resource "aws_security_group_rule" "ingress_lb_http" {
   protocol          = "tcp"
   cidr_blocks       = ["0.0.0.0/0"]
   security_group_id = aws_security_group.nsg_lb.id
+  count             = var.create_lb_http_security_group_rule
 }
 
