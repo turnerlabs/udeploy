@@ -74,7 +74,14 @@ variable "image" {
 # Allow other AWS accounts to publish events
 # to this account for app status updates
 variable "linked_account_ids" {
-  type        = list(string)
-  default     = []
+  type    = list(string)
+  default = []
 }
 
+variable "ecs_cloudwatch_log_retention_in_days" {
+  default = "14"
+}
+
+variable "create_lb_http_security_group_rule" {
+  default = "1"
+}
